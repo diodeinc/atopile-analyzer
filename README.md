@@ -4,11 +4,13 @@ atopile analyzer is an experimental new language server for atopile. You're
 probably better off with the [official atopile
 extension](https://marketplace.visualstudio.com/items?itemName=atopile.atopile).
 
+<img src="assets/unused_interface.png" alt="atopile analyzer showing a warning
+about an unused interface" />
+
 ## Installation
 
-atopile analyzer currently only supports macOS, but other platforms should Just
-Work™ if you compile the LSP server from source and point the VSCode extension
-at it.
+atopile analyzer is only tested on macOS, but other platforms should Just Work™
+if you install from source:
 
 ```sh
 ./crates/atopile_lsp/install.sh

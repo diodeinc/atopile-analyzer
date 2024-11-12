@@ -1,4 +1,4 @@
 out
 node_modules
-lsp/
+lsp/atopile_lsp
 *.vsix
