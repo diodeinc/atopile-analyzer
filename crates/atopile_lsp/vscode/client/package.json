@@ -1,0 +1,23 @@
+{
+  "name": "atopile-analyzer-client",
+  "description": "vscode client for atopile analyzer",
+  "author": "Diode Computers, Inc.",
+  "license": "MIT",
+  "version": "0.0.1",
+  "publisher": "diodeinc",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/diodeinc/atopile-analyzer"
+  },
+  "engines": {
+    "vscode": "^1.52.0"
+  },
+  "scripts": {},
+  "dependencies": {
+    "vscode-languageclient": "^7.0.0",
+    "semver": "^7.3.5"
+  },
+  "devDependencies": {
+    "@types/vscode": "^1.52.0"
+  }
+}

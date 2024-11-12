@@ -1,0 +1,13 @@
+[package]
+name = "atopile_lsp"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+tokio = { version = "1.41.1", features = ["full"] }
+tower-lsp = "0.20.0"
+log = { version = "0.4.22", features = ["std"] }
+
+atopile_parser = { path = "../atopile_parser" }
+atopile_analyzer = { path = "../atopile_analyzer" }
+anyhow = "1.0.93"

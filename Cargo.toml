@@ -1,0 +1,8 @@
+[workspace]
+members = [
+    "crates/atopile_parser",
+    "crates/atopile_lsp",
+    "crates/atopile_analyzer"
+]
+
+resolver = "2"
