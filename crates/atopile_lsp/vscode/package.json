@@ -1,0 +1,43 @@
+{
+  "name": "atopile-analyzer",
+  "description": "atopile language server",
+  "author": "Diode Computers, Inc.",
+  "license": "MIT",
+  "version": "0.0.1",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/diodeinc/atopile-analyzer"
+  },
+  "publisher": "diodeinc",
+  "categories": [],
+  "keywords": [
+    "atopile"
+  ],
+  "engines": {
+    "vscode": "^1.52.0"
+  },
+  "activationEvents": [
+    "onLanguage:ato"
+  ],
+  "main": "./client/out/extension",
+  "contributes": {},
+  "scripts": {
+    "vscode:prepublish": "npm run compile",
+    "compile": "tsc -b",
+    "watch": "tsc -b -w",
+    "lint": "eslint",
+    "postinstall": "cd client && npm install && cd .."
+  },
+  "dependencies": {
+    "vscode-languageclient": "^7.0.0"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.13.0",
+    "@stylistic/eslint-plugin": "^2.9.0",
+    "@types/mocha": "^5.2.0",
+    "@types/node": "^20",
+    "eslint": "^9.13.0",
+    "typescript": "^5.6.2",
+    "typescript-eslint": "^8.11.0"
+  }
+}
