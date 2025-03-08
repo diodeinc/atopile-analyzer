@@ -21,3 +21,4 @@ macro_rules! create_lexer_test {
 create_lexer_test!(vdivs);
 create_lexer_test!(resistors);
 create_lexer_test!(transistors);
+create_lexer_test!(bma400);
