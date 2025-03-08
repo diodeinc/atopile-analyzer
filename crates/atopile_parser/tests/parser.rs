@@ -47,3 +47,4 @@ macro_rules! create_parser_test {
 create_parser_test!(vdivs);
 create_parser_test!(resistors);
 create_parser_test!(transistors);
+create_parser_test!(bma400);

@@ -263,15 +263,17 @@ pub fn lex(input: &str) -> (Vec<Spanned<Token>>, Vec<Simple<char, Span>>) {
         let indent_level = line.chars().take_while(|c| c.is_whitespace()).count();
 
         if !line.trim().is_empty() {
-            // Handle indentation
-            while indent_level < *indent_stack.last().unwrap() {
-                indent_stack.pop();
-                tokens.push((Token::Dedent, line_span.start..line_span.start).into());
-            }
+            // Handle indentation (if we aren't in a multi-line comment)
+            if !in_multiline_comment {
+                while indent_level < *indent_stack.last().unwrap() {
+                    indent_stack.pop();
+                    tokens.push((Token::Dedent, line_span.start..line_span.start).into());
+                }
 
-            if indent_level > *indent_stack.last().unwrap() {
-                indent_stack.push(indent_level);
-                tokens.push((Token::Indent, line_span.start..line_span.start).into());
+                if indent_level > *indent_stack.last().unwrap() {
+                    indent_stack.push(indent_level);
+                    tokens.push((Token::Indent, line_span.start..line_span.start).into());
+                }
             }
 
             let mut line_pos = 0;
@@ -1342,6 +1344,123 @@ component Test:
         Spanned(
             Dedent,
             78..78,
+        ),
+    ]
+    "###);
+}
+
+#[test]
+fn test_multiline_comment_with_indentation() {
+    let input = r#"
+component Test:
+    signal a
+    """
+    This is a multiline comment
+        with weird
+indentation
+    """
+    signal b
+"#;
+    let (tokens, errors) = lex(input);
+    assert_eq!(errors.len(), 0);
+
+    assert_debug_snapshot!(tokens, @r###"
+    [
+        Spanned(
+            Newline,
+            0..1,
+        ),
+        Spanned(
+            Component,
+            1..10,
+        ),
+        Spanned(
+            Name(
+                "Test",
+            ),
+            11..15,
+        ),
+        Spanned(
+            Colon,
+            15..16,
+        ),
+        Spanned(
+            Newline,
+            16..17,
+        ),
+        Spanned(
+            Indent,
+            17..17,
+        ),
+        Spanned(
+            Signal,
+            21..27,
+        ),
+        Spanned(
+            Name(
+                "a",
+            ),
+            28..29,
+        ),
+        Spanned(
+            Newline,
+            29..30,
+        ),
+        Spanned(
+            Newline,
+            37..38,
+        ),
+        Spanned(
+            Comment(
+                "This is a multiline comment",
+            ),
+            42..69,
+        ),
+        Spanned(
+            Newline,
+            69..70,
+        ),
+        Spanned(
+            Comment(
+                "with weird",
+            ),
+            78..88,
+        ),
+        Spanned(
+            Newline,
+            88..89,
+        ),
+        Spanned(
+            Comment(
+                "indentation",
+            ),
+            89..100,
+        ),
+        Spanned(
+            Newline,
+            100..101,
+        ),
+        Spanned(
+            Newline,
+            108..109,
+        ),
+        Spanned(
+            Signal,
+            113..119,
+        ),
+        Spanned(
+            Name(
+                "b",
+            ),
+            120..121,
+        ),
+        Spanned(
+            Newline,
+            121..122,
+        ),
+        Spanned(
+            Dedent,
+            122..122,
         ),
     ]
     "###);
