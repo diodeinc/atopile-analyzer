@@ -108,6 +108,8 @@ impl AtopileSource {
             )]);
         }
 
+        // The spans on the original token stream are w.r.t. the token stream, so we traverse the
+        // generated AST and rewrite the spans to reference raw characters in the source file.
         for stmt in &mut ast {
             Self::rewrite_span(&tokens, stmt);
             Self::rewrite_stmt(&tokens, stmt);
@@ -276,6 +278,8 @@ impl AtopileSource {
         }
     }
 
+    /// Returns the deepest parser::Stmt that is present at the given index into the source file,
+    /// if there is one.
     pub fn stmt_at(&self, index: usize) -> Option<&Spanned<parser::Stmt>> {
         // Keep track of the deepest statement that contains our index
         let mut deepest: Option<&Spanned<parser::Stmt>> = None;
