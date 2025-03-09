@@ -16,11 +16,30 @@
   "engines": {
     "vscode": "^1.52.0"
   },
-  "activationEvents": [
-    "onLanguage:ato"
-  ],
+  "activationEvents": [],
   "main": "./client/out/extension",
-  "contributes": {},
+  "contributes": {
+    "languages": [
+      {
+        "id": "ato",
+        "aliases": [
+          "atopile",
+          "ato"
+        ],
+        "extensions": [
+          ".ato"
+        ],
+        "configuration": "./language-configuration.json"
+      }
+    ],
+    "grammars": [
+      {
+        "language": "ato",
+        "scopeName": "source.ato",
+        "path": "./ato.tmLanguage.json"
+      }
+    ]
+  },
   "scripts": {
     "vscode:prepublish": "npm run compile",
     "compile": "tsc -b",
