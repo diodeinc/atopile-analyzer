@@ -94,6 +94,130 @@ impl AnalyzerSource {
             modules,
         }
     }
+
+    fn port_ref_at_in_expr<'a>(
+        &'a self,
+        index: usize,
+        expr: &'a Spanned<Expr>,
+    ) -> Option<&'a Spanned<PortRef>> {
+        match &expr.deref() {
+            Expr::Port(port) => {
+                if port.span().contains(&index) {
+                    Some(port)
+                } else {
+                    None
+                }
+            }
+            Expr::BinaryOp(binary_op) => {
+                if binary_op.left.span().contains(&index) {
+                    self.port_ref_at_in_expr(index, &binary_op.left)
+                } else if binary_op.right.span().contains(&index) {
+                    self.port_ref_at_in_expr(index, &binary_op.right)
+                } else {
+                    None
+                }
+            }
+            _ => None,
+        }
+    }
+
+    /// Returns a PortRef that is at the given index into the source file, if there is one.
+    pub fn port_ref_at(&self, index: usize) -> Option<&Spanned<PortRef>> {
+        let stmt = self.file.stmt_at(index)?;
+        match &stmt.deref() {
+            Stmt::Assign(assign) => {
+                if assign.target.span().contains(&index) {
+                    Some(&assign.target)
+                } else {
+                    self.port_ref_at_in_expr(index, &assign.value)
+                }
+            }
+            Stmt::Specialize(specialize) => {
+                if specialize.port.span().contains(&index) {
+                    Some(&specialize.port)
+                } else {
+                    None
+                }
+            }
+            Stmt::Connect(connect) => {
+                if let Connectable::Port(port) = &connect.left.deref() {
+                    if port.span().contains(&index) {
+                        Some(&port)
+                    } else {
+                        None
+                    }
+                } else if let Connectable::Port(port) = &connect.right.deref() {
+                    if port.span().contains(&index) {
+                        Some(&port)
+                    } else {
+                        None
+                    }
+                } else {
+                    None
+                }
+            }
+            Stmt::Assert(assert) => self.port_ref_at_in_expr(index, &assert.expr),
+            _ => None,
+        }
+    }
+
+    fn symbol_name_at_in_expr<'a>(
+        &'a self,
+        index: usize,
+        expr: &'a Spanned<Expr>,
+    ) -> Option<&'a Spanned<String>> {
+        match &expr.deref() {
+            Expr::New(symbol) => symbol.span().contains(&index).then(|| symbol),
+            Expr::BinaryOp(binary_op) => {
+                if binary_op.left.span().contains(&index) {
+                    self.symbol_name_at_in_expr(index, &binary_op.left)
+                } else if binary_op.right.span().contains(&index) {
+                    self.symbol_name_at_in_expr(index, &binary_op.right)
+                } else {
+                    None
+                }
+            }
+            _ => None,
+        }
+    }
+
+    /// Returns a Spanned<String> for a symbol name that is at the given index
+    /// into the source file, if there is one.
+    pub fn symbol_name_at(&self, index: usize) -> Option<&Spanned<String>> {
+        let stmt = self.file.stmt_at(index)?;
+        match &stmt.deref() {
+            Stmt::Import(import) => import.imports.iter().find(|i| i.span().contains(&index)),
+            Stmt::DepImport(import) => import.name.span().contains(&index).then(|| &import.name),
+            Stmt::Assign(assign) => self.symbol_name_at_in_expr(index, &assign.value),
+            Stmt::Specialize(specialize) => specialize
+                .value
+                .span()
+                .contains(&index)
+                .then(|| &specialize.value),
+            Stmt::Block(block) => block
+                .parent
+                .as_ref()
+                .and_then(|p| p.span().contains(&index).then(|| p)),
+            _ => None,
+        }
+    }
+
+    pub fn file_path_at(&self, index: usize) -> Option<&Spanned<String>> {
+        let stmt = self.file.stmt_at(index)?;
+        match &stmt.deref() {
+            Stmt::Import(import) => import
+                .from_path
+                .span()
+                .contains(&index)
+                .then(|| &import.from_path),
+            Stmt::DepImport(import) => import
+                .from_path
+                .span()
+                .contains(&index)
+                .then(|| &import.from_path),
+            _ => None,
+        }
+    }
 }
 
 pub struct AtopileAnalyzer {
@@ -420,19 +544,19 @@ impl AtopileAnalyzer {
         Ok(result)
     }
 
-    fn handle_goto_definition_block_parent(
+    fn handle_goto_definition_for_symbol(
         &self,
         source: &AtopileSource,
-        parent: &Spanned<String>,
+        symbol: &Spanned<String>,
     ) -> Result<Option<GotoDefinitionResult>> {
-        let def = self.find_definition(source, &parent.deref())?;
+        let def = self.find_definition(source, &symbol.deref())?;
 
         if let Some(def) = def {
             Ok(Some(GotoDefinitionResult {
                 file: def.location().file.clone(),
                 source_range: Range {
-                    start: source.index_to_position(parent.span().start),
-                    end: source.index_to_position(parent.span().end),
+                    start: source.index_to_position(symbol.span().start),
+                    end: source.index_to_position(symbol.span().end),
                 },
                 target_range: def.location().range.clone(),
                 target_selection_range: def.location().range.clone(),
@@ -452,54 +576,16 @@ impl AtopileAnalyzer {
 
         let index = source.file.position_to_index(position);
         let stmt = source.file.stmt_at(index).map(|s| s.deref());
+        let port_ref = source.port_ref_at(index).map(|p| p.deref());
+        let symbol = source.symbol_name_at(index);
+        let file_path = source.file_path_at(index);
 
-        match stmt {
-            // from "path/to/file.ato" import Symbol
-            Some(Stmt::Import(ImportStmt { from_path, imports })) => {
-                if from_path.span().contains(&index) {
-                    // Import file path.
-                    self.handle_goto_definition_path(&source.file, path, &from_path)
-                } else if let Some(import) = imports.iter().find(|i| i.span().contains(&index)) {
-                    // Import symbol.
-                    self.handle_goto_definition_import(
-                        &source.file,
-                        path,
-                        &from_path.deref().into(),
-                        import,
-                    )
-                } else {
-                    Ok(None)
-                }
-            }
-            // import Symbol from "path/to/file.ato"
-            Some(Stmt::DepImport(DepImportStmt { name, from_path })) => {
-                if name.span().contains(&index) {
-                    // Import symbol.
-                    self.handle_goto_definition_import(
-                        &source.file,
-                        path,
-                        &from_path.deref().into(),
-                        &name,
-                    )
-                } else if from_path.span().contains(&index) {
-                    // Import file path.
-                    self.handle_goto_definition_path(&source.file, path, &from_path)
-                } else {
-                    Ok(None)
-                }
-            }
-            // module M from *P*:
-            Some(Stmt::Block(BlockStmt {
-                parent: Some(parent),
-                ..
-            })) => {
-                if parent.span().contains(&index) {
-                    self.handle_goto_definition_block_parent(&source.file, &parent)
-                } else {
-                    Ok(None)
-                }
-            }
-            _ => Ok(None),
+        if let Some(symbol) = symbol {
+            self.handle_goto_definition_for_symbol(&source.file, symbol)
+        } else if let Some(file_path) = file_path {
+            self.handle_goto_definition_path(&source.file, path, file_path)
+        } else {
+            Ok(None)
         }
     }
 

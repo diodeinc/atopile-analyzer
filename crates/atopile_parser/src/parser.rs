@@ -10,17 +10,43 @@ use insta::assert_debug_snapshot;
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum Stmt {
+    // from "file.ato" import Module
     Import(ImportStmt),
+
+    // import Module from "file.ato"
     DepImport(DepImportStmt),
+
+    // v: voltage
     Attribute(AttributeStmt),
+
+    // r1 = new Resistor
+    // r1: Resistor = new Resistor
     Assign(AssignStmt),
+
+    // m.xtal -> ecsXXX
     Specialize(SpecializeStmt),
+
+    // a ~ b
     Connect(ConnectStmt),
+
+    // module M:
+    // component C:
+    // interface I:
     Block(BlockStmt),
+
+    // signal a
     Signal(SignalStmt),
+
+    // pin A1
     Pin(PinStmt),
+
+    // assert 10kohm within 5%
     Assert(AssertStmt),
+
+    // # comment
     Comment(CommentStmt),
+
+    // pass
     Pass,
 }
 
