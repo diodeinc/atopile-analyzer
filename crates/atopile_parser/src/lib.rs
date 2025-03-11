@@ -2,7 +2,7 @@ use std::{
     fmt::Debug,
     hash::Hash,
     ops::{Deref, Range},
-    path::PathBuf,
+    path::{Path, PathBuf},
 };
 
 #[cfg(test)]
@@ -44,6 +44,10 @@ impl<T> Spanned<T> {
 
     pub fn span(&self) -> &Span {
         &self.1
+    }
+
+    pub fn map<U>(self, f: impl FnOnce(T) -> U) -> Spanned<U> {
+        Spanned(f(self.0), self.1.clone())
     }
 }
 
@@ -326,7 +330,7 @@ impl AtopileSource {
         StmtTraverser::new(&self.ast)
     }
 
-    pub fn path(&self) -> &PathBuf {
+    pub fn path(&self) -> &Path {
         &self.path
     }
 }

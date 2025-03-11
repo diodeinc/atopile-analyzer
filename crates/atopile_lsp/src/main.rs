@@ -22,8 +22,9 @@ struct LspLogger {
 }
 
 impl Log for LspLogger {
-    fn enabled(&self, metadata: &Metadata) -> bool {
-        metadata.level() <= Level::Warn
+    fn enabled(&self, _metadata: &Metadata) -> bool {
+        // metadata.level() <= Level::Warn
+        true
     }
 
     fn log(&self, record: &Record) {
@@ -85,6 +86,12 @@ fn diagnostic_to_lsp(diag: &AnalyzerDiagnostic) -> Diagnostic {
             ),
             ..Default::default()
         },
+        AnalyzerDiagnosticKind::Evaluator(evaluator_diag) => Diagnostic {
+            range: range_to_lsp(evaluator_diag.location.range),
+            severity: Some(diagnostic_severity_to_lsp(diag.severity)),
+            message: format!("{}", evaluator_diag.to_string()),
+            ..Default::default()
+        },
     }
 }
 
@@ -95,8 +102,23 @@ impl Backend {
             client: client.clone(),
         };
         log::set_boxed_logger(Box::new(logger))
-            .map(|()| log::set_max_level(LevelFilter::Info))
+            .map(|()| {
+                log::set_max_level(
+                    match std::env::var("RUST_LOG")
+                        .unwrap_or_else(|_| "info".to_string())
+                        .as_str()
+                    {
+                        "debug" => LevelFilter::Debug,
+                        "info" => LevelFilter::Info,
+                        "warn" => LevelFilter::Warn,
+                        "error" => LevelFilter::Error,
+                        _ => LevelFilter::Info,
+                    },
+                )
+            })
             .expect("Failed to initialize logger");
+
+        log::warn!("logger initialized");
 
         Self {
             client,
@@ -112,13 +134,18 @@ impl Backend {
             .map_err(|e| anyhow::anyhow!("Failed to parse source: {:?}", e))?;
 
         let mut analyzer = self.analyzer.lock().await;
-        analyzer
-            .set_source(
-                &uri.to_file_path()
-                    .expect("Failed to convert URI to file path"),
-                source,
-            )
-            .map_err(|e| anyhow::anyhow!("Failed to set source: {:?}", e))?;
+        match analyzer.set_source(
+            &uri.to_file_path()
+                .expect("Failed to convert URI to file path"),
+            source,
+        ) {
+            Ok(_) => (),
+            Err(e) => {
+                self.client
+                    .log_message(MessageType::ERROR, format!("{:?}", e))
+                    .await;
+            }
+        }
 
         let diagnostics = analyzer
             .diagnostics(&path)
@@ -242,7 +269,7 @@ impl LanguageServer for Backend {
                     .expect("Failed to convert URI to file path"),
                 position_from_lsp(params.text_document_position_params.position),
             )
-            .expect("Failed to find definition");
+            .map_err(|e| tower_lsp::jsonrpc::Error::invalid_params(e.to_string()))?;
 
         Ok(result.map(|r| {
             GotoDefinitionResponse::Link(vec![LocationLink {

@@ -11,3 +11,4 @@ insta = { version = "1.41.1", features = ["filters", "yaml"] }
 log = "0.4.22"
 regex = "1.11.1"
 serde = { version = "1.0.214", features = ["derive", "rc"] }
+thiserror = "1.0"

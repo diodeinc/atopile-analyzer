@@ -11,6 +11,7 @@ import {
   OutputChannel,
   WorkspaceFolder,
   Uri,
+  commands,
 } from "vscode";
 
 import {
@@ -19,6 +20,8 @@ import {
   ServerOptions,
   TransportKind,
 } from "vscode-languageclient/node";
+
+import * as cp from "child_process";
 
 let defaultClient: LanguageClient;
 const clients = new Map<string, LanguageClient>();
@@ -32,6 +35,9 @@ function buildClient(
     command: context.asAbsolutePath(path.join("lsp", "atopile_lsp")),
     args: [],
     transport: TransportKind.stdio,
+    options: {
+      env: { RUST_LOG: "info" },
+    },
   };
 
   let client = new LanguageClient(
@@ -86,6 +92,44 @@ function getOuterMostWorkspaceFolder(folder: WorkspaceFolder): WorkspaceFolder {
 export function activate(context: ExtensionContext) {
   const outputChannel: OutputChannel =
     Window.createOutputChannel("atopile analyzer");
+
+  // TODO: Re-enable
+  // // Add file system watcher for pcb.toml files
+  // const pcbTomlWatcher =
+  //   Workspace.createFileSystemWatcher("**/[!.]**/pcb.toml");
+
+  // // Function to run pcb build
+  // async function runPcbBuild(uri: Uri) {
+  //   try {
+  //     const folderPath = path.dirname(uri.fsPath);
+  //     outputChannel.appendLine(
+  //       `Running pcb build for changes in ${uri.fsPath}`
+  //     );
+
+  //     // Execute pcb build command
+  //     const result = cp.execSync("/Users/lenny/.diode/bin/pcb build", {
+  //       cwd: folderPath,
+  //       encoding: "utf-8",
+  //     });
+
+  //     outputChannel.appendLine(`pcb build output: ${result}`);
+  //     Window.showInformationMessage(
+  //       `PCB build completed for ${path.basename(folderPath)}`
+  //     );
+  //   } catch (error) {
+  //     outputChannel.appendLine(`Error running pcb build: ${error}`);
+  //     Window.showErrorMessage(`Failed to run pcb build: ${error}`);
+  //   }
+  // }
+
+  // // Register event listeners for file changes
+  // pcbTomlWatcher.onDidChange((uri) => {
+  //   outputChannel.appendLine(`pcb.toml changed: ${uri.fsPath}`);
+  //   runPcbBuild(uri);
+  // });
+
+  // // Add disposables to context
+  // context.subscriptions.push(pcbTomlWatcher);
 
   function didOpenTextDocument(document: TextDocument): void {
     // We are only interested in language mode text

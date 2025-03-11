@@ -1,12 +1,21 @@
 pub mod diagnostics;
+mod evaluator;
 mod module;
 mod unused_interface;
 
-use std::{cell::RefCell, collections::HashMap, fmt::Debug, ops::Deref, path::PathBuf, sync::Arc};
+use std::{
+    cell::RefCell,
+    collections::HashMap,
+    fmt::Debug,
+    ops::Deref,
+    path::{Path, PathBuf},
+    sync::Arc,
+};
 
 use anyhow::{Context, Result};
 use atopile_parser::{parser::*, AtopileSource, Position, Span, Spanned};
-use log::{info, warn};
+use evaluator::{resolve_import_path, Evaluator};
+use log::{debug, info, warn};
 use module::{Connection, Instantiation, Interface, Module, ModuleKind};
 use serde::Serialize;
 
@@ -42,9 +51,9 @@ impl<T> Located<T> {
         Self(item, location)
     }
 
-    pub fn from_spanned(spanned: Spanned<T>, source: &AtopileSource, path: &PathBuf) -> Self {
+    pub fn from_spanned(spanned: Spanned<T>, source: &AtopileSource, path: &Path) -> Self {
         let location = Location {
-            file: path.clone(),
+            file: path.to_path_buf(),
             range: Range {
                 start: source.index_to_position(spanned.span().start),
                 end: source.index_to_position(spanned.span().end),
@@ -71,6 +80,32 @@ impl<T: ToOwned> Located<&T> {
     }
 }
 
+trait IntoLocated<T> {
+    fn into_located(self, source: &AtopileSource) -> Located<T>;
+}
+
+impl<T> IntoLocated<T> for Spanned<T> {
+    fn into_located(self, source: &AtopileSource) -> Located<T> {
+        Located::from_spanned(self, source, source.path())
+    }
+}
+
+trait IntoLocation {
+    fn into_location(&self, source: &AtopileSource) -> Location;
+}
+
+impl IntoLocation for Span {
+    fn into_location(&self, source: &AtopileSource) -> Location {
+        Location {
+            file: source.path().to_path_buf(),
+            range: Range {
+                start: source.index_to_position(self.start),
+                end: source.index_to_position(self.end),
+            },
+        }
+    }
+}
+
 /// A result from a goto definition request.
 #[derive(Debug)]
 pub struct GotoDefinitionResult {
@@ -84,11 +119,11 @@ pub struct GotoDefinitionResult {
 #[derive(Debug, Clone)]
 pub(crate) struct AnalyzerSource {
     pub(crate) file: AtopileSource,
-    pub(crate) modules: HashMap<String, Arc<Module>>,
+    pub(crate) modules: HashMap<Symbol, Arc<Module>>,
 }
 
 impl AnalyzerSource {
-    pub fn new(source: AtopileSource, modules: HashMap<String, Arc<Module>>) -> Self {
+    pub fn new(source: AtopileSource, modules: HashMap<Symbol, Arc<Module>>) -> Self {
         Self {
             file: source,
             modules,
@@ -165,7 +200,7 @@ impl AnalyzerSource {
         &'a self,
         index: usize,
         expr: &'a Spanned<Expr>,
-    ) -> Option<&'a Spanned<String>> {
+    ) -> Option<&'a Spanned<Symbol>> {
         match &expr.deref() {
             Expr::New(symbol) => symbol.span().contains(&index).then(|| symbol),
             Expr::BinaryOp(binary_op) => {
@@ -183,7 +218,7 @@ impl AnalyzerSource {
 
     /// Returns a Spanned<String> for a symbol name that is at the given index
     /// into the source file, if there is one.
-    pub fn symbol_name_at(&self, index: usize) -> Option<&Spanned<String>> {
+    pub fn symbol_name_at(&self, index: usize) -> Option<&Spanned<Symbol>> {
         let stmt = self.file.stmt_at(index)?;
         match &stmt.deref() {
             Stmt::Import(import) => import.imports.iter().find(|i| i.span().contains(&index)),
@@ -219,13 +254,8 @@ impl AnalyzerSource {
         }
     }
 }
-
-pub struct AtopileAnalyzer {
-    files: FileCache,
-}
-
 struct FileCache {
-    files: RefCell<HashMap<PathBuf, AnalyzerSource>>,
+    files: RefCell<HashMap<PathBuf, AtopileSource>>,
 }
 
 impl FileCache {
@@ -235,23 +265,48 @@ impl FileCache {
         }
     }
 
-    pub fn get(&self, path: &PathBuf) -> Option<AnalyzerSource> {
+    pub fn get(&self, path: &Path) -> Option<AtopileSource> {
         self.files.borrow().get(path).cloned()
     }
 
-    pub fn insert(&self, path: PathBuf, source: AnalyzerSource) {
+    pub fn insert(&self, path: PathBuf, source: AtopileSource) {
         self.files.borrow_mut().insert(path, source);
     }
 
-    pub fn remove(&self, path: &PathBuf) {
+    pub fn remove(&self, path: &Path) {
         self.files.borrow_mut().remove(path);
     }
+
+    pub fn get_or_load(&self, path: &Path) -> Result<AtopileSource> {
+        debug!("loading source: {:?}", path);
+        match self.get(path) {
+            Some(file) => Ok(file),
+            None => {
+                debug!("loading source from disk: {:?}", path);
+                let content =
+                    std::fs::read_to_string(path).context("Failed to read source file")?;
+                let source = AtopileSource::new(content, path.to_path_buf())
+                    .expect("Failed to load source file");
+                self.files
+                    .borrow_mut()
+                    .insert(path.to_path_buf(), source.clone());
+                Ok(source)
+            }
+        }
+    }
+}
+
+pub struct AtopileAnalyzer {
+    files: FileCache,
+    evaluator: Evaluator,
 }
 
 impl AtopileAnalyzer {
     pub fn new() -> Self {
+        let cache = FileCache::new();
         Self {
-            files: FileCache::new(),
+            files: cache,
+            evaluator: Evaluator::new(),
         }
     }
 
@@ -273,37 +328,27 @@ impl AtopileAnalyzer {
         Ok(AnalyzerSource::new(source, modules))
     }
 
-    /// Load the source file at the given path without analyzing it.
-    fn load_raw_source(path: &PathBuf) -> Result<AtopileSource> {
-        let content = std::fs::read_to_string(path).context("Failed to read source file")?;
-        AtopileSource::new(content, path.clone())
-            .map_err(|e| anyhow::anyhow!("Failed to load source: {:?}", e))
-    }
-
     /// Load the source file at the given path. Will first check the in-memory cache maintained by
     /// `set_source`, and if not found, read from the filesystem.
     fn load_source(&self, path: &PathBuf) -> Result<AnalyzerSource> {
-        info!("loading source: {:?}", path);
+        debug!("loading source: {:?}", path);
         let path = path.canonicalize()?;
 
         if let Some(source) = self.files.get(&path) {
-            info!("source already loaded: {:?}", path);
-            return Ok(source);
+            debug!("source already loaded: {:?}", path);
+            return self.analyze_source(source.clone());
         }
 
-        info!("loading source from disk: {:?}", path);
-        let source = Self::load_raw_source(&path)
-            .map_err(|e| anyhow::anyhow!("Failed to load source: {:?}", e))?;
+        debug!("loading source from disk: {:?}", path);
+        let source = self.files.get_or_load(&path)?;
         let analyzer_source = self.analyze_source(source)?;
-        self.files.insert(path, analyzer_source.clone());
         Ok(analyzer_source)
     }
 
     /// Set the source file at the given path.
     pub fn set_source(&mut self, path: &PathBuf, source: AtopileSource) -> Result<()> {
         let path = path.canonicalize()?;
-        let analyzer_source = self.analyze_source(source)?;
-        self.files.insert(path, analyzer_source);
+        self.files.insert(path, source);
         Ok(())
     }
 
@@ -314,84 +359,24 @@ impl AtopileAnalyzer {
     }
 
     /// Run all diagnostics on the given source file.
-    pub fn diagnostics(&self, path: &PathBuf) -> Result<Vec<AnalyzerDiagnostic>> {
+    pub fn diagnostics(&mut self, path: &PathBuf) -> Result<Vec<AnalyzerDiagnostic>> {
+        log::debug!("diagnostics for {:?}", path);
+        self.evaluator.evaluate(&self.files.get_or_load(path)?);
+
         let mut diagnostics = vec![];
 
         diagnostics.extend(self.analyze_unused_interfaces(path)?);
+        diagnostics.extend(
+            self.evaluator
+                .reporter()
+                .diagnostics()
+                .get(path)
+                .unwrap_or(&vec![])
+                .iter()
+                .map(|d| d.clone()),
+        );
 
         Ok(diagnostics)
-    }
-
-    /// Resolve an import `import_path` relative to current path `ctx_path`. We check these paths
-    /// in order of precedence:
-    /// 1. Relative to the folder of `ctx_path`
-    /// 2. Relative to the project root (marked by ato.yaml)
-    /// 3. Relative to .ato/modules in the project root.
-    ///
-    /// The "project root" is determined by these rules:
-    ///  - If the `ctx_path` is in a `.ato` directory, the parent of the `.ato` directory is the
-    ///    project root.
-    ///  - Otherwise, walk up the tree until a directory containing `ato.yaml` is found.
-    fn resolve_import_path(&self, ctx_path: &PathBuf, import_path: &PathBuf) -> Result<PathBuf> {
-        if import_path.is_absolute() {
-            return Ok(import_path.to_path_buf());
-        }
-
-        // 1. Check relative to the folder of ctx_path
-        if let Some(parent) = ctx_path.parent() {
-            let relative_path = parent.join(import_path);
-            if relative_path.exists() {
-                return Ok(relative_path);
-            }
-        }
-
-        // 2. If we're in a .ato folder, use its parent as project root
-        let mut current_dir = ctx_path.parent();
-        while let Some(dir) = current_dir {
-            if dir.file_name().map_or(false, |name| name == ".ato") {
-                if let Some(project_root) = dir.parent() {
-                    // Check relative to project root
-                    let project_relative = project_root.join(import_path);
-                    if project_relative.exists() {
-                        return Ok(project_relative);
-                    }
-
-                    // Check in .ato/modules
-                    let modules_path = project_root.join(".ato").join("modules").join(import_path);
-                    if modules_path.exists() {
-                        return Ok(modules_path);
-                    }
-                }
-                break;
-            }
-            current_dir = dir.parent();
-        }
-
-        // 3. Walk up the tree to find project root (marked by ato.yaml)
-        let mut current_dir = ctx_path.parent();
-        while let Some(dir) = current_dir {
-            if dir.join("ato.yaml").exists() {
-                // Found project root, check if import exists relative to it
-                let project_relative = dir.join(import_path);
-                if project_relative.exists() {
-                    return Ok(project_relative);
-                }
-
-                // Check in .ato/modules
-                let modules_path = dir.join(".ato").join("modules").join(import_path);
-                if modules_path.exists() {
-                    return Ok(modules_path);
-                }
-
-                // If we found the project root but couldn't find the import,
-                // break to avoid walking up further
-                break;
-            }
-            current_dir = dir.parent();
-        }
-
-        // If we get here, we couldn't find the import
-        anyhow::bail!("Could not resolve import path: {:?}", import_path)
     }
 
     /// Find the BlockStmt that defines the given name, traversing through imports as necessary.
@@ -409,34 +394,32 @@ impl AtopileAnalyzer {
             )))
         } else {
             // Let's see if we import this symbol, then recurse.
-            info!("looking for import for {:?}", name);
+            debug!("looking for import for {:?}", name);
             let imported_file = source
                 .traverse_all_stmts()
                 .filter_map(|(stmt, _)| match stmt.deref() {
                     Stmt::Import(import) => Some((
-                        import.from_path.deref().into(),
+                        import.from_path.deref(),
                         import.imports.iter().map(|i| i.deref().clone()).collect(),
                     )),
-                    Stmt::DepImport(import) => Some((
-                        import.from_path.deref().into(),
-                        vec![import.name.deref().clone()],
-                    )),
+                    Stmt::DepImport(import) => {
+                        Some((import.from_path.deref(), vec![import.name.deref().clone()]))
+                    }
                     _ => None,
                 })
                 .find(|(_import_path, imports)| imports.iter().any(|i| i.deref() == name))
                 .map(|(import_path, _imports)| {
-                    let path = self.resolve_import_path(source.path(), &import_path);
-                    info!("resolved import path: {:?}", path);
+                    let path = resolve_import_path(source.path(), Path::new(import_path));
+                    debug!("resolved import path: {:?}", path);
                     path
                 })
-                .transpose()
                 .context(format!("failed to resolve import path for {:?}", name))?
                 .map(|import| self.load_source(&import))
                 .transpose()
                 .context(format!("failed to load source for import {:?}", name))?;
 
             if let Some(imported_file) = imported_file {
-                info!("found imported file: {:?}", imported_file.file.path());
+                debug!("found imported file: {:?}", imported_file.file.path());
                 self.find_definition(&imported_file.file.clone(), name)
             } else {
                 warn!(
@@ -461,7 +444,7 @@ impl AtopileAnalyzer {
                 Stmt::Block(block) => Some((block, s.span().clone()).into()),
                 _ => None,
             })
-            .find(|b: &Spanned<&BlockStmt>| b.deref().name.deref() == name)
+            .find(|b: &Spanned<&BlockStmt>| b.deref().name.deref().to_string() == name)
     }
 
     /// Create a GotoDefinitionResult for the path component of an import, e.g. `path/to/file.ato`
@@ -478,7 +461,11 @@ impl AtopileAnalyzer {
         let source_range_start = source.index_to_position(path_token.span().start);
         let source_range_end = source.index_to_position(path_token.span().end);
 
-        let resolved_path = self.resolve_import_path(source_path, &path_token.deref().into())?;
+        let resolved_path = resolve_import_path(source_path, &Path::new(path_token.deref()))
+            .context(format!(
+                "failed to resolve import path for {:?}",
+                path_token
+            ))?;
 
         Ok(Some(GotoDefinitionResult {
             file: resolved_path,
@@ -511,7 +498,10 @@ impl AtopileAnalyzer {
         let source_range_start = source.index_to_position(import.span().start);
         let source_range_end = source.index_to_position(import.span().end);
 
-        let resolved_path = self.resolve_import_path(source_path, &import_path.deref().into())?;
+        let resolved_path = resolve_import_path(source_path, import_path).context(format!(
+            "failed to resolve import path for {:?}",
+            import_path
+        ))?;
 
         let target = self.load_source(&resolved_path)?;
         let target_block = self.find_definition_in_source(&target.file, import.as_str());
@@ -547,7 +537,7 @@ impl AtopileAnalyzer {
     fn handle_goto_definition_for_symbol(
         &self,
         source: &AtopileSource,
-        symbol: &Spanned<String>,
+        symbol: &Spanned<Symbol>,
     ) -> Result<Option<GotoDefinitionResult>> {
         let def = self.find_definition(source, &symbol.deref())?;
 
@@ -572,7 +562,7 @@ impl AtopileAnalyzer {
         path: &PathBuf,
         position: Position,
     ) -> Result<Option<GotoDefinitionResult>> {
-        let source = self.files.get(path).context("Source not found")?;
+        let source = self.load_source(path)?;
 
         let index = source.file.position_to_index(position);
         let stmt = source.file.stmt_at(index).map(|s| s.deref());
@@ -599,7 +589,9 @@ impl AtopileAnalyzer {
                         block.name.deref()
                     ))?;
             if let Some(parent_block_def) = parent_block_def {
-                let parent_block_source = Self::load_raw_source(&parent_block_def.location().file)
+                let parent_block_source = self
+                    .files
+                    .get_or_load(&parent_block_def.location().file)
                     .context(format!(
                         "can't load source for parent of {:?}",
                         block.name.deref()
@@ -654,7 +646,7 @@ impl AtopileAnalyzer {
                 BlockKind::Module | BlockKind::Component => {
                     let ident = port.to_string();
                     let module = self.analyze_module(
-                        &Self::load_raw_source(&def_block.location().file)?,
+                        &self.files.get_or_load(&def_block.location().file)?,
                         &def_block,
                     )?;
                     instantiations.insert(
@@ -663,7 +655,7 @@ impl AtopileAnalyzer {
                             ident,
                             module: Arc::new(module),
                             location: Location {
-                                file: source.path().clone(),
+                                file: source.path().to_path_buf(),
                                 range: Range {
                                     start: source.index_to_position(span.start),
                                     end: source.index_to_position(span.end),
@@ -681,7 +673,7 @@ impl AtopileAnalyzer {
                             ident,
                             interface,
                             location: Location {
-                                file: source.path().clone(),
+                                file: source.path().to_path_buf(),
                                 range: Range {
                                     start: source.index_to_position(span.start),
                                     end: source.index_to_position(span.end),
