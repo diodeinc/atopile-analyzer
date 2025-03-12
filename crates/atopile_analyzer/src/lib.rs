@@ -13,9 +13,9 @@ use std::{
 };
 
 use anyhow::{Context, Result};
-use atopile_parser::{parser::*, AtopileSource, Position, Span, Spanned};
+use atopile_parser::{parser::*, AtopileError, AtopileSource, Position, Span, Spanned};
 use evaluator::{resolve_import_path, Evaluator};
-use log::{debug, info, warn};
+use log::{debug, warn};
 use module::{Connection, Instantiation, Interface, Module, ModuleKind};
 use serde::Serialize;
 
@@ -43,6 +43,22 @@ impl<T> Deref for Located<T> {
     type Target = T;
     fn deref(&self) -> &Self::Target {
         &self.0
+    }
+}
+
+trait AsLocation {
+    fn as_location(&self) -> Location;
+}
+
+impl<T> AsLocation for Located<T> {
+    fn as_location(&self) -> Location {
+        self.1.clone()
+    }
+}
+
+impl AsLocation for Location {
+    fn as_location(&self) -> Location {
+        self.clone()
     }
 }
 
@@ -130,6 +146,7 @@ impl AnalyzerSource {
         }
     }
 
+    #[allow(dead_code)]
     fn port_ref_at_in_expr<'a>(
         &'a self,
         index: usize,
@@ -157,6 +174,7 @@ impl AnalyzerSource {
     }
 
     /// Returns a PortRef that is at the given index into the source file, if there is one.
+    #[allow(dead_code)]
     pub fn port_ref_at(&self, index: usize) -> Option<&Spanned<PortRef>> {
         let stmt = self.file.stmt_at(index)?;
         match &stmt.deref() {
@@ -255,7 +273,7 @@ impl AnalyzerSource {
     }
 }
 struct FileCache {
-    files: RefCell<HashMap<PathBuf, AtopileSource>>,
+    files: RefCell<HashMap<PathBuf, (AtopileSource, Vec<AtopileError>)>>,
 }
 
 impl FileCache {
@@ -265,19 +283,19 @@ impl FileCache {
         }
     }
 
-    pub fn get(&self, path: &Path) -> Option<AtopileSource> {
+    pub fn get(&self, path: &Path) -> Option<(AtopileSource, Vec<AtopileError>)> {
         self.files.borrow().get(path).cloned()
     }
 
     pub fn insert(&self, path: PathBuf, source: AtopileSource) {
-        self.files.borrow_mut().insert(path, source);
+        self.files.borrow_mut().insert(path, (source, vec![]));
     }
 
     pub fn remove(&self, path: &Path) {
         self.files.borrow_mut().remove(path);
     }
 
-    pub fn get_or_load(&self, path: &Path) -> Result<AtopileSource> {
+    pub fn get_or_load(&self, path: &Path) -> Result<(AtopileSource, Vec<AtopileError>)> {
         debug!("loading source: {:?}", path);
         match self.get(path) {
             Some(file) => Ok(file),
@@ -285,12 +303,11 @@ impl FileCache {
                 debug!("loading source from disk: {:?}", path);
                 let content =
                     std::fs::read_to_string(path).context("Failed to read source file")?;
-                let source = AtopileSource::new(content, path.to_path_buf())
-                    .expect("Failed to load source file");
+                let (source, errors) = AtopileSource::new(content, path.to_path_buf());
                 self.files
                     .borrow_mut()
-                    .insert(path.to_path_buf(), source.clone());
-                Ok(source)
+                    .insert(path.to_path_buf(), (source.clone(), errors.clone()));
+                Ok((source, errors))
             }
         }
     }
@@ -336,13 +353,13 @@ impl AtopileAnalyzer {
         debug!("loading source: {:?}", path);
         let path = path.canonicalize()?;
 
-        if let Some(source) = self.files.get(&path) {
+        if let Some((source, _)) = self.files.get(&path) {
             debug!("source already loaded: {:?}", path);
             return self.analyze_source(source.clone());
         }
 
         debug!("loading source from disk: {:?}", path);
-        let source = self.files.get_or_load(&path)?;
+        let (source, _) = self.files.get_or_load(&path)?;
         let analyzer_source = self.analyze_source(source)?;
         Ok(analyzer_source)
     }
@@ -382,7 +399,9 @@ impl AtopileAnalyzer {
     pub fn diagnostics(&mut self, path: &PathBuf) -> Result<Vec<AnalyzerDiagnostic>> {
         log::debug!("diagnostics for {:?}", path);
         self.evaluator.reset();
-        self.evaluator.evaluate(&self.files.get_or_load(path)?);
+        let (source, errors) = self.files.get_or_load(path)?;
+        log::info!("errors: {:?}", errors);
+        self.evaluator.evaluate(&source);
 
         let mut diagnostics = vec![];
 
@@ -561,8 +580,8 @@ impl AtopileAnalyzer {
         let source = self.load_source(path)?;
 
         let index = source.file.position_to_index(position);
-        let stmt = source.file.stmt_at(index).map(|s| s.deref());
-        let port_ref = source.port_ref_at(index).map(|p| p.deref());
+        // let stmt = source.file.stmt_at(index).map(|s| s.deref());
+        // let port_ref = source.port_ref_at(index).map(|p| p.deref());
         let symbol = source.symbol_name_at(index);
         let file_path = source.file_path_at(index);
 
@@ -585,7 +604,7 @@ impl AtopileAnalyzer {
                         block.name.deref()
                     ))?;
             if let Some(parent_block_def) = parent_block_def {
-                let parent_block_source = self
+                let (parent_block_source, _) = self
                     .files
                     .get_or_load(&parent_block_def.location().file)
                     .context(format!(
@@ -642,7 +661,7 @@ impl AtopileAnalyzer {
                 BlockKind::Module | BlockKind::Component => {
                     let ident = port.to_string();
                     let module = self.analyze_module(
-                        &self.files.get_or_load(&def_block.location().file)?,
+                        &self.files.get_or_load(&def_block.location().file)?.0,
                         &def_block,
                     )?;
                     instantiations.insert(

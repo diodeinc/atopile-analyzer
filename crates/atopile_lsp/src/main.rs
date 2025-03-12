@@ -1,5 +1,3 @@
-use std::collections::HashMap;
-use std::path::PathBuf;
 use std::time::Instant;
 
 use atopile_analyzer::diagnostics::{
@@ -136,8 +134,8 @@ impl Backend {
             .expect("Failed to convert URI to file path");
 
         let parsing_start = Instant::now();
-        let source = AtopileSource::new(text.to_string(), path.clone())
-            .map_err(|e| anyhow::anyhow!("Failed to parse source: {:?}", e))?;
+        let (source, _) = AtopileSource::new(text.to_string(), path.clone());
+
         info!(
             "[profile] parsing source took {}ms",
             parsing_start.elapsed().as_millis()

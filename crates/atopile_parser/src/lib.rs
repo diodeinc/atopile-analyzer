@@ -7,6 +7,7 @@ use std::{
 
 #[cfg(test)]
 use insta::assert_debug_snapshot;
+use log::info;
 use serde::Serialize;
 
 pub mod lexer;
@@ -67,8 +68,8 @@ pub struct AtopileErrorReport<T> {
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum AtopileError {
-    Lexer(Vec<AtopileErrorReport<char>>),
-    Parser(Vec<AtopileErrorReport<lexer::Token>>),
+    Lexer(AtopileErrorReport<char>),
+    Parser(AtopileErrorReport<lexer::Token>),
 }
 
 impl<T: Hash + Eq + Debug + Clone> From<chumsky::error::Simple<T>> for AtopileErrorReport<T> {
@@ -95,22 +96,24 @@ pub struct AtopileSource {
 }
 
 impl AtopileSource {
-    pub fn new(raw: String, path: PathBuf) -> Result<Self, Vec<AtopileError>> {
-        let (tokens, lexer_errors) = lexer::lex(&raw);
+    pub fn new(raw: String, path: PathBuf) -> (Self, Vec<AtopileError>) {
+        let mut errors: Vec<AtopileError> = Vec::new();
 
-        if !lexer_errors.is_empty() {
-            return Err(vec![AtopileError::Lexer(
-                lexer_errors.into_iter().map(|e| e.into()).collect(),
-            )]);
-        }
+        let (tokens, lexer_errors) = lexer::lex(&raw);
+        info!("tokens: {:?}", tokens);
+        errors.extend(
+            lexer_errors
+                .into_iter()
+                .map(|e| AtopileError::Lexer(e.into())),
+        );
 
         let (mut ast, parser_errors) = parser::parse(&tokens);
-
-        if !parser_errors.is_empty() {
-            return Err(vec![AtopileError::Parser(
-                parser_errors.into_iter().map(|e| e.into()).collect(),
-            )]);
-        }
+        info!("ast: {:?}", ast);
+        errors.extend(
+            parser_errors
+                .into_iter()
+                .map(|e| AtopileError::Parser(e.into())),
+        );
 
         // The spans on the original token stream are w.r.t. the token stream, so we traverse the
         // generated AST and rewrite the spans to reference raw characters in the source file.
@@ -129,13 +132,16 @@ impl AtopileSource {
             )
             .collect::<Vec<_>>();
 
-        Ok(Self {
-            raw,
-            tokens,
-            ast,
-            line_to_index,
-            path,
-        })
+        (
+            Self {
+                raw,
+                tokens,
+                ast,
+                line_to_index,
+                path,
+            },
+            errors,
+        )
     }
 
     fn rewrite_span<T>(tokens: &Vec<Spanned<lexer::Token>>, spanned: &mut Spanned<T>) {
@@ -212,7 +218,7 @@ impl AtopileSource {
 
                 Self::rewrite_port_ref(tokens, &mut stmt.port.0);
             }
-            parser::Stmt::Pass => {}
+            parser::Stmt::Pass | parser::Stmt::Unparsable(_) => {}
         }
     }
 
@@ -392,7 +398,7 @@ impl<'a> Iterator for StmtTraverser<'a> {
 
 #[test]
 fn test_index_to_position() {
-    let source = AtopileSource::new(
+    let (source, errors) = AtopileSource::new(
         r#"
 from "test.ato" import MyModule
 
@@ -401,8 +407,9 @@ from "test2.ato" import MyModule2
         .trim()
         .to_string(),
         PathBuf::from("test.ato"),
-    )
-    .expect("failed to parse source");
+    );
+
+    assert_eq!(errors.len(), 0);
 
     assert_eq!(source.index_to_position(0), Position { line: 0, column: 0 });
     assert_eq!(
@@ -417,7 +424,7 @@ from "test2.ato" import MyModule2
 
 #[test]
 fn test_stmt_at() {
-    let source = AtopileSource::new(
+    let (source, errors) = AtopileSource::new(
         r#"
 from "test.ato" import MyModule
 
@@ -428,8 +435,9 @@ module M:
         .trim()
         .to_string(),
         PathBuf::from("test.ato"),
-    )
-    .expect("failed to parse source");
+    );
+
+    assert_eq!(errors.len(), 0);
 
     assert_debug_snapshot!(
         source.stmt_at(0),
@@ -494,7 +502,7 @@ module M:
 
 #[test]
 fn test_traverse_all_stmts() {
-    let source = AtopileSource::new(
+    let (source, errors) = AtopileSource::new(
         r#"
 module M:
     r1 = new Resistor
@@ -506,8 +514,9 @@ module M:
         .trim()
         .to_string(),
         PathBuf::from("test.ato"),
-    )
-    .expect("failed to parse source");
+    );
+
+    assert_eq!(errors.len(), 0);
 
     let mut traversal = source.traverse_all_stmts();
 

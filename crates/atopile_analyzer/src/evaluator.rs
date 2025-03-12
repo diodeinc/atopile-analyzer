@@ -1,18 +1,17 @@
 use std::{
-    cell::{Ref, RefCell, RefMut},
-    collections::{HashMap, HashSet},
+    collections::HashMap,
     ops::Deref,
     path::{Path, PathBuf},
     time::Instant,
 };
 
 use atopile_parser::{
-    parser::{BlockKind, BlockStmt, Connectable, Expr, PortRef, Stmt, Symbol},
+    parser::{BlockKind, BlockStmt, Connectable, Expr, Stmt, Symbol},
     AtopileSource, Spanned,
 };
 use thiserror::Error;
 
-use crate::{diagnostics::AnalyzerReporter, FileCache, IntoLocation, Location};
+use crate::{diagnostics::AnalyzerReporter, AsLocation, FileCache, IntoLocation, Location};
 
 pub(crate) struct Evaluator {
     instances: HashMap<InstanceRef, Instance>,
@@ -166,6 +165,14 @@ impl EvaluatorError {
         }
     }
 
+    fn internal<T: AsLocation>(location: &T, message: String) -> Self {
+        Self {
+            kind: EvaluatorErrorKind::Internal,
+            location: location.as_location().clone(),
+            message: Some(message),
+        }
+    }
+
     fn with_message(mut self, message: String) -> Self {
         self.message = Some(message);
         self
@@ -188,6 +195,8 @@ pub enum EvaluatorErrorKind {
     TypeNotFound,
     #[error("Invalid assignment")]
     InvalidAssignment,
+    #[error("Unparsable statement")]
+    UnparsableStmt,
 
     #[error("Internal error")]
     Internal,
@@ -394,6 +403,59 @@ impl Evaluator {
             to_instance.add_child(k, &transposed_ref);
         }
 
+        for connection in &connections {
+            let new_left = InstanceRef::new(
+                &to_ref.module,
+                [
+                    to_ref.instance_path.clone(),
+                    connection.left.instance_path.clone(),
+                ]
+                .concat(),
+            );
+            let new_right = InstanceRef::new(
+                &to_ref.module,
+                [
+                    to_ref.instance_path.clone(),
+                    connection.right.instance_path.clone(),
+                ]
+                .concat(),
+            );
+
+            let connection = Connection::new(new_left.clone(), new_right.clone());
+
+            // Find the deepest common ancestor for left and right paths
+            let left_path = &new_left.instance_path;
+            let right_path = &new_right.instance_path;
+
+            // Determine the common prefix length
+            let common_prefix_len = left_path
+                .iter()
+                .zip(right_path.iter())
+                .take_while(|(a, b)| a == b)
+                .count();
+
+            if common_prefix_len == 0 {
+                // No common ancestor, add to the top-level instance
+                to_instance
+                    .connections
+                    .push(Connection::new(new_left, new_right));
+            } else {
+                // Create a reference to the common ancestor
+                let common_ancestor_path = left_path[0..common_prefix_len].to_vec();
+                let common_ancestor_ref =
+                    InstanceRef::new(&to_ref.module, common_ancestor_path.clone());
+
+                // Find the common ancestor instance
+                if let Some(ancestor_instance) = self.resolve_instance_mut(&common_ancestor_ref) {
+                    // Add the connection to the common ancestor
+                    ancestor_instance.connections.push(connection);
+                } else {
+                    // If we can't find the common ancestor (shouldn't happen), add to top-level
+                    to_instance.connections.push(connection);
+                }
+            }
+        }
+
         self.add_instance(to_ref, to_instance);
 
         Ok(())
@@ -410,9 +472,15 @@ impl Evaluator {
         // Fast path: check if we already evaluated this module.
         let mut load_file = false;
         for symbol in import_symbols {
-            let module_ref = ModuleRef::new(source.path(), symbol.deref());
-            if let Some(instance) = self.resolve_instance(&module_ref.into()) {
-                file_scope.define(symbol.deref(), &instance.module);
+            if let Some(resolved_path) =
+                resolve_import_path(source.path(), Path::new(import_path.deref()))
+            {
+                let module_ref = ModuleRef::new(&resolved_path, symbol.deref());
+                if let Some(instance) = self.resolve_instance(&module_ref.into()) {
+                    file_scope.define(symbol.deref(), &instance.module);
+                } else {
+                    load_file = true;
+                }
             } else {
                 load_file = true;
             }
@@ -439,7 +507,7 @@ impl Evaluator {
         }
 
         // Load and evaluate the imported module.
-        let imported_source = self.file_cache.get_or_load(&path).with_context(
+        let (imported_source, _) = self.file_cache.get_or_load(&path).with_context(
             source,
             |_| EvaluatorErrorKind::ImportLoadFailed,
             &import_path,
@@ -524,14 +592,13 @@ impl Evaluator {
                         // Create the child instance.
                         self.clone_instance(&type_module_ref.into(), &target_ref)
                             .map_err(|e| {
-                                EvaluatorError::new(
-                                    EvaluatorErrorKind::Internal,
+                                EvaluatorError::internal(
                                     &assign.target.span().into_location(source),
+                                    format!(
+                                        "Failed to clone instance `{}`: {}",
+                                        type_module_ref, e
+                                    ),
                                 )
-                                .with_message(format!(
-                                    "Failed to clone instance `{}`: {}",
-                                    type_module_ref, e
-                                ))
                             })?;
 
                         instance.add_child(&child_name.clone().deref().deref().into(), &target_ref);
@@ -676,9 +743,9 @@ impl Evaluator {
 
             self.clone_instance(&parent_module_ref.into(), &module_ref.clone().into())
                 .map_err(|_| {
-                    EvaluatorError::new(
-                        EvaluatorErrorKind::Internal,
+                    EvaluatorError::internal(
                         &parent.span().into_location(source),
+                        "Failed to clone parent module".to_string(),
                     )
                 })?;
         } else {
@@ -733,6 +800,10 @@ impl Evaluator {
             ),
             Stmt::Block(block) => self.evaluate_block(source, file_scope, block),
             Stmt::Comment(_) => Ok(()),
+            Stmt::Unparsable(_) => Err(EvaluatorError::new(
+                EvaluatorErrorKind::UnparsableStmt,
+                &stmt.span().into_location(source),
+            )),
             _ => Err(EvaluatorError::new(
                 EvaluatorErrorKind::UnexpectedStmt,
                 &stmt.span().into_location(source),

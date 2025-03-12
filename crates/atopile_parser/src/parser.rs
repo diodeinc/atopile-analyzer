@@ -86,6 +86,9 @@ pub enum Stmt {
 
     // pass
     Pass,
+
+    // Unparsable. Used for error recovery.
+    Unparsable(Vec<Spanned<Token>>),
 }
 
 #[derive(Debug, Clone, PartialEq)]
@@ -715,6 +718,13 @@ fn stmt() -> impl Parser<Token, Spanned<Stmt>, Error = Simple<Token>> {
             )))
             .then_ignore(separator.repeated())
     })
+    .recover_with(skip_parser(
+        none_of([Token::Newline, Token::Semicolon])
+            .map_with_span(|token, span| (token, span).into())
+            .repeated()
+            .then_ignore(just(Token::Newline))
+            .map_with_span(|tokens, span| (Stmt::Unparsable(tokens), span).into()),
+    ))
     .labelled("stmt")
 }
 
@@ -729,7 +739,7 @@ pub fn parse(tokens: &Vec<Spanned<Token>>) -> (Vec<Spanned<Stmt>>, Vec<Simple<To
 
 pub fn parse_raw(tokens: Vec<Token>) -> (Vec<Spanned<Stmt>>, Vec<Simple<Token>>) {
     let (ast, errors) = parser().parse_recovery(tokens);
-    (ast.unwrap_or_default(), errors)
+    (ast.unwrap(), errors)
 }
 
 #[test]

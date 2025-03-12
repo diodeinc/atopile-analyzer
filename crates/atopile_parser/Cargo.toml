@@ -7,6 +7,7 @@ edition = "2021"
 chumsky = "0.9.3"
 insta = "1.41.1"
 serde = { version = "1.0.214", features = ["derive", "rc"] }
+log = "0.4.22"
 
 [dev-dependencies]
 insta = "1.34.0"
