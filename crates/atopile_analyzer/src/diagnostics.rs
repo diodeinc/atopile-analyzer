@@ -47,8 +47,16 @@ impl AnalyzerReporter {
         }
     }
 
+    pub fn reset(&self) {
+        self.diagnostics.borrow_mut().clear();
+    }
+
     pub fn clear(&self, path: &Path) {
-        self.diagnostics.borrow_mut().remove(path);
+        self.diagnostics
+            .borrow_mut()
+            .entry(path.to_path_buf())
+            .or_default()
+            .clear();
     }
 
     pub fn report(&self, diagnostic: AnalyzerDiagnostic) {

@@ -36,7 +36,7 @@ function buildClient(
     args: [],
     transport: TransportKind.stdio,
     options: {
-      env: { RUST_LOG: "info" },
+      env: { RUST_LOG: "info", RUST_BACKTRACE: "1" },
     },
   };
 

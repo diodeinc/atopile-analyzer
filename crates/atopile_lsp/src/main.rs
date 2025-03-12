@@ -1,5 +1,6 @@
 use std::collections::HashMap;
 use std::path::PathBuf;
+use std::time::Instant;
 
 use atopile_analyzer::diagnostics::{
     AnalyzerDiagnostic, AnalyzerDiagnosticKind, AnalyzerDiagnosticSeverity,
@@ -127,12 +128,22 @@ impl Backend {
     }
 
     async fn update_source(&self, text: &str, uri: &Url) -> anyhow::Result<()> {
+        let update_start = Instant::now();
+        info!("[update_source] starting for {}", uri);
+
         let path = uri
             .to_file_path()
             .expect("Failed to convert URI to file path");
+
+        let parsing_start = Instant::now();
         let source = AtopileSource::new(text.to_string(), path.clone())
             .map_err(|e| anyhow::anyhow!("Failed to parse source: {:?}", e))?;
+        info!(
+            "[profile] parsing source took {}ms",
+            parsing_start.elapsed().as_millis()
+        );
 
+        let analyzer_start = Instant::now();
         let mut analyzer = self.analyzer.lock().await;
         match analyzer.set_source(
             &uri.to_file_path()
@@ -146,33 +157,57 @@ impl Backend {
                     .await;
             }
         }
+        info!(
+            "[profile] set_source took {}ms",
+            analyzer_start.elapsed().as_millis()
+        );
 
-        let diagnostics = analyzer
-            .diagnostics(&path)
-            .map_err(|e| anyhow::anyhow!("Failed to get diagnostics: {:?}", e))?;
+        let diagnostics_start = Instant::now();
+        let diagnostics_result = analyzer.diagnostics_for_all_open_files();
+        info!(
+            "[profile] diagnostics_for_all_open_files took {}ms",
+            diagnostics_start.elapsed().as_millis()
+        );
 
-        let mut diagnostics_per_file = HashMap::<PathBuf, Vec<AnalyzerDiagnostic>>::new();
-        for diag in diagnostics {
-            diagnostics_per_file
-                .entry(diag.file.clone())
-                .or_default()
-                .push(diag);
+        match diagnostics_result {
+            Ok(diagnostics_per_file) => {
+                let publish_start = Instant::now();
+                for (file, diagnostics) in diagnostics_per_file {
+                    let lsp_diagnostics =
+                        diagnostics.iter().map(|d| diagnostic_to_lsp(d)).collect();
+
+                    info!(
+                        "publishing diagnostics for file {:?}: {:?}",
+                        file, lsp_diagnostics
+                    );
+
+                    self.client
+                        .publish_diagnostics(
+                            Url::from_file_path(&file).expect("Failed to convert file path to URI"),
+                            lsp_diagnostics,
+                            None,
+                        )
+                        .await;
+                }
+                info!(
+                    "[profile] publishing diagnostics took {}ms",
+                    publish_start.elapsed().as_millis()
+                );
+            }
+            Err(e) => {
+                self.client
+                    .log_message(
+                        MessageType::ERROR,
+                        format!("Failed to get diagnostics: {:?}", e),
+                    )
+                    .await;
+            }
         }
 
-        for (file, diagnostics) in diagnostics_per_file {
-            let lsp_diagnostics = diagnostics.iter().map(|d| diagnostic_to_lsp(d)).collect();
-
-            info!("publishing diagnostics: {:?}", lsp_diagnostics);
-
-            self.client
-                .publish_diagnostics(
-                    Url::from_file_path(&file).expect("Failed to convert file path to URI"),
-                    lsp_diagnostics,
-                    None,
-                )
-                .await;
-        }
-
+        info!(
+            "[profile] update_source total time: {}ms",
+            update_start.elapsed().as_millis()
+        );
         Ok(())
     }
 }
@@ -203,6 +238,24 @@ impl LanguageServer for Backend {
     async fn did_open(&self, params: DidOpenTextDocumentParams) {
         info!("did_open");
 
+        let path = params
+            .text_document
+            .uri
+            .to_file_path()
+            .expect("Failed to convert URI to file path");
+
+        {
+            let mut analyzer = self.analyzer.lock().await;
+            if let Err(e) = analyzer.mark_file_open(&path) {
+                self.client
+                    .log_message(
+                        MessageType::ERROR,
+                        format!("Failed to mark file as open: {:?}", e),
+                    )
+                    .await;
+            }
+        }
+
         let res = self
             .update_source(&params.text_document.text, &params.text_document.uri)
             .await;
@@ -218,7 +271,8 @@ impl LanguageServer for Backend {
     }
 
     async fn did_change(&self, params: DidChangeTextDocumentParams) {
-        info!("did_change");
+        info!("[did_change] start {}", params.text_document.uri);
+        let start = Instant::now();
 
         let res = self
             .update_source(
@@ -235,21 +289,46 @@ impl LanguageServer for Backend {
                     .await;
             }
         }
+
+        info!(
+            "[did_change] done: {} ({}ms)",
+            params.text_document.uri,
+            start.elapsed().as_millis()
+        );
     }
 
     async fn did_close(&self, params: DidCloseTextDocumentParams) {
         info!("did_close");
 
+        let path = params
+            .text_document
+            .uri
+            .to_file_path()
+            .expect("Failed to convert URI to file path");
+
         let mut analyzer = self.analyzer.lock().await;
-        analyzer
-            .remove_source(
-                &params
-                    .text_document
-                    .uri
-                    .to_file_path()
-                    .expect("Failed to convert URI to file path"),
-            )
-            .expect("Failed to remove source");
+
+        if let Err(e) = analyzer.mark_file_closed(&path) {
+            self.client
+                .log_message(
+                    MessageType::ERROR,
+                    format!("Failed to mark file as closed: {:?}", e),
+                )
+                .await;
+        }
+
+        if let Err(e) = analyzer.remove_source(&path) {
+            self.client
+                .log_message(
+                    MessageType::ERROR,
+                    format!("Failed to remove source: {:?}", e),
+                )
+                .await;
+        }
+
+        self.client
+            .publish_diagnostics(params.text_document.uri, vec![], None)
+            .await;
     }
 
     async fn goto_definition(

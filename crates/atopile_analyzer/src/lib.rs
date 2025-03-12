@@ -299,6 +299,7 @@ impl FileCache {
 pub struct AtopileAnalyzer {
     files: FileCache,
     evaluator: Evaluator,
+    open_files: std::collections::HashSet<PathBuf>,
 }
 
 impl AtopileAnalyzer {
@@ -307,6 +308,7 @@ impl AtopileAnalyzer {
         Self {
             files: cache,
             evaluator: Evaluator::new(),
+            open_files: std::collections::HashSet::new(),
         }
     }
 
@@ -355,17 +357,36 @@ impl AtopileAnalyzer {
     /// Remove the source file at the given path.
     pub fn remove_source(&mut self, path: &PathBuf) -> Result<()> {
         self.files.remove(&path.canonicalize()?);
+        self.open_files.remove(&path.canonicalize()?);
         Ok(())
+    }
+
+    /// Mark a file as open in the editor.
+    pub fn mark_file_open(&mut self, path: &PathBuf) -> Result<()> {
+        self.open_files.insert(path.canonicalize()?);
+        Ok(())
+    }
+
+    /// Mark a file as closed in the editor.
+    pub fn mark_file_closed(&mut self, path: &PathBuf) -> Result<()> {
+        self.open_files.remove(&path.canonicalize()?);
+        Ok(())
+    }
+
+    /// Get all open files.
+    pub fn get_open_files(&self) -> &std::collections::HashSet<PathBuf> {
+        &self.open_files
     }
 
     /// Run all diagnostics on the given source file.
     pub fn diagnostics(&mut self, path: &PathBuf) -> Result<Vec<AnalyzerDiagnostic>> {
         log::debug!("diagnostics for {:?}", path);
+        self.evaluator.reset();
         self.evaluator.evaluate(&self.files.get_or_load(path)?);
 
         let mut diagnostics = vec![];
 
-        diagnostics.extend(self.analyze_unused_interfaces(path)?);
+        // diagnostics.extend(self.analyze_unused_interfaces(path)?);
         diagnostics.extend(
             self.evaluator
                 .reporter()
@@ -377,6 +398,31 @@ impl AtopileAnalyzer {
         );
 
         Ok(diagnostics)
+    }
+
+    /// Get diagnostics for all open files.
+    pub fn diagnostics_for_all_open_files(
+        &mut self,
+    ) -> Result<HashMap<PathBuf, Vec<AnalyzerDiagnostic>>> {
+        let mut all_diagnostics = HashMap::new();
+
+        // Clone the open_files to avoid the borrow checker issue
+        let open_files = self.open_files.clone();
+
+        for path in open_files.iter() {
+            match self.diagnostics(path) {
+                Ok(diagnostics) => {
+                    all_diagnostics.insert(path.clone(), diagnostics);
+                }
+                Err(e) => {
+                    log::warn!("Failed to get diagnostics for file {:?}: {:?}", path, e);
+                    // Insert empty diagnostics to clear any previous diagnostics
+                    all_diagnostics.insert(path.clone(), vec![]);
+                }
+            }
+        }
+
+        Ok(all_diagnostics)
     }
 
     /// Find the BlockStmt that defines the given name, traversing through imports as necessary.
@@ -482,56 +528,6 @@ impl AtopileAnalyzer {
                 end: Position { line: 0, column: 0 },
             },
         }))
-    }
-
-    /// Create a GotoDefinitionResult for the import component of an import, e.g. `Symbol` here:
-    /// ```ato
-    /// from "path/to/file.ato" import Symbol
-    /// ```
-    fn handle_goto_definition_import(
-        &self,
-        source: &AtopileSource,
-        source_path: &PathBuf,
-        import_path: &PathBuf,
-        import: &Spanned<String>,
-    ) -> Result<Option<GotoDefinitionResult>> {
-        let source_range_start = source.index_to_position(import.span().start);
-        let source_range_end = source.index_to_position(import.span().end);
-
-        let resolved_path = resolve_import_path(source_path, import_path).context(format!(
-            "failed to resolve import path for {:?}",
-            import_path
-        ))?;
-
-        let target = self.load_source(&resolved_path)?;
-        let target_block = self.find_definition_in_source(&target.file, import.as_str());
-
-        let result = target_block.map(|block| {
-            let target_selection_range_start =
-                target.file.index_to_position(block.name.span().start);
-            let target_selection_range_end = target.file.index_to_position(block.name.span().end);
-
-            let target_range_start = block.span().start;
-            let target_range_end = block.span().end;
-
-            GotoDefinitionResult {
-                file: resolved_path,
-                source_range: Range {
-                    start: source_range_start,
-                    end: source_range_end,
-                },
-                target_range: Range {
-                    start: target.file.index_to_position(target_range_start),
-                    end: target.file.index_to_position(target_range_end),
-                },
-                target_selection_range: Range {
-                    start: target_selection_range_start,
-                    end: target_selection_range_end,
-                },
-            }
-        });
-
-        Ok(result)
     }
 
     fn handle_goto_definition_for_symbol(

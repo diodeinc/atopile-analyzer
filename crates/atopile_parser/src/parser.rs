@@ -40,6 +40,12 @@ impl From<String> for Symbol {
     }
 }
 
+impl From<&str> for Symbol {
+    fn from(s: &str) -> Self {
+        Symbol(s.to_string())
+    }
+}
+
 #[derive(Debug, Clone, PartialEq)]
 pub enum Stmt {
     // from "file.ato" import Module

@@ -1,28 +1,21 @@
 use std::{
+    cell::{Ref, RefCell, RefMut},
     collections::{HashMap, HashSet},
     ops::Deref,
     path::{Path, PathBuf},
+    time::Instant,
 };
 
 use atopile_parser::{
-    parser::{Stmt, Symbol},
+    parser::{BlockKind, BlockStmt, Connectable, Expr, PortRef, Stmt, Symbol},
     AtopileSource, Spanned,
 };
 use thiserror::Error;
 
-use crate::{
-    diagnostics::{AnalyzerDiagnostic, AnalyzerReporter},
-    FileCache, IntoLocation, Location,
-};
+use crate::{diagnostics::AnalyzerReporter, FileCache, IntoLocation, Location};
 
-/// Each module is: a set of signals/pins, a set of instantiations, a set of
-/// connections, and attributes. Each instantiation is an instance of a module
-/// and can have its attributes overwritten by any instantiator. We can store a
-/// top-level set of instantiations indexed by a "ref" which is a path:
-/// path/to/file.ato:ModuleName.path.to.instance
 pub(crate) struct Evaluator {
     instances: HashMap<InstanceRef, Instance>,
-    connections: Vec<Connection>,
     reporter: AnalyzerReporter,
     file_cache: FileCache,
 }
@@ -37,11 +30,24 @@ pub(crate) struct ModuleRef {
 }
 
 impl ModuleRef {
-    fn new(source_path: PathBuf, module_name: Symbol) -> Self {
+    fn new(source_path: &Path, module_name: &Symbol) -> Self {
         Self {
-            source_path,
-            module_name,
+            source_path: source_path.to_path_buf(),
+            module_name: module_name.clone(),
         }
+    }
+
+    fn port() -> Self {
+        Self {
+            source_path: PathBuf::new(),
+            module_name: "".into(),
+        }
+    }
+}
+
+impl std::fmt::Display for ModuleRef {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}:{}", self.source_path.display(), self.module_name)
     }
 }
 
@@ -54,42 +60,93 @@ pub(crate) struct InstanceRef {
 }
 
 impl InstanceRef {
-    fn new(module: ModuleRef, instance_path: Vec<Symbol>) -> Self {
+    fn new(module: &ModuleRef, instance_path: Vec<Symbol>) -> Self {
         Self {
-            module,
+            module: module.clone(),
             instance_path,
         }
     }
 }
 
+impl From<&ModuleRef> for InstanceRef {
+    fn from(module: &ModuleRef) -> Self {
+        Self::new(module, vec![])
+    }
+}
+
+impl From<ModuleRef> for InstanceRef {
+    fn from(module: ModuleRef) -> Self {
+        Self::new(&module, vec![])
+    }
+}
+
+impl std::fmt::Display for InstanceRef {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}", self.module)?;
+        for part in &self.instance_path {
+            write!(f, ".{}", part)?;
+        }
+        Ok(())
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Copy)]
+pub(crate) enum InstanceKind {
+    Module,
+    Component,
+    Interface,
+    Port,
+}
+
 #[derive(Debug, Clone)]
 pub(crate) struct Instance {
     module: ModuleRef,
-    signals: HashSet<Symbol>,
+    kind: InstanceKind,
     attributes: HashMap<Symbol, String>,
+    children: HashMap<Symbol, InstanceRef>,
+    connections: Vec<Connection>,
 }
 
 impl Instance {
-    fn new(module: ModuleRef) -> Self {
+    fn new(module: &ModuleRef, kind: InstanceKind) -> Self {
         Self {
-            module,
-            signals: HashSet::new(),
+            module: module.clone(),
+            kind,
             attributes: HashMap::new(),
+            children: HashMap::new(),
+            connections: Vec::new(),
         }
     }
 
-    fn add_signal(&mut self, signal: Symbol) {
-        self.signals.insert(signal);
+    fn port() -> Self {
+        Self {
+            module: ModuleRef::port(),
+            kind: InstanceKind::Port,
+            attributes: HashMap::new(),
+            children: HashMap::new(),
+            connections: Vec::new(),
+        }
     }
 
-    fn add_attribute(&mut self, attribute: Symbol, value: String) {
-        self.attributes.insert(attribute, value);
+    fn add_attribute(&mut self, attribute: &Symbol, value: String) {
+        self.attributes.insert(attribute.clone(), value);
+    }
+
+    fn add_child(&mut self, child: &Symbol, instance_ref: &InstanceRef) {
+        self.children.insert(child.clone(), instance_ref.clone());
     }
 }
 
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub(crate) struct Connection {
-    left: Symbol,
-    right: Symbol,
+    left: InstanceRef,
+    right: InstanceRef,
+}
+
+impl Connection {
+    fn new(left: InstanceRef, right: InstanceRef) -> Self {
+        Self { left, right }
+    }
 }
 
 #[derive(Debug, Clone, Error)]
@@ -125,6 +182,15 @@ pub enum EvaluatorErrorKind {
     ImportLoadFailed,
     #[error("Symbol not found")]
     ImportNotFound,
+    #[error("Unexpected statement")]
+    UnexpectedStmt,
+    #[error("Type not found")]
+    TypeNotFound,
+    #[error("Invalid assignment")]
+    InvalidAssignment,
+
+    #[error("Internal error")]
+    Internal,
 }
 
 type EvaluatorResult<T> = Result<T, EvaluatorError>;
@@ -167,12 +233,12 @@ impl FileScope {
         }
     }
 
-    fn define(&mut self, symbol: Symbol, module_ref: &ModuleRef) {
-        self.symbols.insert(symbol, module_ref.clone());
+    fn define(&mut self, symbol: &Symbol, module_ref: &ModuleRef) {
+        self.symbols.insert(symbol.clone(), module_ref.clone());
     }
 
-    fn resolve(&self, symbol: Symbol) -> Option<&ModuleRef> {
-        self.symbols.get(&symbol)
+    fn resolve(&self, symbol: &Symbol) -> Option<&ModuleRef> {
+        self.symbols.get(symbol)
     }
 }
 
@@ -264,10 +330,13 @@ impl Evaluator {
     pub(crate) fn new() -> Self {
         Self {
             instances: HashMap::new(),
-            connections: Vec::new(),
             reporter: AnalyzerReporter::new(),
             file_cache: FileCache::new(),
         }
+    }
+
+    pub(crate) fn reset(&mut self) {
+        self.instances.clear();
     }
 
     pub(crate) fn reporter(&self) -> &AnalyzerReporter {
@@ -278,8 +347,56 @@ impl Evaluator {
         self.instances.get(instance_ref)
     }
 
-    fn add_instance(&mut self, instance_ref: InstanceRef, instance: Instance) {
-        self.instances.insert(instance_ref, instance);
+    fn resolve_instance_mut(&mut self, instance_ref: &InstanceRef) -> Option<&mut Instance> {
+        self.instances.get_mut(instance_ref)
+    }
+
+    fn add_instance(&mut self, instance_ref: &InstanceRef, instance: Instance) {
+        self.instances.insert(instance_ref.clone(), instance);
+    }
+
+    fn remove_instance(&mut self, instance_ref: &InstanceRef) -> Option<Instance> {
+        self.instances.remove(instance_ref)
+    }
+
+    fn clone_instance(
+        &mut self,
+        from_ref: &InstanceRef,
+        to_ref: &InstanceRef,
+    ) -> anyhow::Result<()> {
+        let (mut to_instance, children, connections) = {
+            let from_instance = self.resolve_instance(from_ref).ok_or(anyhow::anyhow!(
+                "Tried to clone instance `{}` but it doesn't exist",
+                from_ref
+            ))?;
+
+            let mut to_instance = Instance::new(&to_ref.module, from_instance.kind);
+
+            to_instance.attributes = from_instance.attributes.clone();
+            (
+                to_instance,
+                from_instance.children.clone(),
+                from_instance.connections.clone(),
+            )
+        };
+
+        for (k, v) in children.iter() {
+            // If:
+            //  * `from_ref`       == `file.ato:ModuleA`
+            //  * `k`              == `file.ato:ModuleA.a`
+            //  * `to_ref`         == `file.ato:ModuleB.b`
+            // Then:
+            //  * `transposed_ref` == `file.ato:ModuleB.b.a`
+            let mut path = to_ref.instance_path.clone();
+            path.push(k.clone());
+            let transposed_ref = InstanceRef::new(&to_ref.module, path);
+            self.clone_instance(&v, &transposed_ref)?;
+            to_instance.add_child(k, &transposed_ref);
+        }
+
+        self.add_instance(to_ref, to_instance);
+
+        Ok(())
     }
 
     fn evaluate_import(
@@ -290,6 +407,22 @@ impl Evaluator {
         import_path: &Spanned<String>,
         import_symbols: &Vec<Spanned<Symbol>>,
     ) -> EvaluatorResult<()> {
+        // Fast path: check if we already evaluated this module.
+        let mut load_file = false;
+        for symbol in import_symbols {
+            let module_ref = ModuleRef::new(source.path(), symbol.deref());
+            if let Some(instance) = self.resolve_instance(&module_ref.into()) {
+                file_scope.define(symbol.deref(), &instance.module);
+            } else {
+                load_file = true;
+            }
+        }
+
+        if !load_file {
+            return Ok(());
+        }
+
+        // Resolve the import path.
         let path = resolve_import_path(source.path(), Path::new(import_path.deref()))
             .with_context(
                 source,
@@ -297,6 +430,7 @@ impl Evaluator {
                 &import_path,
             )?;
 
+        // Check for cycles.
         if import_stack.iter().any(|p| p == &path) {
             return Err(EvaluatorError::new(
                 EvaluatorErrorKind::ImportCycle,
@@ -304,6 +438,7 @@ impl Evaluator {
             ));
         }
 
+        // Load and evaluate the imported module.
         let imported_source = self.file_cache.get_or_load(&path).with_context(
             source,
             |_| EvaluatorErrorKind::ImportLoadFailed,
@@ -315,14 +450,12 @@ impl Evaluator {
 
         self.evaluate_inner(&imported_source, import_stack);
 
+        // Define the imported symbols.
         for imported_symbol in import_symbols {
-            let instance_ref = InstanceRef::new(
-                ModuleRef::new(path.clone(), imported_symbol.deref().clone()),
-                vec![],
-            );
+            let instance_ref = ModuleRef::new(&path, imported_symbol.deref()).into();
 
             if let Some(instance) = self.resolve_instance(&instance_ref) {
-                file_scope.define(imported_symbol.deref().clone(), &instance.module);
+                file_scope.define(imported_symbol.deref(), &instance.module);
             } else {
                 self.reporter.report(
                     EvaluatorError::new(
@@ -337,14 +470,253 @@ impl Evaluator {
         Ok(())
     }
 
-    fn evaluate_stmt(
+    fn evaluate_block_stmt(
+        &mut self,
+        source: &AtopileSource,
+        file_scope: &FileScope,
+        instance: &mut Instance,
+        module_ref: &ModuleRef,
+        stmt: &Spanned<Stmt>,
+    ) -> EvaluatorResult<()> {
+        match stmt.deref() {
+            // x.y.z = ...
+            Stmt::Assign(assign) => {
+                let target_ref = InstanceRef::new(
+                    module_ref,
+                    assign
+                        .target
+                        .deref()
+                        .parts
+                        .iter()
+                        .map(|p| p.deref().deref().into())
+                        .collect(),
+                );
+
+                match assign.value.deref() {
+                    // x = new Module
+                    Expr::New(type_name) => {
+                        // `x` must be a top-level name.
+                        if assign.target.deref().parts.len() != 1 {
+                            return Err(EvaluatorError::new(
+                                EvaluatorErrorKind::InvalidAssignment,
+                                &assign.target.span().into_location(source),
+                            )
+                            .with_message("Cannot create new module in sub-module".to_string()));
+                        }
+
+                        // Get a reference to the module that we're creating.
+                        let child_name = assign.target.deref().parts.last().unwrap();
+                        let type_module_ref =
+                            file_scope.resolve(type_name).ok_or(EvaluatorError::new(
+                                EvaluatorErrorKind::TypeNotFound,
+                                &type_name.span().into_location(source),
+                            ))?;
+
+                        // Cannot create a child that already exists.
+                        if let Some(_) = self.resolve_instance(&target_ref) {
+                            return Err(EvaluatorError::new(
+                                EvaluatorErrorKind::InvalidAssignment,
+                                &assign.target.span().into_location(source),
+                            )
+                            .with_message(format!("`{}` already exists", child_name.deref())));
+                        }
+
+                        // Create the child instance.
+                        self.clone_instance(&type_module_ref.into(), &target_ref)
+                            .map_err(|e| {
+                                EvaluatorError::new(
+                                    EvaluatorErrorKind::Internal,
+                                    &assign.target.span().into_location(source),
+                                )
+                                .with_message(format!(
+                                    "Failed to clone instance `{}`: {}",
+                                    type_module_ref, e
+                                ))
+                            })?;
+
+                        instance.add_child(&child_name.clone().deref().deref().into(), &target_ref);
+                    }
+                    Expr::Port(port) => {
+                        return Err(EvaluatorError::new(
+                            EvaluatorErrorKind::InvalidAssignment,
+                            &assign.target.span().into_location(source),
+                        )
+                        .with_message(format!(
+                            "Cannot assign port `{}`. Maybe you meant to connect with `~`?",
+                            port.deref().to_string()
+                        )));
+                    }
+                    _ => {}
+                }
+                Ok(())
+            }
+            Stmt::Pin(pin) => {
+                let pin_name = pin.name.deref();
+                let pin_ref = InstanceRef::new(module_ref, vec![pin_name.clone()]);
+                self.add_instance(&pin_ref, Instance::port());
+                instance.add_child(pin_name, &pin_ref);
+                Ok(())
+            }
+            Stmt::Signal(signal) => {
+                let signal_name = signal.name.deref();
+                let signal_ref = InstanceRef::new(module_ref, vec![signal_name.clone()]);
+                self.add_instance(&signal_ref, Instance::port());
+                instance.add_child(signal_name, &signal_ref);
+                Ok(())
+            }
+            Stmt::Connect(connect) => {
+                let left = connect.left.deref();
+                let right = connect.right.deref();
+
+                // Handle implicit signal/pin definitions and pull out the ConnectionHandle for each.
+                let left_instance_ref = match left {
+                    Connectable::Pin(signal) | Connectable::Signal(signal) => {
+                        let signal_symbol: Symbol = signal.deref().clone().into();
+                        let instance_ref =
+                            InstanceRef::new(module_ref, vec![signal_symbol.clone()]);
+                        self.add_instance(&instance_ref, Instance::port());
+                        instance.add_child(&signal_symbol, &instance_ref);
+                        instance_ref
+                    }
+                    Connectable::Port(port) => InstanceRef::new(
+                        module_ref,
+                        port.deref()
+                            .parts
+                            .iter()
+                            .map(|p| p.deref().clone().into())
+                            .collect(),
+                    ),
+                };
+
+                let right_instance_ref = match right {
+                    Connectable::Pin(signal) | Connectable::Signal(signal) => {
+                        let signal_symbol: Symbol = signal.deref().clone().into();
+                        let instance_ref =
+                            InstanceRef::new(module_ref, vec![signal_symbol.clone()]);
+                        self.add_instance(&instance_ref, Instance::port());
+                        instance.add_child(&signal_symbol, &instance_ref);
+                        instance_ref
+                    }
+                    Connectable::Port(port) => InstanceRef::new(
+                        module_ref,
+                        port.deref()
+                            .parts
+                            .iter()
+                            .map(|p| p.deref().clone().into())
+                            .collect(),
+                    ),
+                };
+
+                if let Some(left_instance) = self.resolve_instance(&left_instance_ref) {
+                    if !matches!(
+                        left_instance.kind,
+                        InstanceKind::Port | InstanceKind::Interface
+                    ) {
+                        return Err(EvaluatorError::new(
+                            EvaluatorErrorKind::InvalidAssignment,
+                            &connect.left.span().into_location(source),
+                        )
+                        .with_message(format!("Can't connect to `{}`", left_instance_ref)));
+                    }
+                } else {
+                    return Err(EvaluatorError::new(
+                        EvaluatorErrorKind::InvalidAssignment,
+                        &connect.left.span().into_location(source),
+                    )
+                    .with_message(format!("`{}` does not exist", left_instance_ref)));
+                }
+
+                if let Some(right_instance) = self.resolve_instance(&right_instance_ref) {
+                    if !matches!(
+                        right_instance.kind,
+                        InstanceKind::Port | InstanceKind::Interface
+                    ) {
+                        return Err(EvaluatorError::new(
+                            EvaluatorErrorKind::InvalidAssignment,
+                            &connect.right.span().into_location(source),
+                        )
+                        .with_message(format!("Can't connect to `{}`", right_instance_ref)));
+                    }
+                } else {
+                    return Err(EvaluatorError::new(
+                        EvaluatorErrorKind::InvalidAssignment,
+                        &connect.right.span().into_location(source),
+                    )
+                    .with_message(format!("`{}` does not exist", right_instance_ref)));
+                }
+
+                instance
+                    .connections
+                    .push(Connection::new(left_instance_ref, right_instance_ref));
+
+                Ok(())
+            }
+            _ => Ok(()),
+        }
+    }
+
+    fn evaluate_block(
+        &mut self,
+        source: &AtopileSource,
+        file_scope: &mut FileScope,
+        block: &BlockStmt,
+    ) -> EvaluatorResult<()> {
+        let module_ref = ModuleRef::new(source.path(), block.name.deref());
+        let instance_kind = match block.kind.deref() {
+            BlockKind::Module => InstanceKind::Module,
+            BlockKind::Component => InstanceKind::Component,
+            BlockKind::Interface => InstanceKind::Interface,
+        };
+
+        if let Some(parent) = &block.parent {
+            let parent_module_ref = file_scope.resolve(parent).ok_or(EvaluatorError::new(
+                EvaluatorErrorKind::TypeNotFound,
+                &parent.span().into_location(source),
+            ))?;
+
+            self.clone_instance(&parent_module_ref.into(), &module_ref.clone().into())
+                .map_err(|_| {
+                    EvaluatorError::new(
+                        EvaluatorErrorKind::Internal,
+                        &parent.span().into_location(source),
+                    )
+                })?;
+        } else {
+            let new_instance = Instance::new(&module_ref, instance_kind);
+            self.add_instance(&module_ref.clone().into(), new_instance);
+        };
+
+        // Remove the instance so we can tinker with it before putting it back.
+        let instance_ref: InstanceRef = module_ref.clone().into();
+        let mut instance = self
+            .remove_instance(&instance_ref)
+            .ok_or(EvaluatorError::new(
+                EvaluatorErrorKind::Internal,
+                &block.name.span().into_location(source),
+            ))?;
+
+        for stmt in &block.body {
+            if let Err(e) =
+                self.evaluate_block_stmt(source, file_scope, &mut instance, &module_ref, stmt)
+            {
+                self.reporter.report(e.into());
+            }
+        }
+
+        self.add_instance(&instance_ref, instance);
+        file_scope.define(block.name.deref(), &module_ref);
+
+        Ok(())
+    }
+
+    fn evaluate_top_stmt(
         &mut self,
         source: &AtopileSource,
         import_stack: &Vec<PathBuf>,
         file_scope: &mut FileScope,
-        stmt: &Stmt,
+        stmt: &Spanned<Stmt>,
     ) -> EvaluatorResult<()> {
-        match stmt {
+        match stmt.deref() {
             Stmt::Import(import) => self.evaluate_import(
                 source,
                 import_stack,
@@ -359,48 +731,35 @@ impl Evaluator {
                 &dep_import.from_path,
                 &vec![dep_import.name.clone()],
             ),
-            Stmt::Block(block) => {
-                let module_ref =
-                    ModuleRef::new(source.path().to_path_buf(), block.name.deref().clone());
-                let instance = Instance::new(module_ref.clone());
-                let instance_ref = InstanceRef::new(module_ref, vec![]);
-                self.add_instance(instance_ref, instance);
-
-                Ok(())
-            }
-            _ => Ok(()),
+            Stmt::Block(block) => self.evaluate_block(source, file_scope, block),
+            Stmt::Comment(_) => Ok(()),
+            _ => Err(EvaluatorError::new(
+                EvaluatorErrorKind::UnexpectedStmt,
+                &stmt.span().into_location(source),
+            )),
         }
-    }
-
-    fn evaluate_ast(
-        &mut self,
-        source: &AtopileSource,
-        file_scope: &mut FileScope,
-        import_stack: Vec<PathBuf>,
-    ) -> Vec<EvaluatorError> {
-        source
-            .ast()
-            .iter()
-            .filter_map(|stmt| {
-                self.evaluate_stmt(source, &import_stack, file_scope, stmt)
-                    .err()
-            })
-            .collect()
     }
 
     fn evaluate_inner(&mut self, source: &AtopileSource, import_stack: Vec<PathBuf>) {
         self.reporter.clear(source.path());
 
         let mut file_scope = FileScope::new();
-        let errs = self.evaluate_ast(source, &mut file_scope, import_stack);
-
-        for err in errs {
-            self.reporter.report(err.into());
+        for stmt in source.ast() {
+            if let Err(e) = self.evaluate_top_stmt(source, &import_stack, &mut file_scope, stmt) {
+                self.reporter.report(e.into());
+            }
         }
     }
 
     pub(crate) fn evaluate(&mut self, source: &AtopileSource) {
-        log::debug!("evaluating source: {:?}", source.path());
+        log::info!("[evaluate] start: {:?}", source.path());
+        let start = Instant::now();
         self.evaluate_inner(source, vec![]);
+        let duration = start.elapsed();
+        log::info!(
+            "[evaluate] done: {:?} ({}ms)",
+            source.path(),
+            duration.as_millis()
+        );
     }
 }
