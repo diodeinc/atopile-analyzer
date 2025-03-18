@@ -1,0 +1,56 @@
+### Footprint positions - created on 2025-03-14T22:22:46-0400 ###
+### Printed by KiCad version 9.0.0
+## Unit = inches, Angle = deg.
+## Side : All
+# Ref     Val                                                                                                                                    Package                               PosX       PosY       Rot  Side
+C20       50V_10nF_X7R_±10%_0402_Multilayer_Ceramic_Capacitors_MLCC_-_SMD/SMT_ROHS                                                              C0402                               7.8955    -4.4921    0.0000  bottom
+C21       6.3V_2.2uF_X5R_±20%_0402_Multilayer_Ceramic_Capacitors_MLCC_-_SMD/SMT_ROHS                                                            C0402                               8.0297    -4.4917    0.0000  bottom
+R10       62.5mW_Thick_Film_Resistors_50V_±1%_220mΩ_0402_Chip_Resistor_-_Surface_Mount_ROHS                                                    R0402                               8.0297    -4.7413    0.0000  bottom
+R11       62.5mW_Thick_Film_Resistors_50V_±1%_220mΩ_0402_Chip_Resistor_-_Surface_Mount_ROHS                                                    R0402                               7.8959    -4.7421  180.0000  bottom
+U14       Dual_H-Bridge_Motor_Driver_1.5A_WQFN16EP_Texas_Instruments_DRV8833RTYT,_Half_Bridge_Motor_Driver,_16-Pin_QFN                           QFN65P400X400X80-17N-D              7.9626    -4.6161   90.0000  bottom
+U15       1.25mm_Pitch,_PicoBlade_PCB_Header,_Single_Row,_Right-Angle,_Surface_Mount,_Tin_(Sn)_Plating,_Friction_Lock,__Circuits,_Tape_and_Reel  532610271                           7.6181    -4.6161  180.0000  bottom
+U16       1.25mm_Pitch,_PicoBlade_PCB_Header,_Single_Row,_Right-Angle,_Surface_Mount,_Tin_(Sn)_Plating,_Friction_Lock,__Circuits,_Tape_and_Reel  532610371                           7.9626    -4.2421   90.0000  bottom
+U17       1.25mm_Pitch,_PicoBlade_PCB_Header,_Single_Row,_Right-Angle,_Surface_Mount,_Tin_(Sn)_Plating,_Friction_Lock,__Circuits,_Tape_and_Reel  532610671                           7.5984    -3.9665  -90.0000  bottom
+U18       Molex_PICOBLADE_Series,_Series_Number_53261,_1.25mm_Pitch,_8_Way_1_Row_Shrouded_Right_Angle_PCB_Header,_Surface_Mount                  53261-0871                          7.7795    -3.6070    0.0000  bottom
+C1        25V_1uF_X5R_±10%_0402_Multilayer_Ceramic_Capacitors_MLCC_-_SMD/SMT_ROHS                                                               C0402                               7.5197    -3.5967  180.0000  top
+C2        25V_1uF_X5R_±10%_0402_Multilayer_Ceramic_Capacitors_MLCC_-_SMD/SMT_ROHS                                                               C0402                               7.6197    -3.5967    0.0000  top
+C3        50V_22pF_C0G_±5%_0402_Multilayer_Ceramic_Capacitors_MLCC_-_SMD/SMT_ROHS                                                               C0402                               7.5231    -4.6617   90.0000  top
+C4        50V_22pF_C0G_±5%_0402_Multilayer_Ceramic_Capacitors_MLCC_-_SMD/SMT_ROHS                                                               C0402                               7.7842    -4.6660  -90.0000  top
+C5        16V_100nF_X7R_±10%_0402_Multilayer_Ceramic_Capacitors_MLCC_-_SMD/SMT_ROHS                                                             C0402                               7.9168    -4.2015    0.0000  top
+C6        16V_100nF_X7R_±10%_0402_Multilayer_Ceramic_Capacitors_MLCC_-_SMD/SMT_ROHS                                                             C0402                               7.4980    -4.2057  180.0000  top
+C7        16V_100nF_X7R_±10%_0402_Multilayer_Ceramic_Capacitors_MLCC_-_SMD/SMT_ROHS                                                             C0402                               7.4969    -4.1648  180.0000  top
+C8        16V_100nF_X7R_±10%_0402_Multilayer_Ceramic_Capacitors_MLCC_-_SMD/SMT_ROHS                                                             C0402                               7.7834    -4.5920  -90.0000  top
+C9        16V_100nF_X7R_±10%_0402_Multilayer_Ceramic_Capacitors_MLCC_-_SMD/SMT_ROHS                                                             C0402                               7.8448    -3.8090  180.0000  top
+C10       25V_1uF_X5R_±10%_0402_Multilayer_Ceramic_Capacitors_MLCC_-_SMD/SMT_ROHS                                                               C0402                               7.9196    -4.3558    0.0000  top
+C11       16V_100nF_X7R_±10%_0402_Multilayer_Ceramic_Capacitors_MLCC_-_SMD/SMT_ROHS                                                             C0402                               7.8576    -4.5920  -90.0000  top
+C12       16V_100nF_X7R_±10%_0402_Multilayer_Ceramic_Capacitors_MLCC_-_SMD/SMT_ROHS                                                             C0402                               7.9166    -4.1643    0.0000  top
+C13       16V_100nF_X7R_±10%_0402_Multilayer_Ceramic_Capacitors_MLCC_-_SMD/SMT_ROHS                                                             C0402                               7.8214    -4.5920  -90.0000  top
+C14       25V_1uF_X5R_±10%_0402_Multilayer_Ceramic_Capacitors_MLCC_-_SMD/SMT_ROHS                                                               C0402                               7.7043    -4.1098   90.0000  top
+C15       25V_1uF_X5R_±10%_0402_Multilayer_Ceramic_Capacitors_MLCC_-_SMD/SMT_ROHS                                                               C0402                               7.8065    -3.2551  -90.0000  top
+C16       50V_100nF_X7R_±10%_0603_Multilayer_Ceramic_Capacitors_MLCC_-_SMD/SMT_ROHS                                                             C0603                               7.5815    -3.2305  180.0000  top
+C17       50V_100nF_X7R_±10%_0603_Multilayer_Ceramic_Capacitors_MLCC_-_SMD/SMT_ROHS                                                             C0603                               7.7144    -3.2305    0.0000  top
+C18       50V_10uF_X5R_±10%_1206_Multilayer_Ceramic_Capacitors_MLCC_-_SMD/SMT_ROHS                                                              C1206                               8.0000    -3.9321    0.0000  top
+C19       50V_10uF_X5R_±10%_1206_Multilayer_Ceramic_Capacitors_MLCC_-_SMD/SMT_ROHS                                                              C1206                               8.0000    -3.6073    0.0000  top
+R1        62.5mW_Thick_Film_Resistors_50V_±100ppm/℃_±1%_5.1kΩ_0402_Chip_Resistor_-_Surface_Mount_ROHS                                       R0402                               7.5512    -4.7992   90.0000  top
+R2        62.5mW_Thick_Film_Resistors_50V_±100ppm/℃_±1%_5.1kΩ_0402_Chip_Resistor_-_Surface_Mount_ROHS                                       R0402                               8.0079    -4.7953   90.0000  top
+R3        62.5mW_Thick_Film_Resistors_50V_±100ppm/℃_±1%_10kΩ_0402_Chip_Resistor_-_Surface_Mount_ROHS                                        R0402                               7.5019    -4.3550  180.0000  top
+R4        62.5mW_Thick_Film_Resistors_50V_±100ppm/℃_±1%_10kΩ_0402_Chip_Resistor_-_Surface_Mount_ROHS                                        R0402                               7.5751    -4.1231  180.0000  top
+R5        62.5mW_Thick_Film_Resistors_50V_±100ppm/℃_±1%_1kΩ_0402_Chip_Resistor_-_Surface_Mount_ROHS                                         R0402                               7.7042    -4.5184    0.0000  top
+R6        62.5mW_Thick_Film_Resistors_50V_±100ppm/℃_±1%_27Ω_0402_Chip_Resistor_-_Surface_Mount_ROHS                                         R0402                               7.8516    -4.0813    0.0000  top
+R7        62.5mW_Thick_Film_Resistors_50V_±100ppm/℃_±1%_27Ω_0402_Chip_Resistor_-_Surface_Mount_ROHS                                         R0402                               7.8521    -4.1231  180.0000  top
+R8        62.5mW_Thick_Film_Resistors_50V_±100ppm/℃_±1%_220kΩ_0402_Chip_Resistor_-_Surface_Mount_ROHS                                       R0402                               7.9606    -4.0010  180.0000  top
+R9        62.5mW_Thick_Film_Resistors_50V_±100ppm/℃_±1%_54.9kΩ_0402_Chip_Resistor_-_Surface_Mount_ROHS                                      R0402                               8.0394    -4.0010    0.0000  top
+U1        RICHTEK_-_RT9013-33GB_-_IC,_LDO,_FIXED,_3.3V,_0.5A,_SOT-23-5                                                                           SOT94P279X130-5N                    7.5689    -3.6909    0.0000  top
+U2        ?                                                                                                                                      USB-C-SMD_KH-TYPE-C-16P             7.7805    -4.8753    0.0000  top
+U3        Microcontroller_in_QFN_Package                                                                                                         QFN40P700X700X90-57N-D              7.7047    -4.3150    0.0000  top
+U4        KMR211NGLFS_(Tactile_Switches)                                                                                                         KMR211NGLFS                         8.0472    -4.5866  -90.0000  top
+U5        KMR211NGLFS_(Tactile_Switches)                                                                                                         KMR211NGLFS                         8.0472    -4.2913  -90.0000  top
+U6        SMD_Crystal_Resonators_12MHz_+/-10ppm_SMD-3225_4P_RoHS                                                                                 X322512MSB4SI                       7.6546    -4.6338    0.0000  top
+U7        128M-bit_Serial_Flash_Memory_with_uniform_4KB_sectors_and_Dual/Quad_SPI                                                                SOIC127P790X216-8N                  7.6976    -3.9448    0.0000  top
+U8        1.6-V_to_5.5-V,_40-m,_2.5-A,_low-IQ,_dual_ideal_diode                                                                                  SOTFL50P160X60-8N                   8.0512    -4.0984  -90.0000  top
+U9        SN75176BDG4,_Line_Transceiver_Differential,_5V,_8-Pin_SOIC                                                                             SOIC127P600X175-8N                  7.9331    -3.3661   90.0000  top
+U10       8-Bit_Bidirectional_Voltage-Level_Shifter_For_Open-Drain_And_Push-Pull_Application                                                     SN74LVC541ARGYR                     7.6474    -3.4057  -90.0000  top
+U11       ?                                                                                                                                      PinHeader_1x04_P2.54mm_Vertical     7.4459    -3.1181    0.0000  top
+U12       ?                                                                                                                                      PinHeader_1x04_P2.54mm_Vertical     8.1152    -3.1181    0.0000  top
+U13       36-V,_1-A_Step-Down_DC-DC_Power_Module_in_3.8-mm__3-mm_Package                                                                         LMZM23600SILT                       8.0000    -3.7835  -90.0000  top
+## End

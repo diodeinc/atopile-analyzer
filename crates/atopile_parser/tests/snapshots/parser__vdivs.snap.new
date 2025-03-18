@@ -1,0 +1,1654 @@
+---
+source: crates/atopile_parser/tests/parser.rs
+assertion_line: 47
+expression: output
+snapshot_kind: text
+---
+(
+    [
+        Spanned(
+            DepImport(
+                DepImportStmt {
+                    name: Spanned(
+                        Symbol(
+                            "Resistor",
+                        ),
+                        1..2,
+                    ),
+                    from_path: Spanned(
+                        "resistors.ato",
+                        3..4,
+                    ),
+                },
+            ),
+            0..4,
+        ),
+        Spanned(
+            DepImport(
+                DepImportStmt {
+                    name: Spanned(
+                        Symbol(
+                            "Capacitor",
+                        ),
+                        1..2,
+                    ),
+                    from_path: Spanned(
+                        "capacitors.ato",
+                        3..4,
+                    ),
+                },
+            ),
+            0..4,
+        ),
+        Spanned(
+            DepImport(
+                DepImportStmt {
+                    name: Spanned(
+                        Symbol(
+                            "Power",
+                        ),
+                        1..2,
+                    ),
+                    from_path: Spanned(
+                        "interfaces.ato",
+                        3..4,
+                    ),
+                },
+            ),
+            0..4,
+        ),
+        Spanned(
+            DepImport(
+                DepImportStmt {
+                    name: Spanned(
+                        Symbol(
+                            "Pair",
+                        ),
+                        1..2,
+                    ),
+                    from_path: Spanned(
+                        "interfaces.ato",
+                        3..4,
+                    ),
+                },
+            ),
+            0..4,
+        ),
+        Spanned(
+            Block(
+                BlockStmt {
+                    kind: Spanned(
+                        Module,
+                        0..1,
+                    ),
+                    name: Spanned(
+                        Symbol(
+                            "VDiv",
+                        ),
+                        1..2,
+                    ),
+                    parent: Some(
+                        Spanned(
+                            Symbol(
+                                "_VDiv",
+                            ),
+                            3..4,
+                        ),
+                    ),
+                    body: [
+                        Spanned(
+                            Attribute(
+                                AttributeStmt {
+                                    name: Spanned(
+                                        Symbol(
+                                            "r_total",
+                                        ),
+                                        0..1,
+                                    ),
+                                    type_info: Spanned(
+                                        Symbol(
+                                            "resistance",
+                                        ),
+                                        2..3,
+                                    ),
+                                },
+                            ),
+                            0..3,
+                        ),
+                        Spanned(
+                            Comment(
+                                CommentStmt {
+                                    comment: Spanned(
+                                        " ratio: None",
+                                        0..1,
+                                    ),
+                                },
+                            ),
+                            0..1,
+                        ),
+                        Spanned(
+                            Attribute(
+                                AttributeStmt {
+                                    name: Spanned(
+                                        Symbol(
+                                            "v_in",
+                                        ),
+                                        0..1,
+                                    ),
+                                    type_info: Spanned(
+                                        Symbol(
+                                            "voltage",
+                                        ),
+                                        2..3,
+                                    ),
+                                },
+                            ),
+                            0..3,
+                        ),
+                        Spanned(
+                            Attribute(
+                                AttributeStmt {
+                                    name: Spanned(
+                                        Symbol(
+                                            "v_out",
+                                        ),
+                                        0..1,
+                                    ),
+                                    type_info: Spanned(
+                                        Symbol(
+                                            "voltage",
+                                        ),
+                                        2..3,
+                                    ),
+                                },
+                            ),
+                            0..3,
+                        ),
+                        Spanned(
+                            Attribute(
+                                AttributeStmt {
+                                    name: Spanned(
+                                        Symbol(
+                                            "i_q",
+                                        ),
+                                        0..1,
+                                    ),
+                                    type_info: Spanned(
+                                        Symbol(
+                                            "current",
+                                        ),
+                                        2..3,
+                                    ),
+                                },
+                            ),
+                            0..3,
+                        ),
+                        Spanned(
+                            Assign(
+                                AssignStmt {
+                                    target: Spanned(
+                                        PortRef {
+                                            parts: [
+                                                Spanned(
+                                                    "i_q",
+                                                    0..1,
+                                                ),
+                                            ],
+                                        },
+                                        0..1,
+                                    ),
+                                    type_info: None,
+                                    value: Spanned(
+                                        Physical(
+                                            Spanned(
+                                                PhysicalValue {
+                                                    value: Spanned(
+                                                        "100",
+                                                        2..3,
+                                                    ),
+                                                    unit: Some(
+                                                        Spanned(
+                                                            "uA",
+                                                            3..4,
+                                                        ),
+                                                    ),
+                                                    tolerance: Some(
+                                                        Spanned(
+                                                            Bound {
+                                                                min: Spanned(
+                                                                    "0",
+                                                                    0..0,
+                                                                ),
+                                                                max: Spanned(
+                                                                    "10",
+                                                                    5..6,
+                                                                ),
+                                                            },
+                                                            4..7,
+                                                        ),
+                                                    ),
+                                                },
+                                                2..7,
+                                            ),
+                                        ),
+                                        2..7,
+                                    ),
+                                },
+                            ),
+                            0..7,
+                        ),
+                        Spanned(
+                            Comment(
+                                CommentStmt {
+                                    comment: Spanned(
+                                        " assert r_top.value / r_bottom.value within ratio",
+                                        0..1,
+                                    ),
+                                },
+                            ),
+                            0..1,
+                        ),
+                        Spanned(
+                            Comment(
+                                CommentStmt {
+                                    comment: Spanned(
+                                        " assert r_top.value + r_bottom.value within r_total",
+                                        0..1,
+                                    ),
+                                },
+                            ),
+                            0..1,
+                        ),
+                        Spanned(
+                            Assert(
+                                AssertStmt {
+                                    expr: Spanned(
+                                        BinaryOp(
+                                            Spanned(
+                                                BinaryOp {
+                                                    left: Spanned(
+                                                        BinaryOp(
+                                                            Spanned(
+                                                                BinaryOp {
+                                                                    left: Spanned(
+                                                                        BinaryOp(
+                                                                            Spanned(
+                                                                                BinaryOp {
+                                                                                    left: Spanned(
+                                                                                        Port(
+                                                                                            Spanned(
+                                                                                                PortRef {
+                                                                                                    parts: [
+                                                                                                        Spanned(
+                                                                                                            "v_in",
+                                                                                                            1..2,
+                                                                                                        ),
+                                                                                                    ],
+                                                                                                },
+                                                                                                1..2,
+                                                                                            ),
+                                                                                        ),
+                                                                                        1..2,
+                                                                                    ),
+                                                                                    op: Spanned(
+                                                                                        Mul,
+                                                                                        2..3,
+                                                                                    ),
+                                                                                    right: Spanned(
+                                                                                        Port(
+                                                                                            Spanned(
+                                                                                                PortRef {
+                                                                                                    parts: [
+                                                                                                        Spanned(
+                                                                                                            "r_bottom",
+                                                                                                            3..4,
+                                                                                                        ),
+                                                                                                        Spanned(
+                                                                                                            "value",
+                                                                                                            5..6,
+                                                                                                        ),
+                                                                                                    ],
+                                                                                                },
+                                                                                                3..6,
+                                                                                            ),
+                                                                                        ),
+                                                                                        3..6,
+                                                                                    ),
+                                                                                },
+                                                                                1..6,
+                                                                            ),
+                                                                        ),
+                                                                        1..6,
+                                                                    ),
+                                                                    op: Spanned(
+                                                                        Div,
+                                                                        6..7,
+                                                                    ),
+                                                                    right: Spanned(
+                                                                        BinaryOp(
+                                                                            Spanned(
+                                                                                BinaryOp {
+                                                                                    left: Spanned(
+                                                                                        Port(
+                                                                                            Spanned(
+                                                                                                PortRef {
+                                                                                                    parts: [
+                                                                                                        Spanned(
+                                                                                                            "r_top",
+                                                                                                            8..9,
+                                                                                                        ),
+                                                                                                        Spanned(
+                                                                                                            "value",
+                                                                                                            10..11,
+                                                                                                        ),
+                                                                                                    ],
+                                                                                                },
+                                                                                                8..11,
+                                                                                            ),
+                                                                                        ),
+                                                                                        8..11,
+                                                                                    ),
+                                                                                    op: Spanned(
+                                                                                        Add,
+                                                                                        11..12,
+                                                                                    ),
+                                                                                    right: Spanned(
+                                                                                        Port(
+                                                                                            Spanned(
+                                                                                                PortRef {
+                                                                                                    parts: [
+                                                                                                        Spanned(
+                                                                                                            "r_bottom",
+                                                                                                            12..13,
+                                                                                                        ),
+                                                                                                        Spanned(
+                                                                                                            "value",
+                                                                                                            14..15,
+                                                                                                        ),
+                                                                                                    ],
+                                                                                                },
+                                                                                                12..15,
+                                                                                            ),
+                                                                                        ),
+                                                                                        12..15,
+                                                                                    ),
+                                                                                },
+                                                                                8..15,
+                                                                            ),
+                                                                        ),
+                                                                        8..15,
+                                                                    ),
+                                                                },
+                                                                1..15,
+                                                            ),
+                                                        ),
+                                                        1..15,
+                                                    ),
+                                                    op: Spanned(
+                                                        Within,
+                                                        16..17,
+                                                    ),
+                                                    right: Spanned(
+                                                        Port(
+                                                            Spanned(
+                                                                PortRef {
+                                                                    parts: [
+                                                                        Spanned(
+                                                                            "v_out",
+                                                                            17..18,
+                                                                        ),
+                                                                    ],
+                                                                },
+                                                                17..18,
+                                                            ),
+                                                        ),
+                                                        17..18,
+                                                    ),
+                                                },
+                                                1..18,
+                                            ),
+                                        ),
+                                        1..18,
+                                    ),
+                                },
+                            ),
+                            0..18,
+                        ),
+                        Spanned(
+                            Assert(
+                                AssertStmt {
+                                    expr: Spanned(
+                                        BinaryOp(
+                                            Spanned(
+                                                BinaryOp {
+                                                    left: Spanned(
+                                                        BinaryOp(
+                                                            Spanned(
+                                                                BinaryOp {
+                                                                    left: Spanned(
+                                                                        Port(
+                                                                            Spanned(
+                                                                                PortRef {
+                                                                                    parts: [
+                                                                                        Spanned(
+                                                                                            "v_in",
+                                                                                            1..2,
+                                                                                        ),
+                                                                                    ],
+                                                                                },
+                                                                                1..2,
+                                                                            ),
+                                                                        ),
+                                                                        1..2,
+                                                                    ),
+                                                                    op: Spanned(
+                                                                        Div,
+                                                                        2..3,
+                                                                    ),
+                                                                    right: Spanned(
+                                                                        BinaryOp(
+                                                                            Spanned(
+                                                                                BinaryOp {
+                                                                                    left: Spanned(
+                                                                                        Port(
+                                                                                            Spanned(
+                                                                                                PortRef {
+                                                                                                    parts: [
+                                                                                                        Spanned(
+                                                                                                            "r_bottom",
+                                                                                                            4..5,
+                                                                                                        ),
+                                                                                                        Spanned(
+                                                                                                            "value",
+                                                                                                            6..7,
+                                                                                                        ),
+                                                                                                    ],
+                                                                                                },
+                                                                                                4..7,
+                                                                                            ),
+                                                                                        ),
+                                                                                        4..7,
+                                                                                    ),
+                                                                                    op: Spanned(
+                                                                                        Add,
+                                                                                        7..8,
+                                                                                    ),
+                                                                                    right: Spanned(
+                                                                                        Port(
+                                                                                            Spanned(
+                                                                                                PortRef {
+                                                                                                    parts: [
+                                                                                                        Spanned(
+                                                                                                            "r_top",
+                                                                                                            8..9,
+                                                                                                        ),
+                                                                                                        Spanned(
+                                                                                                            "value",
+                                                                                                            10..11,
+                                                                                                        ),
+                                                                                                    ],
+                                                                                                },
+                                                                                                8..11,
+                                                                                            ),
+                                                                                        ),
+                                                                                        8..11,
+                                                                                    ),
+                                                                                },
+                                                                                4..11,
+                                                                            ),
+                                                                        ),
+                                                                        4..11,
+                                                                    ),
+                                                                },
+                                                                1..11,
+                                                            ),
+                                                        ),
+                                                        1..11,
+                                                    ),
+                                                    op: Spanned(
+                                                        Within,
+                                                        12..13,
+                                                    ),
+                                                    right: Spanned(
+                                                        Port(
+                                                            Spanned(
+                                                                PortRef {
+                                                                    parts: [
+                                                                        Spanned(
+                                                                            "i_q",
+                                                                            13..14,
+                                                                        ),
+                                                                    ],
+                                                                },
+                                                                13..14,
+                                                            ),
+                                                        ),
+                                                        13..14,
+                                                    ),
+                                                },
+                                                1..14,
+                                            ),
+                                        ),
+                                        1..14,
+                                    ),
+                                },
+                            ),
+                            0..14,
+                        ),
+                    ],
+                },
+            ),
+            21..97,
+        ),
+        Spanned(
+            Block(
+                BlockStmt {
+                    kind: Spanned(
+                        Module,
+                        0..1,
+                    ),
+                    name: Spanned(
+                        Symbol(
+                            "_VDiv",
+                        ),
+                        1..2,
+                    ),
+                    parent: None,
+                    body: [
+                        Spanned(
+                            Signal(
+                                SignalStmt {
+                                    name: Spanned(
+                                        Symbol(
+                                            "top",
+                                        ),
+                                        1..2,
+                                    ),
+                                },
+                            ),
+                            0..2,
+                        ),
+                        Spanned(
+                            Signal(
+                                SignalStmt {
+                                    name: Spanned(
+                                        Symbol(
+                                            "out",
+                                        ),
+                                        1..2,
+                                    ),
+                                },
+                            ),
+                            0..2,
+                        ),
+                        Spanned(
+                            Signal(
+                                SignalStmt {
+                                    name: Spanned(
+                                        Symbol(
+                                            "bottom",
+                                        ),
+                                        1..2,
+                                    ),
+                                },
+                            ),
+                            0..2,
+                        ),
+                        Spanned(
+                            Assign(
+                                AssignStmt {
+                                    target: Spanned(
+                                        PortRef {
+                                            parts: [
+                                                Spanned(
+                                                    "output",
+                                                    0..1,
+                                                ),
+                                            ],
+                                        },
+                                        0..1,
+                                    ),
+                                    type_info: None,
+                                    value: Spanned(
+                                        New(
+                                            Spanned(
+                                                Symbol(
+                                                    "Pair",
+                                                ),
+                                                3..4,
+                                            ),
+                                        ),
+                                        2..4,
+                                    ),
+                                },
+                            ),
+                            0..4,
+                        ),
+                        Spanned(
+                            Connect(
+                                ConnectStmt {
+                                    left: Spanned(
+                                        Port(
+                                            Spanned(
+                                                PortRef {
+                                                    parts: [
+                                                        Spanned(
+                                                            "output",
+                                                            0..1,
+                                                        ),
+                                                        Spanned(
+                                                            "io",
+                                                            2..3,
+                                                        ),
+                                                    ],
+                                                },
+                                                0..3,
+                                            ),
+                                        ),
+                                        0..3,
+                                    ),
+                                    right: Spanned(
+                                        Port(
+                                            Spanned(
+                                                PortRef {
+                                                    parts: [
+                                                        Spanned(
+                                                            "out",
+                                                            4..5,
+                                                        ),
+                                                    ],
+                                                },
+                                                4..5,
+                                            ),
+                                        ),
+                                        4..5,
+                                    ),
+                                },
+                            ),
+                            0..5,
+                        ),
+                        Spanned(
+                            Connect(
+                                ConnectStmt {
+                                    left: Spanned(
+                                        Port(
+                                            Spanned(
+                                                PortRef {
+                                                    parts: [
+                                                        Spanned(
+                                                            "output",
+                                                            0..1,
+                                                        ),
+                                                        Spanned(
+                                                            "gnd",
+                                                            2..3,
+                                                        ),
+                                                    ],
+                                                },
+                                                0..3,
+                                            ),
+                                        ),
+                                        0..3,
+                                    ),
+                                    right: Spanned(
+                                        Port(
+                                            Spanned(
+                                                PortRef {
+                                                    parts: [
+                                                        Spanned(
+                                                            "bottom",
+                                                            4..5,
+                                                        ),
+                                                    ],
+                                                },
+                                                4..5,
+                                            ),
+                                        ),
+                                        4..5,
+                                    ),
+                                },
+                            ),
+                            0..5,
+                        ),
+                        Spanned(
+                            Assign(
+                                AssignStmt {
+                                    target: Spanned(
+                                        PortRef {
+                                            parts: [
+                                                Spanned(
+                                                    "in",
+                                                    0..1,
+                                                ),
+                                            ],
+                                        },
+                                        0..1,
+                                    ),
+                                    type_info: None,
+                                    value: Spanned(
+                                        New(
+                                            Spanned(
+                                                Symbol(
+                                                    "Power",
+                                                ),
+                                                3..4,
+                                            ),
+                                        ),
+                                        2..4,
+                                    ),
+                                },
+                            ),
+                            0..4,
+                        ),
+                        Spanned(
+                            Assign(
+                                AssignStmt {
+                                    target: Spanned(
+                                        PortRef {
+                                            parts: [
+                                                Spanned(
+                                                    "power",
+                                                    0..1,
+                                                ),
+                                            ],
+                                        },
+                                        0..1,
+                                    ),
+                                    type_info: None,
+                                    value: Spanned(
+                                        New(
+                                            Spanned(
+                                                Symbol(
+                                                    "Power",
+                                                ),
+                                                3..4,
+                                            ),
+                                        ),
+                                        2..4,
+                                    ),
+                                },
+                            ),
+                            0..4,
+                        ),
+                        Spanned(
+                            Connect(
+                                ConnectStmt {
+                                    left: Spanned(
+                                        Port(
+                                            Spanned(
+                                                PortRef {
+                                                    parts: [
+                                                        Spanned(
+                                                            "in",
+                                                            0..1,
+                                                        ),
+                                                    ],
+                                                },
+                                                0..1,
+                                            ),
+                                        ),
+                                        0..1,
+                                    ),
+                                    right: Spanned(
+                                        Port(
+                                            Spanned(
+                                                PortRef {
+                                                    parts: [
+                                                        Spanned(
+                                                            "power",
+                                                            2..3,
+                                                        ),
+                                                    ],
+                                                },
+                                                2..3,
+                                            ),
+                                        ),
+                                        2..3,
+                                    ),
+                                },
+                            ),
+                            0..3,
+                        ),
+                        Spanned(
+                            Connect(
+                                ConnectStmt {
+                                    left: Spanned(
+                                        Port(
+                                            Spanned(
+                                                PortRef {
+                                                    parts: [
+                                                        Spanned(
+                                                            "power",
+                                                            0..1,
+                                                        ),
+                                                        Spanned(
+                                                            "vcc",
+                                                            2..3,
+                                                        ),
+                                                    ],
+                                                },
+                                                0..3,
+                                            ),
+                                        ),
+                                        0..3,
+                                    ),
+                                    right: Spanned(
+                                        Port(
+                                            Spanned(
+                                                PortRef {
+                                                    parts: [
+                                                        Spanned(
+                                                            "top",
+                                                            4..5,
+                                                        ),
+                                                    ],
+                                                },
+                                                4..5,
+                                            ),
+                                        ),
+                                        4..5,
+                                    ),
+                                },
+                            ),
+                            0..5,
+                        ),
+                        Spanned(
+                            Connect(
+                                ConnectStmt {
+                                    left: Spanned(
+                                        Port(
+                                            Spanned(
+                                                PortRef {
+                                                    parts: [
+                                                        Spanned(
+                                                            "power",
+                                                            0..1,
+                                                        ),
+                                                        Spanned(
+                                                            "gnd",
+                                                            2..3,
+                                                        ),
+                                                    ],
+                                                },
+                                                0..3,
+                                            ),
+                                        ),
+                                        0..3,
+                                    ),
+                                    right: Spanned(
+                                        Port(
+                                            Spanned(
+                                                PortRef {
+                                                    parts: [
+                                                        Spanned(
+                                                            "bottom",
+                                                            4..5,
+                                                        ),
+                                                    ],
+                                                },
+                                                4..5,
+                                            ),
+                                        ),
+                                        4..5,
+                                    ),
+                                },
+                            ),
+                            0..5,
+                        ),
+                        Spanned(
+                            Assign(
+                                AssignStmt {
+                                    target: Spanned(
+                                        PortRef {
+                                            parts: [
+                                                Spanned(
+                                                    "r_top",
+                                                    0..1,
+                                                ),
+                                            ],
+                                        },
+                                        0..1,
+                                    ),
+                                    type_info: None,
+                                    value: Spanned(
+                                        New(
+                                            Spanned(
+                                                Symbol(
+                                                    "Resistor",
+                                                ),
+                                                3..4,
+                                            ),
+                                        ),
+                                        2..4,
+                                    ),
+                                },
+                            ),
+                            0..4,
+                        ),
+                        Spanned(
+                            Assign(
+                                AssignStmt {
+                                    target: Spanned(
+                                        PortRef {
+                                            parts: [
+                                                Spanned(
+                                                    "r_bottom",
+                                                    0..1,
+                                                ),
+                                            ],
+                                        },
+                                        0..1,
+                                    ),
+                                    type_info: None,
+                                    value: Spanned(
+                                        New(
+                                            Spanned(
+                                                Symbol(
+                                                    "Resistor",
+                                                ),
+                                                3..4,
+                                            ),
+                                        ),
+                                        2..4,
+                                    ),
+                                },
+                            ),
+                            0..4,
+                        ),
+                        Spanned(
+                            Assign(
+                                AssignStmt {
+                                    target: Spanned(
+                                        PortRef {
+                                            parts: [
+                                                Spanned(
+                                                    "r_top",
+                                                    0..1,
+                                                ),
+                                                Spanned(
+                                                    "package",
+                                                    2..3,
+                                                ),
+                                            ],
+                                        },
+                                        0..3,
+                                    ),
+                                    type_info: None,
+                                    value: Spanned(
+                                        String(
+                                            Spanned(
+                                                "0402",
+                                                4..5,
+                                            ),
+                                        ),
+                                        4..5,
+                                    ),
+                                },
+                            ),
+                            0..5,
+                        ),
+                        Spanned(
+                            Assign(
+                                AssignStmt {
+                                    target: Spanned(
+                                        PortRef {
+                                            parts: [
+                                                Spanned(
+                                                    "r_bottom",
+                                                    0..1,
+                                                ),
+                                                Spanned(
+                                                    "package",
+                                                    2..3,
+                                                ),
+                                            ],
+                                        },
+                                        0..3,
+                                    ),
+                                    type_info: None,
+                                    value: Spanned(
+                                        String(
+                                            Spanned(
+                                                "0402",
+                                                4..5,
+                                            ),
+                                        ),
+                                        4..5,
+                                    ),
+                                },
+                            ),
+                            0..5,
+                        ),
+                        Spanned(
+                            Connect(
+                                ConnectStmt {
+                                    left: Spanned(
+                                        Port(
+                                            Spanned(
+                                                PortRef {
+                                                    parts: [
+                                                        Spanned(
+                                                            "top",
+                                                            0..1,
+                                                        ),
+                                                    ],
+                                                },
+                                                0..1,
+                                            ),
+                                        ),
+                                        0..1,
+                                    ),
+                                    right: Spanned(
+                                        Port(
+                                            Spanned(
+                                                PortRef {
+                                                    parts: [
+                                                        Spanned(
+                                                            "r_top",
+                                                            2..3,
+                                                        ),
+                                                        Spanned(
+                                                            "1",
+                                                            4..5,
+                                                        ),
+                                                    ],
+                                                },
+                                                2..5,
+                                            ),
+                                        ),
+                                        2..5,
+                                    ),
+                                },
+                            ),
+                            0..5,
+                        ),
+                        Spanned(
+                            Connect(
+                                ConnectStmt {
+                                    left: Spanned(
+                                        Port(
+                                            Spanned(
+                                                PortRef {
+                                                    parts: [
+                                                        Spanned(
+                                                            "r_top",
+                                                            0..1,
+                                                        ),
+                                                        Spanned(
+                                                            "2",
+                                                            2..3,
+                                                        ),
+                                                    ],
+                                                },
+                                                0..3,
+                                            ),
+                                        ),
+                                        0..3,
+                                    ),
+                                    right: Spanned(
+                                        Port(
+                                            Spanned(
+                                                PortRef {
+                                                    parts: [
+                                                        Spanned(
+                                                            "r_bottom",
+                                                            4..5,
+                                                        ),
+                                                        Spanned(
+                                                            "1",
+                                                            6..7,
+                                                        ),
+                                                    ],
+                                                },
+                                                4..7,
+                                            ),
+                                        ),
+                                        4..7,
+                                    ),
+                                },
+                            ),
+                            0..7,
+                        ),
+                        Spanned(
+                            Connect(
+                                ConnectStmt {
+                                    left: Spanned(
+                                        Port(
+                                            Spanned(
+                                                PortRef {
+                                                    parts: [
+                                                        Spanned(
+                                                            "r_bottom",
+                                                            0..1,
+                                                        ),
+                                                        Spanned(
+                                                            "2",
+                                                            2..3,
+                                                        ),
+                                                    ],
+                                                },
+                                                0..3,
+                                            ),
+                                        ),
+                                        0..3,
+                                    ),
+                                    right: Spanned(
+                                        Port(
+                                            Spanned(
+                                                PortRef {
+                                                    parts: [
+                                                        Spanned(
+                                                            "bottom",
+                                                            4..5,
+                                                        ),
+                                                    ],
+                                                },
+                                                4..5,
+                                            ),
+                                        ),
+                                        4..5,
+                                    ),
+                                },
+                            ),
+                            0..5,
+                        ),
+                        Spanned(
+                            Connect(
+                                ConnectStmt {
+                                    left: Spanned(
+                                        Port(
+                                            Spanned(
+                                                PortRef {
+                                                    parts: [
+                                                        Spanned(
+                                                            "r_top",
+                                                            0..1,
+                                                        ),
+                                                        Spanned(
+                                                            "2",
+                                                            2..3,
+                                                        ),
+                                                    ],
+                                                },
+                                                0..3,
+                                            ),
+                                        ),
+                                        0..3,
+                                    ),
+                                    right: Spanned(
+                                        Port(
+                                            Spanned(
+                                                PortRef {
+                                                    parts: [
+                                                        Spanned(
+                                                            "out",
+                                                            4..5,
+                                                        ),
+                                                    ],
+                                                },
+                                                4..5,
+                                            ),
+                                        ),
+                                        4..5,
+                                    ),
+                                },
+                            ),
+                            0..5,
+                        ),
+                    ],
+                },
+            ),
+            97..209,
+        ),
+        Spanned(
+            Block(
+                BlockStmt {
+                    kind: Spanned(
+                        Module,
+                        0..1,
+                    ),
+                    name: Spanned(
+                        Symbol(
+                            "VDivLowPassFilter",
+                        ),
+                        1..2,
+                    ),
+                    parent: Some(
+                        Spanned(
+                            Symbol(
+                                "VDiv",
+                            ),
+                            3..4,
+                        ),
+                    ),
+                    body: [
+                        Spanned(
+                            Assign(
+                                AssignStmt {
+                                    target: Spanned(
+                                        PortRef {
+                                            parts: [
+                                                Spanned(
+                                                    "cap",
+                                                    0..1,
+                                                ),
+                                            ],
+                                        },
+                                        0..1,
+                                    ),
+                                    type_info: None,
+                                    value: Spanned(
+                                        New(
+                                            Spanned(
+                                                Symbol(
+                                                    "Capacitor",
+                                                ),
+                                                3..4,
+                                            ),
+                                        ),
+                                        2..4,
+                                    ),
+                                },
+                            ),
+                            0..4,
+                        ),
+                        Spanned(
+                            Assign(
+                                AssignStmt {
+                                    target: Spanned(
+                                        PortRef {
+                                            parts: [
+                                                Spanned(
+                                                    "cap",
+                                                    0..1,
+                                                ),
+                                                Spanned(
+                                                    "package",
+                                                    2..3,
+                                                ),
+                                            ],
+                                        },
+                                        0..3,
+                                    ),
+                                    type_info: None,
+                                    value: Spanned(
+                                        String(
+                                            Spanned(
+                                                "0402",
+                                                4..5,
+                                            ),
+                                        ),
+                                        4..5,
+                                    ),
+                                },
+                            ),
+                            0..5,
+                        ),
+                        Spanned(
+                            Attribute(
+                                AttributeStmt {
+                                    name: Spanned(
+                                        Symbol(
+                                            "cutoff_frequency",
+                                        ),
+                                        0..1,
+                                    ),
+                                    type_info: Spanned(
+                                        Symbol(
+                                            "frequency",
+                                        ),
+                                        2..3,
+                                    ),
+                                },
+                            ),
+                            0..3,
+                        ),
+                        Spanned(
+                            Connect(
+                                ConnectStmt {
+                                    left: Spanned(
+                                        Port(
+                                            Spanned(
+                                                PortRef {
+                                                    parts: [
+                                                        Spanned(
+                                                            "out",
+                                                            0..1,
+                                                        ),
+                                                    ],
+                                                },
+                                                0..1,
+                                            ),
+                                        ),
+                                        0..1,
+                                    ),
+                                    right: Spanned(
+                                        Port(
+                                            Spanned(
+                                                PortRef {
+                                                    parts: [
+                                                        Spanned(
+                                                            "cap",
+                                                            2..3,
+                                                        ),
+                                                        Spanned(
+                                                            "1",
+                                                            4..5,
+                                                        ),
+                                                    ],
+                                                },
+                                                2..5,
+                                            ),
+                                        ),
+                                        2..5,
+                                    ),
+                                },
+                            ),
+                            0..5,
+                        ),
+                        Spanned(
+                            Connect(
+                                ConnectStmt {
+                                    left: Spanned(
+                                        Port(
+                                            Spanned(
+                                                PortRef {
+                                                    parts: [
+                                                        Spanned(
+                                                            "cap",
+                                                            0..1,
+                                                        ),
+                                                        Spanned(
+                                                            "2",
+                                                            2..3,
+                                                        ),
+                                                    ],
+                                                },
+                                                0..3,
+                                            ),
+                                        ),
+                                        0..3,
+                                    ),
+                                    right: Spanned(
+                                        Port(
+                                            Spanned(
+                                                PortRef {
+                                                    parts: [
+                                                        Spanned(
+                                                            "bottom",
+                                                            4..5,
+                                                        ),
+                                                    ],
+                                                },
+                                                4..5,
+                                            ),
+                                        ),
+                                        4..5,
+                                    ),
+                                },
+                            ),
+                            0..5,
+                        ),
+                        Spanned(
+                            Assign(
+                                AssignStmt {
+                                    target: Spanned(
+                                        PortRef {
+                                            parts: [
+                                                Spanned(
+                                                    "cap",
+                                                    0..1,
+                                                ),
+                                                Spanned(
+                                                    "value",
+                                                    2..3,
+                                                ),
+                                            ],
+                                        },
+                                        0..3,
+                                    ),
+                                    type_info: None,
+                                    value: Spanned(
+                                        Physical(
+                                            Spanned(
+                                                PhysicalValue {
+                                                    value: Spanned(
+                                                        "100",
+                                                        4..5,
+                                                    ),
+                                                    unit: Some(
+                                                        Spanned(
+                                                            "nF",
+                                                            5..6,
+                                                        ),
+                                                    ),
+                                                    tolerance: Some(
+                                                        Spanned(
+                                                            Bilateral {
+                                                                value: Spanned(
+                                                                    "10",
+                                                                    7..8,
+                                                                ),
+                                                                unit: None,
+                                                            },
+                                                            6..9,
+                                                        ),
+                                                    ),
+                                                },
+                                                4..9,
+                                            ),
+                                        ),
+                                        4..9,
+                                    ),
+                                },
+                            ),
+                            0..9,
+                        ),
+                        Spanned(
+                            Attribute(
+                                AttributeStmt {
+                                    name: Spanned(
+                                        Symbol(
+                                            "cutoff_frequency",
+                                        ),
+                                        0..1,
+                                    ),
+                                    type_info: Spanned(
+                                        Symbol(
+                                            "frequency",
+                                        ),
+                                        2..3,
+                                    ),
+                                },
+                            ),
+                            0..3,
+                        ),
+                        Spanned(
+                            Assert(
+                                AssertStmt {
+                                    expr: Spanned(
+                                        BinaryOp(
+                                            Spanned(
+                                                BinaryOp {
+                                                    left: Spanned(
+                                                        BinaryOp(
+                                                            Spanned(
+                                                                BinaryOp {
+                                                                    left: Spanned(
+                                                                        Physical(
+                                                                            Spanned(
+                                                                                PhysicalValue {
+                                                                                    value: Spanned(
+                                                                                        "1",
+                                                                                        1..2,
+                                                                                    ),
+                                                                                    unit: None,
+                                                                                    tolerance: None,
+                                                                                },
+                                                                                1..2,
+                                                                            ),
+                                                                        ),
+                                                                        1..2,
+                                                                    ),
+                                                                    op: Spanned(
+                                                                        Div,
+                                                                        2..3,
+                                                                    ),
+                                                                    right: Spanned(
+                                                                        BinaryOp(
+                                                                            Spanned(
+                                                                                BinaryOp {
+                                                                                    left: Spanned(
+                                                                                        BinaryOp(
+                                                                                            Spanned(
+                                                                                                BinaryOp {
+                                                                                                    left: Spanned(
+                                                                                                        BinaryOp(
+                                                                                                            Spanned(
+                                                                                                                BinaryOp {
+                                                                                                                    left: Spanned(
+                                                                                                                        Physical(
+                                                                                                                            Spanned(
+                                                                                                                                PhysicalValue {
+                                                                                                                                    value: Spanned(
+                                                                                                                                        "2",
+                                                                                                                                        4..5,
+                                                                                                                                    ),
+                                                                                                                                    unit: None,
+                                                                                                                                    tolerance: None,
+                                                                                                                                },
+                                                                                                                                4..5,
+                                                                                                                            ),
+                                                                                                                        ),
+                                                                                                                        4..5,
+                                                                                                                    ),
+                                                                                                                    op: Spanned(
+                                                                                                                        Mul,
+                                                                                                                        5..6,
+                                                                                                                    ),
+                                                                                                                    right: Spanned(
+                                                                                                                        Physical(
+                                                                                                                            Spanned(
+                                                                                                                                PhysicalValue {
+                                                                                                                                    value: Spanned(
+                                                                                                                                        "3.14",
+                                                                                                                                        6..7,
+                                                                                                                                    ),
+                                                                                                                                    unit: None,
+                                                                                                                                    tolerance: None,
+                                                                                                                                },
+                                                                                                                                6..7,
+                                                                                                                            ),
+                                                                                                                        ),
+                                                                                                                        6..7,
+                                                                                                                    ),
+                                                                                                                },
+                                                                                                                4..7,
+                                                                                                            ),
+                                                                                                        ),
+                                                                                                        4..7,
+                                                                                                    ),
+                                                                                                    op: Spanned(
+                                                                                                        Mul,
+                                                                                                        7..8,
+                                                                                                    ),
+                                                                                                    right: Spanned(
+                                                                                                        Port(
+                                                                                                            Spanned(
+                                                                                                                PortRef {
+                                                                                                                    parts: [
+                                                                                                                        Spanned(
+                                                                                                                            "r_top",
+                                                                                                                            8..9,
+                                                                                                                        ),
+                                                                                                                        Spanned(
+                                                                                                                            "value",
+                                                                                                                            10..11,
+                                                                                                                        ),
+                                                                                                                    ],
+                                                                                                                },
+                                                                                                                8..11,
+                                                                                                            ),
+                                                                                                        ),
+                                                                                                        8..11,
+                                                                                                    ),
+                                                                                                },
+                                                                                                4..11,
+                                                                                            ),
+                                                                                        ),
+                                                                                        4..11,
+                                                                                    ),
+                                                                                    op: Spanned(
+                                                                                        Mul,
+                                                                                        11..12,
+                                                                                    ),
+                                                                                    right: Spanned(
+                                                                                        Port(
+                                                                                            Spanned(
+                                                                                                PortRef {
+                                                                                                    parts: [
+                                                                                                        Spanned(
+                                                                                                            "cap",
+                                                                                                            12..13,
+                                                                                                        ),
+                                                                                                        Spanned(
+                                                                                                            "value",
+                                                                                                            14..15,
+                                                                                                        ),
+                                                                                                    ],
+                                                                                                },
+                                                                                                12..15,
+                                                                                            ),
+                                                                                        ),
+                                                                                        12..15,
+                                                                                    ),
+                                                                                },
+                                                                                4..15,
+                                                                            ),
+                                                                        ),
+                                                                        4..15,
+                                                                    ),
+                                                                },
+                                                                1..15,
+                                                            ),
+                                                        ),
+                                                        1..15,
+                                                    ),
+                                                    op: Spanned(
+                                                        Within,
+                                                        16..17,
+                                                    ),
+                                                    right: Spanned(
+                                                        Port(
+                                                            Spanned(
+                                                                PortRef {
+                                                                    parts: [
+                                                                        Spanned(
+                                                                            "cutoff_frequency",
+                                                                            17..18,
+                                                                        ),
+                                                                    ],
+                                                                },
+                                                                17..18,
+                                                            ),
+                                                        ),
+                                                        17..18,
+                                                    ),
+                                                },
+                                                1..18,
+                                            ),
+                                        ),
+                                        1..18,
+                                    ),
+                                },
+                            ),
+                            0..18,
+                        ),
+                    ],
+                },
+            ),
+            209..280,
+        ),
+    ],
+    [],
+)

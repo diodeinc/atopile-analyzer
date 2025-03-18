@@ -1,0 +1,753 @@
+---
+source: crates/atopile_parser/tests/parser.rs
+assertion_line: 48
+expression: output
+snapshot_kind: text
+---
+(
+    [
+        Spanned(
+            DepImport(
+                DepImportStmt {
+                    name: Spanned(
+                        Symbol(
+                            "Power",
+                        ),
+                        1..2,
+                    ),
+                    from_path: Spanned(
+                        "interfaces.ato",
+                        3..4,
+                    ),
+                },
+            ),
+            0..4,
+        ),
+        Spanned(
+            DepImport(
+                DepImportStmt {
+                    name: Spanned(
+                        Symbol(
+                            "I2C",
+                        ),
+                        1..2,
+                    ),
+                    from_path: Spanned(
+                        "interfaces.ato",
+                        3..4,
+                    ),
+                },
+            ),
+            0..4,
+        ),
+        Spanned(
+            Block(
+                BlockStmt {
+                    kind: Spanned(
+                        Component,
+                        0..1,
+                    ),
+                    name: Spanned(
+                        Symbol(
+                            "Resistor",
+                        ),
+                        1..2,
+                    ),
+                    parent: None,
+                    body: [
+                        Spanned(
+                            Connect(
+                                ConnectStmt {
+                                    left: Spanned(
+                                        Signal(
+                                            Spanned(
+                                                "p1",
+                                                1..2,
+                                            ),
+                                        ),
+                                        0..2,
+                                    ),
+                                    right: Spanned(
+                                        Pin(
+                                            Spanned(
+                                                "1",
+                                                4..5,
+                                            ),
+                                        ),
+                                        3..5,
+                                    ),
+                                },
+                            ),
+                            0..5,
+                        ),
+                        Spanned(
+                            Connect(
+                                ConnectStmt {
+                                    left: Spanned(
+                                        Signal(
+                                            Spanned(
+                                                "p2",
+                                                1..2,
+                                            ),
+                                        ),
+                                        0..2,
+                                    ),
+                                    right: Spanned(
+                                        Pin(
+                                            Spanned(
+                                                "2",
+                                                4..5,
+                                            ),
+                                        ),
+                                        3..5,
+                                    ),
+                                },
+                            ),
+                            0..5,
+                        ),
+                        Spanned(
+                            Assign(
+                                AssignStmt {
+                                    target: Spanned(
+                                        PortRef {
+                                            parts: [
+                                                Spanned(
+                                                    "designator_prefix",
+                                                    0..1,
+                                                ),
+                                            ],
+                                        },
+                                        0..1,
+                                    ),
+                                    type_info: None,
+                                    value: Spanned(
+                                        String(
+                                            Spanned(
+                                                "R",
+                                                2..3,
+                                            ),
+                                        ),
+                                        2..3,
+                                    ),
+                                },
+                            ),
+                            0..3,
+                        ),
+                        Spanned(
+                            Assign(
+                                AssignStmt {
+                                    target: Spanned(
+                                        PortRef {
+                                            parts: [
+                                                Spanned(
+                                                    "mpn",
+                                                    0..1,
+                                                ),
+                                            ],
+                                        },
+                                        0..1,
+                                    ),
+                                    type_info: None,
+                                    value: Spanned(
+                                        String(
+                                            Spanned(
+                                                "generic_resistor",
+                                                2..3,
+                                            ),
+                                        ),
+                                        2..3,
+                                    ),
+                                },
+                            ),
+                            0..3,
+                        ),
+                        Spanned(
+                            Assign(
+                                AssignStmt {
+                                    target: Spanned(
+                                        PortRef {
+                                            parts: [
+                                                Spanned(
+                                                    "type",
+                                                    0..1,
+                                                ),
+                                            ],
+                                        },
+                                        0..1,
+                                    ),
+                                    type_info: None,
+                                    value: Spanned(
+                                        String(
+                                            Spanned(
+                                                "resistor",
+                                                2..3,
+                                            ),
+                                        ),
+                                        2..3,
+                                    ),
+                                },
+                            ),
+                            0..3,
+                        ),
+                        Spanned(
+                            Attribute(
+                                AttributeStmt {
+                                    name: Spanned(
+                                        Symbol(
+                                            "value",
+                                        ),
+                                        0..1,
+                                    ),
+                                    type_info: Spanned(
+                                        Symbol(
+                                            "resistance",
+                                        ),
+                                        2..3,
+                                    ),
+                                },
+                            ),
+                            0..3,
+                        ),
+                        Spanned(
+                            Comment(
+                                CommentStmt {
+                                    comment: Spanned(
+                                        " Equations",
+                                        0..1,
+                                    ),
+                                },
+                            ),
+                            0..1,
+                        ),
+                        Spanned(
+                            Comment(
+                                CommentStmt {
+                                    comment: Spanned(
+                                        " R = V/I",
+                                        0..1,
+                                    ),
+                                },
+                            ),
+                            0..1,
+                        ),
+                        Spanned(
+                            Comment(
+                                CommentStmt {
+                                    comment: Spanned(
+                                        " R = V^2/P",
+                                        0..1,
+                                    ),
+                                },
+                            ),
+                            0..1,
+                        ),
+                    ],
+                },
+            ),
+            11..53,
+        ),
+        Spanned(
+            Block(
+                BlockStmt {
+                    kind: Spanned(
+                        Module,
+                        0..1,
+                    ),
+                    name: Spanned(
+                        Symbol(
+                            "I2CPullup",
+                        ),
+                        1..2,
+                    ),
+                    parent: None,
+                    body: [
+                        Spanned(
+                            Assign(
+                                AssignStmt {
+                                    target: Spanned(
+                                        PortRef {
+                                            parts: [
+                                                Spanned(
+                                                    "r_sda",
+                                                    0..1,
+                                                ),
+                                            ],
+                                        },
+                                        0..1,
+                                    ),
+                                    type_info: None,
+                                    value: Spanned(
+                                        New(
+                                            Spanned(
+                                                Symbol(
+                                                    "Resistor",
+                                                ),
+                                                3..4,
+                                            ),
+                                        ),
+                                        2..4,
+                                    ),
+                                },
+                            ),
+                            0..4,
+                        ),
+                        Spanned(
+                            Assign(
+                                AssignStmt {
+                                    target: Spanned(
+                                        PortRef {
+                                            parts: [
+                                                Spanned(
+                                                    "r_scl",
+                                                    0..1,
+                                                ),
+                                            ],
+                                        },
+                                        0..1,
+                                    ),
+                                    type_info: None,
+                                    value: Spanned(
+                                        New(
+                                            Spanned(
+                                                Symbol(
+                                                    "Resistor",
+                                                ),
+                                                3..4,
+                                            ),
+                                        ),
+                                        2..4,
+                                    ),
+                                },
+                            ),
+                            0..4,
+                        ),
+                        Spanned(
+                            Assign(
+                                AssignStmt {
+                                    target: Spanned(
+                                        PortRef {
+                                            parts: [
+                                                Spanned(
+                                                    "power",
+                                                    0..1,
+                                                ),
+                                            ],
+                                        },
+                                        0..1,
+                                    ),
+                                    type_info: None,
+                                    value: Spanned(
+                                        New(
+                                            Spanned(
+                                                Symbol(
+                                                    "Power",
+                                                ),
+                                                3..4,
+                                            ),
+                                        ),
+                                        2..4,
+                                    ),
+                                },
+                            ),
+                            0..4,
+                        ),
+                        Spanned(
+                            Assign(
+                                AssignStmt {
+                                    target: Spanned(
+                                        PortRef {
+                                            parts: [
+                                                Spanned(
+                                                    "i2c",
+                                                    0..1,
+                                                ),
+                                            ],
+                                        },
+                                        0..1,
+                                    ),
+                                    type_info: None,
+                                    value: Spanned(
+                                        New(
+                                            Spanned(
+                                                Symbol(
+                                                    "I2C",
+                                                ),
+                                                3..4,
+                                            ),
+                                        ),
+                                        2..4,
+                                    ),
+                                },
+                            ),
+                            0..4,
+                        ),
+                        Spanned(
+                            Assign(
+                                AssignStmt {
+                                    target: Spanned(
+                                        PortRef {
+                                            parts: [
+                                                Spanned(
+                                                    "r_sda",
+                                                    0..1,
+                                                ),
+                                                Spanned(
+                                                    "value",
+                                                    2..3,
+                                                ),
+                                            ],
+                                        },
+                                        0..3,
+                                    ),
+                                    type_info: None,
+                                    value: Spanned(
+                                        Physical(
+                                            Spanned(
+                                                PhysicalValue {
+                                                    value: Spanned(
+                                                        "10",
+                                                        4..5,
+                                                    ),
+                                                    unit: Some(
+                                                        Spanned(
+                                                            "kohm",
+                                                            5..6,
+                                                        ),
+                                                    ),
+                                                    tolerance: Some(
+                                                        Spanned(
+                                                            Bilateral {
+                                                                value: Spanned(
+                                                                    "20",
+                                                                    7..8,
+                                                                ),
+                                                                unit: None,
+                                                            },
+                                                            6..9,
+                                                        ),
+                                                    ),
+                                                },
+                                                4..9,
+                                            ),
+                                        ),
+                                        4..9,
+                                    ),
+                                },
+                            ),
+                            0..9,
+                        ),
+                        Spanned(
+                            Assign(
+                                AssignStmt {
+                                    target: Spanned(
+                                        PortRef {
+                                            parts: [
+                                                Spanned(
+                                                    "r_scl",
+                                                    0..1,
+                                                ),
+                                                Spanned(
+                                                    "value",
+                                                    2..3,
+                                                ),
+                                            ],
+                                        },
+                                        0..3,
+                                    ),
+                                    type_info: None,
+                                    value: Spanned(
+                                        Physical(
+                                            Spanned(
+                                                PhysicalValue {
+                                                    value: Spanned(
+                                                        "10",
+                                                        4..5,
+                                                    ),
+                                                    unit: Some(
+                                                        Spanned(
+                                                            "kohm",
+                                                            5..6,
+                                                        ),
+                                                    ),
+                                                    tolerance: Some(
+                                                        Spanned(
+                                                            Bilateral {
+                                                                value: Spanned(
+                                                                    "20",
+                                                                    7..8,
+                                                                ),
+                                                                unit: None,
+                                                            },
+                                                            6..9,
+                                                        ),
+                                                    ),
+                                                },
+                                                4..9,
+                                            ),
+                                        ),
+                                        4..9,
+                                    ),
+                                },
+                            ),
+                            0..9,
+                        ),
+                        Spanned(
+                            Assign(
+                                AssignStmt {
+                                    target: Spanned(
+                                        PortRef {
+                                            parts: [
+                                                Spanned(
+                                                    "r_sda",
+                                                    0..1,
+                                                ),
+                                                Spanned(
+                                                    "package",
+                                                    2..3,
+                                                ),
+                                            ],
+                                        },
+                                        0..3,
+                                    ),
+                                    type_info: None,
+                                    value: Spanned(
+                                        String(
+                                            Spanned(
+                                                "0402",
+                                                4..5,
+                                            ),
+                                        ),
+                                        4..5,
+                                    ),
+                                },
+                            ),
+                            0..5,
+                        ),
+                        Spanned(
+                            Assign(
+                                AssignStmt {
+                                    target: Spanned(
+                                        PortRef {
+                                            parts: [
+                                                Spanned(
+                                                    "r_scl",
+                                                    0..1,
+                                                ),
+                                                Spanned(
+                                                    "package",
+                                                    2..3,
+                                                ),
+                                            ],
+                                        },
+                                        0..3,
+                                    ),
+                                    type_info: None,
+                                    value: Spanned(
+                                        String(
+                                            Spanned(
+                                                "0402",
+                                                4..5,
+                                            ),
+                                        ),
+                                        4..5,
+                                    ),
+                                },
+                            ),
+                            0..5,
+                        ),
+                        Spanned(
+                            Connect(
+                                ConnectStmt {
+                                    left: Spanned(
+                                        Port(
+                                            Spanned(
+                                                PortRef {
+                                                    parts: [
+                                                        Spanned(
+                                                            "i2c",
+                                                            0..1,
+                                                        ),
+                                                        Spanned(
+                                                            "sda",
+                                                            2..3,
+                                                        ),
+                                                    ],
+                                                },
+                                                0..3,
+                                            ),
+                                        ),
+                                        0..3,
+                                    ),
+                                    right: Spanned(
+                                        Port(
+                                            Spanned(
+                                                PortRef {
+                                                    parts: [
+                                                        Spanned(
+                                                            "r_sda",
+                                                            4..5,
+                                                        ),
+                                                        Spanned(
+                                                            "1",
+                                                            6..7,
+                                                        ),
+                                                    ],
+                                                },
+                                                4..7,
+                                            ),
+                                        ),
+                                        4..7,
+                                    ),
+                                },
+                            ),
+                            0..7,
+                        ),
+                        Spanned(
+                            Connect(
+                                ConnectStmt {
+                                    left: Spanned(
+                                        Port(
+                                            Spanned(
+                                                PortRef {
+                                                    parts: [
+                                                        Spanned(
+                                                            "r_sda",
+                                                            0..1,
+                                                        ),
+                                                        Spanned(
+                                                            "2",
+                                                            2..3,
+                                                        ),
+                                                    ],
+                                                },
+                                                0..3,
+                                            ),
+                                        ),
+                                        0..3,
+                                    ),
+                                    right: Spanned(
+                                        Port(
+                                            Spanned(
+                                                PortRef {
+                                                    parts: [
+                                                        Spanned(
+                                                            "power",
+                                                            4..5,
+                                                        ),
+                                                        Spanned(
+                                                            "vcc",
+                                                            6..7,
+                                                        ),
+                                                    ],
+                                                },
+                                                4..7,
+                                            ),
+                                        ),
+                                        4..7,
+                                    ),
+                                },
+                            ),
+                            0..7,
+                        ),
+                        Spanned(
+                            Connect(
+                                ConnectStmt {
+                                    left: Spanned(
+                                        Port(
+                                            Spanned(
+                                                PortRef {
+                                                    parts: [
+                                                        Spanned(
+                                                            "i2c",
+                                                            0..1,
+                                                        ),
+                                                        Spanned(
+                                                            "scl",
+                                                            2..3,
+                                                        ),
+                                                    ],
+                                                },
+                                                0..3,
+                                            ),
+                                        ),
+                                        0..3,
+                                    ),
+                                    right: Spanned(
+                                        Port(
+                                            Spanned(
+                                                PortRef {
+                                                    parts: [
+                                                        Spanned(
+                                                            "r_scl",
+                                                            4..5,
+                                                        ),
+                                                        Spanned(
+                                                            "1",
+                                                            6..7,
+                                                        ),
+                                                    ],
+                                                },
+                                                4..7,
+                                            ),
+                                        ),
+                                        4..7,
+                                    ),
+                                },
+                            ),
+                            0..7,
+                        ),
+                        Spanned(
+                            Connect(
+                                ConnectStmt {
+                                    left: Spanned(
+                                        Port(
+                                            Spanned(
+                                                PortRef {
+                                                    parts: [
+                                                        Spanned(
+                                                            "r_scl",
+                                                            0..1,
+                                                        ),
+                                                        Spanned(
+                                                            "2",
+                                                            2..3,
+                                                        ),
+                                                    ],
+                                                },
+                                                0..3,
+                                            ),
+                                        ),
+                                        0..3,
+                                    ),
+                                    right: Spanned(
+                                        Port(
+                                            Spanned(
+                                                PortRef {
+                                                    parts: [
+                                                        Spanned(
+                                                            "power",
+                                                            4..5,
+                                                        ),
+                                                        Spanned(
+                                                            "vcc",
+                                                            6..7,
+                                                        ),
+                                                    ],
+                                                },
+                                                4..7,
+                                            ),
+                                        ),
+                                        4..7,
+                                    ),
+                                },
+                            ),
+                            0..7,
+                        ),
+                    ],
+                },
+            ),
+            53..145,
+        ),
+    ],
+    [],
+)

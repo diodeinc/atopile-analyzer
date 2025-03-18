@@ -3,7 +3,7 @@ use std::ops::Deref;
 
 use chumsky::prelude::*;
 use chumsky::{error::Simple, Parser};
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
 
 use crate::lexer::Token;
 use crate::Spanned;
@@ -11,7 +11,7 @@ use crate::Spanned;
 #[cfg(test)]
 use insta::assert_debug_snapshot;
 
-#[derive(Clone, Debug, PartialEq, Hash, Eq)]
+#[derive(Clone, Debug, PartialEq, Hash, Eq, Serialize, Deserialize)]
 pub struct Symbol(String);
 
 impl Deref for Symbol {

@@ -1,0 +1,308 @@
+---
+source: crates/atopile_parser/tests/parser.rs
+assertion_line: 49
+expression: output
+snapshot_kind: text
+---
+(
+    [
+        Spanned(
+            Block(
+                BlockStmt {
+                    kind: Spanned(
+                        Component,
+                        0..1,
+                    ),
+                    name: Spanned(
+                        Symbol(
+                            "NPN",
+                        ),
+                        1..2,
+                    ),
+                    parent: None,
+                    body: [
+                        Spanned(
+                            Connect(
+                                ConnectStmt {
+                                    left: Spanned(
+                                        Signal(
+                                            Spanned(
+                                                "base",
+                                                1..2,
+                                            ),
+                                        ),
+                                        0..2,
+                                    ),
+                                    right: Spanned(
+                                        Pin(
+                                            Spanned(
+                                                "1",
+                                                4..5,
+                                            ),
+                                        ),
+                                        3..5,
+                                    ),
+                                },
+                            ),
+                            0..5,
+                        ),
+                        Spanned(
+                            Connect(
+                                ConnectStmt {
+                                    left: Spanned(
+                                        Signal(
+                                            Spanned(
+                                                "collector",
+                                                1..2,
+                                            ),
+                                        ),
+                                        0..2,
+                                    ),
+                                    right: Spanned(
+                                        Pin(
+                                            Spanned(
+                                                "2",
+                                                4..5,
+                                            ),
+                                        ),
+                                        3..5,
+                                    ),
+                                },
+                            ),
+                            0..5,
+                        ),
+                        Spanned(
+                            Connect(
+                                ConnectStmt {
+                                    left: Spanned(
+                                        Signal(
+                                            Spanned(
+                                                "emitter",
+                                                1..2,
+                                            ),
+                                        ),
+                                        0..2,
+                                    ),
+                                    right: Spanned(
+                                        Pin(
+                                            Spanned(
+                                                "3",
+                                                4..5,
+                                            ),
+                                        ),
+                                        3..5,
+                                    ),
+                                },
+                            ),
+                            0..5,
+                        ),
+                        Spanned(
+                            Assign(
+                                AssignStmt {
+                                    target: Spanned(
+                                        PortRef {
+                                            parts: [
+                                                Spanned(
+                                                    "designator_prefix",
+                                                    0..1,
+                                                ),
+                                            ],
+                                        },
+                                        0..1,
+                                    ),
+                                    type_info: None,
+                                    value: Spanned(
+                                        String(
+                                            Spanned(
+                                                "Q",
+                                                2..3,
+                                            ),
+                                        ),
+                                        2..3,
+                                    ),
+                                },
+                            ),
+                            0..3,
+                        ),
+                    ],
+                },
+            ),
+            0..29,
+        ),
+        Spanned(
+            Block(
+                BlockStmt {
+                    kind: Spanned(
+                        Component,
+                        0..1,
+                    ),
+                    name: Spanned(
+                        Symbol(
+                            "PNP",
+                        ),
+                        1..2,
+                    ),
+                    parent: None,
+                    body: [
+                        Spanned(
+                            Signal(
+                                SignalStmt {
+                                    name: Spanned(
+                                        Symbol(
+                                            "base",
+                                        ),
+                                        1..2,
+                                    ),
+                                },
+                            ),
+                            0..2,
+                        ),
+                        Spanned(
+                            Signal(
+                                SignalStmt {
+                                    name: Spanned(
+                                        Symbol(
+                                            "collector",
+                                        ),
+                                        1..2,
+                                    ),
+                                },
+                            ),
+                            0..2,
+                        ),
+                        Spanned(
+                            Signal(
+                                SignalStmt {
+                                    name: Spanned(
+                                        Symbol(
+                                            "emitter",
+                                        ),
+                                        1..2,
+                                    ),
+                                },
+                            ),
+                            0..2,
+                        ),
+                        Spanned(
+                            Assign(
+                                AssignStmt {
+                                    target: Spanned(
+                                        PortRef {
+                                            parts: [
+                                                Spanned(
+                                                    "designator_prefix",
+                                                    0..1,
+                                                ),
+                                            ],
+                                        },
+                                        0..1,
+                                    ),
+                                    type_info: None,
+                                    value: Spanned(
+                                        String(
+                                            Spanned(
+                                                "Q",
+                                                2..3,
+                                            ),
+                                        ),
+                                        2..3,
+                                    ),
+                                },
+                            ),
+                            0..3,
+                        ),
+                    ],
+                },
+            ),
+            29..49,
+        ),
+        Spanned(
+            Block(
+                BlockStmt {
+                    kind: Spanned(
+                        Component,
+                        0..1,
+                    ),
+                    name: Spanned(
+                        Symbol(
+                            "Triac",
+                        ),
+                        1..2,
+                    ),
+                    parent: None,
+                    body: [
+                        Spanned(
+                            Signal(
+                                SignalStmt {
+                                    name: Spanned(
+                                        Symbol(
+                                            "MT1",
+                                        ),
+                                        1..2,
+                                    ),
+                                },
+                            ),
+                            0..2,
+                        ),
+                        Spanned(
+                            Signal(
+                                SignalStmt {
+                                    name: Spanned(
+                                        Symbol(
+                                            "MT2",
+                                        ),
+                                        1..2,
+                                    ),
+                                },
+                            ),
+                            0..2,
+                        ),
+                        Spanned(
+                            Signal(
+                                SignalStmt {
+                                    name: Spanned(
+                                        Symbol(
+                                            "gate",
+                                        ),
+                                        1..2,
+                                    ),
+                                },
+                            ),
+                            0..2,
+                        ),
+                        Spanned(
+                            Assign(
+                                AssignStmt {
+                                    target: Spanned(
+                                        PortRef {
+                                            parts: [
+                                                Spanned(
+                                                    "designator_prefix",
+                                                    0..1,
+                                                ),
+                                            ],
+                                        },
+                                        0..1,
+                                    ),
+                                    type_info: None,
+                                    value: Spanned(
+                                        String(
+                                            Spanned(
+                                                "TR",
+                                                2..3,
+                                            ),
+                                        ),
+                                        2..3,
+                                    ),
+                                },
+                            ),
+                            0..3,
+                        ),
+                    ],
+                },
+            ),
+            49..67,
+        ),
+    ],
+    [],
+)

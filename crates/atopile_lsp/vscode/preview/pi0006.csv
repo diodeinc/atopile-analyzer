@@ -1,0 +1,51 @@
+Ref,Val,Package,PosX,PosY,Rot,Side
+"C20","50V 10nF X7R ±10% 0402 Multilayer Ceramic Capacitors MLCC - SMD/SMT ROHS","C0402",7.895472,-4.492116,0.000000,bottom
+"C21","6.3V 2.2uF X5R ±20% 0402 Multilayer Ceramic Capacitors MLCC - SMD/SMT ROHS","C0402",8.029724,-4.491722,0.000000,bottom
+"R10","62.5mW Thick Film Resistors 50V ±1% 220mΩ 0402 Chip Resistor - Surface Mount ROHS","R0402",8.029724,-4.741329,0.000000,bottom
+"R11","62.5mW Thick Film Resistors 50V ±1% 220mΩ 0402 Chip Resistor - Surface Mount ROHS","R0402",7.895866,-4.742116,180.000000,bottom
+"U14","Dual H-Bridge Motor Driver 1.5A WQFN16EP Texas Instruments DRV8833RTYT, Half Bridge Motor Driver, 16-Pin QFN","QFN65P400X400X80-17N-D",7.962598,-4.616142,90.000000,bottom
+"U15","1.25mm Pitch, PicoBlade PCB Header, Single Row, Right-Angle, Surface Mount, Tin (Sn) Plating, Friction Lock,  Circuits, Tape and Reel","532610271",7.618110,-4.616142,180.000000,bottom
+"U16","1.25mm Pitch, PicoBlade PCB Header, Single Row, Right-Angle, Surface Mount, Tin (Sn) Plating, Friction Lock,  Circuits, Tape and Reel","532610371",7.962598,-4.242126,90.000000,bottom
+"U17","1.25mm Pitch, PicoBlade PCB Header, Single Row, Right-Angle, Surface Mount, Tin (Sn) Plating, Friction Lock,  Circuits, Tape and Reel","532610671",7.598425,-3.966535,-90.000000,bottom
+"U18","Molex PICOBLADE Series, Series Number 53261, 1.25mm Pitch, 8 Way 1 Row Shrouded Right Angle PCB Header, Surface Mount","53261-0871",7.779528,-3.606993,0.000000,bottom
+"C1","25V 1uF X5R ±10% 0402 Multilayer Ceramic Capacitors MLCC - SMD/SMT ROHS","C0402",7.519709,-3.596669,180.000000,top
+"C2","25V 1uF X5R ±10% 0402 Multilayer Ceramic Capacitors MLCC - SMD/SMT ROHS","C0402",7.619709,-3.596669,0.000000,top
+"C3","50V 22pF C0G ±5% 0402 Multilayer Ceramic Capacitors MLCC - SMD/SMT ROHS","C0402",7.523143,-4.661714,90.000000,top
+"C4","50V 22pF C0G ±5% 0402 Multilayer Ceramic Capacitors MLCC - SMD/SMT ROHS","C0402",7.784167,-4.666045,-90.000000,top
+"C5","16V 100nF X7R ±10% 0402 Multilayer Ceramic Capacitors MLCC - SMD/SMT ROHS","C0402",7.916844,-4.201478,0.000000,top
+"C6","16V 100nF X7R ±10% 0402 Multilayer Ceramic Capacitors MLCC - SMD/SMT ROHS","C0402",7.498039,-4.205699,180.000000,top
+"C7","16V 100nF X7R ±10% 0402 Multilayer Ceramic Capacitors MLCC - SMD/SMT ROHS","C0402",7.496935,-4.164804,180.000000,top
+"C8","16V 100nF X7R ±10% 0402 Multilayer Ceramic Capacitors MLCC - SMD/SMT ROHS","C0402",7.783379,-4.591973,-90.000000,top
+"C9","16V 100nF X7R ±10% 0402 Multilayer Ceramic Capacitors MLCC - SMD/SMT ROHS","C0402",7.844797,-3.808958,180.000000,top
+"C10","25V 1uF X5R ±10% 0402 Multilayer Ceramic Capacitors MLCC - SMD/SMT ROHS","C0402",7.919600,-4.355808,0.000000,top
+"C11","16V 100nF X7R ±10% 0402 Multilayer Ceramic Capacitors MLCC - SMD/SMT ROHS","C0402",7.857605,-4.592029,-90.000000,top
+"C12","16V 100nF X7R ±10% 0402 Multilayer Ceramic Capacitors MLCC - SMD/SMT ROHS","C0402",7.916623,-4.164350,0.000000,top
+"C13","16V 100nF X7R ±10% 0402 Multilayer Ceramic Capacitors MLCC - SMD/SMT ROHS","C0402",7.821385,-4.592029,-90.000000,top
+"C14","25V 1uF X5R ±10% 0402 Multilayer Ceramic Capacitors MLCC - SMD/SMT ROHS","C0402",7.704287,-4.109845,90.000000,top
+"C15","25V 1uF X5R ±10% 0402 Multilayer Ceramic Capacitors MLCC - SMD/SMT ROHS","C0402",7.806496,-3.255079,-90.000000,top
+"C16","50V 100nF X7R ±10% 0603 Multilayer Ceramic Capacitors MLCC - SMD/SMT ROHS","C0603",7.581496,-3.230512,180.000000,top
+"C17","50V 100nF X7R ±10% 0603 Multilayer Ceramic Capacitors MLCC - SMD/SMT ROHS","C0603",7.714370,-3.230512,0.000000,top
+"C18","50V 10uF X5R ±10% 1206 Multilayer Ceramic Capacitors MLCC - SMD/SMT ROHS","C1206",8.000000,-3.932087,0.000000,top
+"C19","50V 10uF X5R ±10% 1206 Multilayer Ceramic Capacitors MLCC - SMD/SMT ROHS","C1206",8.000000,-3.607283,0.000000,top
+"R1","62.5mW Thick Film Resistors 50V ±100ppm/℃ ±1% 5.1kΩ 0402 Chip Resistor - Surface Mount ROHS","R0402",7.551181,-4.799213,90.000000,top
+"R2","62.5mW Thick Film Resistors 50V ±100ppm/℃ ±1% 5.1kΩ 0402 Chip Resistor - Surface Mount ROHS","R0402",8.007874,-4.795276,90.000000,top
+"R3","62.5mW Thick Film Resistors 50V ±100ppm/℃ ±1% 10kΩ 0402 Chip Resistor - Surface Mount ROHS","R0402",7.501883,-4.355021,180.000000,top
+"R4","62.5mW Thick Film Resistors 50V ±100ppm/℃ ±1% 10kΩ 0402 Chip Resistor - Surface Mount ROHS","R0402",7.575112,-4.123131,180.000000,top
+"R5","62.5mW Thick Film Resistors 50V ±100ppm/℃ ±1% 1kΩ 0402 Chip Resistor - Surface Mount ROHS","R0402",7.704246,-4.518407,0.000000,top
+"R6","62.5mW Thick Film Resistors 50V ±100ppm/℃ ±1% 27Ω 0402 Chip Resistor - Surface Mount ROHS","R0402",7.851588,-4.081306,0.000000,top
+"R7","62.5mW Thick Film Resistors 50V ±100ppm/℃ ±1% 27Ω 0402 Chip Resistor - Surface Mount ROHS","R0402",7.852098,-4.123135,180.000000,top
+"R8","62.5mW Thick Film Resistors 50V ±100ppm/℃ ±1% 220kΩ 0402 Chip Resistor - Surface Mount ROHS","R0402",7.960630,-4.000984,180.000000,top
+"R9","62.5mW Thick Film Resistors 50V ±100ppm/℃ ±1% 54.9kΩ 0402 Chip Resistor - Surface Mount ROHS","R0402",8.039370,-4.000984,0.000000,top
+"U1","RICHTEK - RT9013-33GB - IC, LDO, FIXED, 3.3V, 0.5A, SOT-23-5","SOT94P279X130-5N",7.568898,-3.690945,0.000000,top
+"U2","?","USB-C-SMD_KH-TYPE-C-16P",7.780512,-4.875295,0.000000,top
+"U3","Microcontroller in QFN Package","QFN40P700X700X90-57N-D",7.704724,-4.314961,0.000000,top
+"U4","KMR211NGLFS (Tactile Switches)","KMR211NGLFS",8.047244,-4.586614,-90.000000,top
+"U5","KMR211NGLFS (Tactile Switches)","KMR211NGLFS",8.047244,-4.291339,-90.000000,top
+"U6","SMD Crystal Resonators 12MHz +/-10ppm SMD-3225_4P RoHS","X322512MSB4SI",7.654639,-4.633761,0.000000,top
+"U7","128M-bit Serial Flash Memory with uniform 4KB sectors and Dual/Quad SPI","SOIC127P790X216-8N",7.697553,-3.944785,0.000000,top
+"U8","1.6-V to 5.5-V, 40-m, 2.5-A, low-IQ, dual ideal diode","SOTFL50P160X60-8N",8.051181,-4.098425,-90.000000,top
+"U9","SN75176BDG4, Line Transceiver Differential, 5V, 8-Pin SOIC","SOIC127P600X175-8N",7.933071,-3.366142,90.000000,top
+"U10","8-Bit Bidirectional Voltage-Level Shifter For Open-Drain And Push-Pull Application","SN74LVC541ARGYR",7.647441,-3.405709,-90.000000,top
+"U11","?","PinHeader_1x04_P2.54mm_Vertical",7.445866,-3.118110,0.000000,top
+"U12","?","PinHeader_1x04_P2.54mm_Vertical",8.115157,-3.118110,0.000000,top
+"U13","36-V, 1-A Step-Down DC-DC Power Module in 3.8-mm  3-mm Package","LMZM23600SILT",8.000000,-3.783465,-90.000000,top

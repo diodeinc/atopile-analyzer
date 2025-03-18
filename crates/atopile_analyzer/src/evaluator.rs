@@ -1,5 +1,6 @@
 use std::{
     collections::HashMap,
+    fs::File,
     ops::Deref,
     path::{Path, PathBuf},
     time::Instant,
@@ -9,17 +10,35 @@ use atopile_parser::{
     parser::{BlockKind, BlockStmt, Connectable, Expr, Stmt, Symbol},
     AtopileSource, Spanned,
 };
+use log::info;
+use serde::{Deserialize, Serialize};
 use thiserror::Error;
 
-use crate::{diagnostics::AnalyzerReporter, AsLocation, FileCache, IntoLocation, Location};
+use crate::{
+    diagnostics::AnalyzerReporter, AsLocation, FileCache, IntoLocated, IntoLocation, Located,
+    Location,
+};
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub(crate) struct EvaluatorState {
+    instances: HashMap<InstanceRef, Instance>,
+}
+
+impl EvaluatorState {
+    fn new() -> Self {
+        Self {
+            instances: HashMap::new(),
+        }
+    }
+}
 
 pub(crate) struct Evaluator {
-    instances: HashMap<InstanceRef, Instance>,
+    state: EvaluatorState,
     reporter: AnalyzerReporter,
     file_cache: FileCache,
 }
 
-#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
 pub(crate) struct ModuleRef {
     /// The canonicalized path to the source file that declares the root module.
     source_path: PathBuf,
@@ -50,7 +69,8 @@ impl std::fmt::Display for ModuleRef {
     }
 }
 
-#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
+#[serde(into = "String")]
 pub(crate) struct InstanceRef {
     /// The root module that this instance belongs to.
     module: ModuleRef,
@@ -64,6 +84,10 @@ impl InstanceRef {
             module: module.clone(),
             instance_path,
         }
+    }
+
+    fn pop(&mut self) -> Option<Symbol> {
+        self.instance_path.pop()
     }
 }
 
@@ -89,7 +113,13 @@ impl std::fmt::Display for InstanceRef {
     }
 }
 
-#[derive(Debug, Clone, PartialEq, Eq, Copy)]
+impl From<InstanceRef> for String {
+    fn from(instance_ref: InstanceRef) -> Self {
+        instance_ref.to_string()
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Copy, Serialize, Deserialize)]
 pub(crate) enum InstanceKind {
     Module,
     Component,
@@ -97,7 +127,13 @@ pub(crate) enum InstanceKind {
     Port,
 }
 
-#[derive(Debug, Clone)]
+impl std::fmt::Display for InstanceKind {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{:?}", self)
+    }
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub(crate) struct Instance {
     module: ModuleRef,
     kind: InstanceKind,
@@ -136,7 +172,7 @@ impl Instance {
     }
 }
 
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub(crate) struct Connection {
     left: InstanceRef,
     right: InstanceRef,
@@ -338,14 +374,14 @@ pub(crate) fn resolve_import_path(ctx_path: &Path, import_path: &Path) -> Option
 impl Evaluator {
     pub(crate) fn new() -> Self {
         Self {
-            instances: HashMap::new(),
+            state: EvaluatorState::new(),
             reporter: AnalyzerReporter::new(),
             file_cache: FileCache::new(),
         }
     }
 
     pub(crate) fn reset(&mut self) {
-        self.instances.clear();
+        self.state = EvaluatorState::new();
     }
 
     pub(crate) fn reporter(&self) -> &AnalyzerReporter {
@@ -353,19 +389,19 @@ impl Evaluator {
     }
 
     fn resolve_instance(&self, instance_ref: &InstanceRef) -> Option<&Instance> {
-        self.instances.get(instance_ref)
+        self.state.instances.get(instance_ref)
     }
 
     fn resolve_instance_mut(&mut self, instance_ref: &InstanceRef) -> Option<&mut Instance> {
-        self.instances.get_mut(instance_ref)
+        self.state.instances.get_mut(instance_ref)
     }
 
     fn add_instance(&mut self, instance_ref: &InstanceRef, instance: Instance) {
-        self.instances.insert(instance_ref.clone(), instance);
+        self.state.instances.insert(instance_ref.clone(), instance);
     }
 
     fn remove_instance(&mut self, instance_ref: &InstanceRef) -> Option<Instance> {
-        self.instances.remove(instance_ref)
+        self.state.instances.remove(instance_ref)
     }
 
     fn clone_instance(
@@ -379,7 +415,7 @@ impl Evaluator {
                 from_ref
             ))?;
 
-            let mut to_instance = Instance::new(&to_ref.module, from_instance.kind);
+            let mut to_instance = Instance::new(&from_instance.module, from_instance.kind);
 
             to_instance.attributes = from_instance.attributes.clone();
             (
@@ -404,28 +440,130 @@ impl Evaluator {
         }
 
         for connection in &connections {
+            // Strip from_ref.instance_path from the beginning of connection.left.instance_path
+            // and replace it with to_ref.instance_path
+            let left_relative_path = if connection
+                .left
+                .instance_path
+                .starts_with(&from_ref.instance_path)
+            {
+                // Get the part after from_ref.instance_path
+                connection.left.instance_path[from_ref.instance_path.len()..].to_vec()
+            } else {
+                connection.left.instance_path.clone()
+            };
+
+            // Same for right path
+            let right_relative_path = if connection
+                .right
+                .instance_path
+                .starts_with(&from_ref.instance_path)
+            {
+                // Get the part after from_ref.instance_path
+                connection.right.instance_path[from_ref.instance_path.len()..].to_vec()
+            } else {
+                connection.right.instance_path.clone()
+            };
+
             let new_left = InstanceRef::new(
                 &to_ref.module,
-                [
-                    to_ref.instance_path.clone(),
-                    connection.left.instance_path.clone(),
-                ]
-                .concat(),
+                [to_ref.instance_path.clone(), left_relative_path].concat(),
             );
+
             let new_right = InstanceRef::new(
                 &to_ref.module,
-                [
-                    to_ref.instance_path.clone(),
-                    connection.right.instance_path.clone(),
-                ]
-                .concat(),
+                [to_ref.instance_path.clone(), right_relative_path].concat(),
             );
 
             let connection = Connection::new(new_left.clone(), new_right.clone());
+            to_instance.connections.push(connection);
+        }
 
-            // Find the deepest common ancestor for left and right paths
-            let left_path = &new_left.instance_path;
-            let right_path = &new_right.instance_path;
+        self.add_instance(to_ref, to_instance);
+
+        Ok(())
+    }
+
+    fn connect(
+        &mut self,
+        instance: &mut Instance,
+        source: &Located<InstanceRef>,
+        target: &Located<InstanceRef>,
+        assignment: &Located<Stmt>,
+    ) -> EvaluatorResult<()> {
+        let left_instance = self
+            .resolve_instance(source)
+            .ok_or(EvaluatorError::internal(
+                source,
+                "Cannot connect to non-existent instance".to_string(),
+            ))?;
+
+        let right_instance = self
+            .resolve_instance(target)
+            .ok_or(EvaluatorError::internal(
+                target,
+                "Cannot connect to non-existent instance".to_string(),
+            ))?;
+
+        let connections = match (left_instance.kind, right_instance.kind) {
+            (InstanceKind::Port, InstanceKind::Port) => {
+                vec![Connection::new(
+                    source.deref().clone(),
+                    target.deref().clone(),
+                )]
+            }
+            (InstanceKind::Interface, InstanceKind::Interface) => {
+                if left_instance.module != right_instance.module {
+                    return Err(EvaluatorError::new(
+                        EvaluatorErrorKind::InvalidAssignment,
+                        &assignment.location(),
+                    )
+                    .with_message(format!(
+                        "Cannot connect interfaces of different type: `{}` and `{}`",
+                        left_instance.module, right_instance.module
+                    )));
+                }
+
+                let mut left_sorted: Vec<_> = left_instance.children.iter().collect();
+                let mut right_sorted: Vec<_> = right_instance.children.iter().collect();
+
+                // Sort by the key (Symbol)
+                left_sorted.sort_by(|a, b| a.0.cmp(b.0));
+                right_sorted.sort_by(|a, b| a.0.cmp(b.0));
+
+                left_sorted
+                    .into_iter()
+                    .zip(right_sorted.into_iter())
+                    .map(|((_, l), (_, r))| Connection::new(l.clone(), r.clone()))
+                    .collect()
+            }
+            _ => {
+                return Err(EvaluatorError::new(
+                    EvaluatorErrorKind::InvalidAssignment,
+                    &assignment.location(),
+                )
+                .with_message(format!(
+                    "Cannot connect instances of different kind: `{}` and `{}`",
+                    left_instance.kind, right_instance.kind
+                )));
+            }
+        };
+
+        for connection in connections {
+            info!("handling connection: {:?}", connection);
+            let left_path = &connection.left.instance_path;
+            let right_path = &connection.right.instance_path;
+
+            if connection.left.module != connection.right.module {
+                return Err(EvaluatorError::new(
+                    EvaluatorErrorKind::InvalidAssignment,
+                    &assignment.location(),
+                )
+                .with_message(format!(
+                    "Cannot connect interfaces across modules: `{}` and `{}`",
+                    connection.left.module, connection.right.module
+                )));
+            }
 
             // Determine the common prefix length
             let common_prefix_len = left_path
@@ -434,29 +572,31 @@ impl Evaluator {
                 .take_while(|(a, b)| a == b)
                 .count();
 
+            info!(
+                "common prefix len({:?}, {:?}): {}",
+                left_path, right_path, common_prefix_len
+            );
+
             if common_prefix_len == 0 {
-                // No common ancestor, add to the top-level instance
-                to_instance
-                    .connections
-                    .push(Connection::new(new_left, new_right));
+                info!("no common ancestor, adding to default instance");
+                instance.connections.push(connection);
             } else {
                 // Create a reference to the common ancestor
                 let common_ancestor_path = left_path[0..common_prefix_len].to_vec();
                 let common_ancestor_ref =
-                    InstanceRef::new(&to_ref.module, common_ancestor_path.clone());
+                    InstanceRef::new(&source.module, common_ancestor_path.clone());
 
-                // Find the common ancestor instance
-                if let Some(ancestor_instance) = self.resolve_instance_mut(&common_ancestor_ref) {
-                    // Add the connection to the common ancestor
-                    ancestor_instance.connections.push(connection);
-                } else {
-                    // If we can't find the common ancestor (shouldn't happen), add to top-level
-                    to_instance.connections.push(connection);
-                }
+                info!("adding to common ancestor: {}", common_ancestor_ref);
+
+                self.resolve_instance_mut(&common_ancestor_ref)
+                    .ok_or(EvaluatorError::internal(
+                        assignment,
+                        "Cannot connect to non-existent instance".to_string(),
+                    ))?
+                    .connections
+                    .push(connection);
             }
         }
-
-        self.add_instance(to_ref, to_instance);
 
         Ok(())
     }
@@ -549,7 +689,7 @@ impl Evaluator {
         match stmt.deref() {
             // x.y.z = ...
             Stmt::Assign(assign) => {
-                let target_ref = InstanceRef::new(
+                let mut target_ref = InstanceRef::new(
                     module_ref,
                     assign
                         .target
@@ -613,17 +753,37 @@ impl Evaluator {
                             port.deref().to_string()
                         )));
                     }
+                    Expr::String(string) => {
+                        let attr_name = target_ref.pop().ok_or(
+                            EvaluatorError::new(
+                                EvaluatorErrorKind::InvalidAssignment,
+                                &string.span().into_location(source),
+                            )
+                            .with_message(
+                                "Cannot assign attribute to top-level module".to_string(),
+                            ),
+                        )?;
+
+                        let target_instance =
+                            self.resolve_instance_mut(&target_ref)
+                                .ok_or(EvaluatorError::new(
+                                    EvaluatorErrorKind::InvalidAssignment,
+                                    &string.span().into_location(source),
+                                ))?;
+
+                        target_instance.add_attribute(&attr_name, string.deref().to_string());
+                    }
                     _ => {}
                 }
                 Ok(())
             }
-            Stmt::Pin(pin) => {
-                let pin_name = pin.name.deref();
-                let pin_ref = InstanceRef::new(module_ref, vec![pin_name.clone()]);
-                self.add_instance(&pin_ref, Instance::port());
-                instance.add_child(pin_name, &pin_ref);
-                Ok(())
-            }
+            // Stmt::Pin(pin) => {
+            //     let pin_name = pin.name.deref();
+            //     let pin_ref = InstanceRef::new(module_ref, vec![pin_name.clone()]);
+            //     self.add_instance(&pin_ref, Instance::port());
+            //     instance.add_child(pin_name, &pin_ref);
+            //     Ok(())
+            // }
             Stmt::Signal(signal) => {
                 let signal_name = signal.name.deref();
                 let signal_ref = InstanceRef::new(module_ref, vec![signal_name.clone()]);
@@ -635,86 +795,58 @@ impl Evaluator {
                 let left = connect.left.deref();
                 let right = connect.right.deref();
 
-                // Handle implicit signal/pin definitions and pull out the ConnectionHandle for each.
+                // Handle implicit signal definitions and pull out the ConnectionHandle for each.
                 let left_instance_ref = match left {
-                    Connectable::Pin(signal) | Connectable::Signal(signal) => {
+                    Connectable::Signal(signal) => {
                         let signal_symbol: Symbol = signal.deref().clone().into();
                         let instance_ref =
                             InstanceRef::new(module_ref, vec![signal_symbol.clone()]);
                         self.add_instance(&instance_ref, Instance::port());
                         instance.add_child(&signal_symbol, &instance_ref);
-                        instance_ref
+                        Some(instance_ref)
                     }
-                    Connectable::Port(port) => InstanceRef::new(
+                    Connectable::Port(port) => Some(InstanceRef::new(
                         module_ref,
                         port.deref()
                             .parts
                             .iter()
                             .map(|p| p.deref().clone().into())
                             .collect(),
-                    ),
+                    )),
+                    Connectable::Pin(_) => None,
                 };
 
                 let right_instance_ref = match right {
-                    Connectable::Pin(signal) | Connectable::Signal(signal) => {
+                    Connectable::Signal(signal) => {
                         let signal_symbol: Symbol = signal.deref().clone().into();
                         let instance_ref =
                             InstanceRef::new(module_ref, vec![signal_symbol.clone()]);
                         self.add_instance(&instance_ref, Instance::port());
                         instance.add_child(&signal_symbol, &instance_ref);
-                        instance_ref
+                        Some(instance_ref)
                     }
-                    Connectable::Port(port) => InstanceRef::new(
+                    Connectable::Port(port) => Some(InstanceRef::new(
                         module_ref,
                         port.deref()
                             .parts
                             .iter()
                             .map(|p| p.deref().clone().into())
                             .collect(),
-                    ),
+                    )),
+                    Connectable::Pin(_) => None,
                 };
 
-                if let Some(left_instance) = self.resolve_instance(&left_instance_ref) {
-                    if !matches!(
-                        left_instance.kind,
-                        InstanceKind::Port | InstanceKind::Interface
-                    ) {
-                        return Err(EvaluatorError::new(
-                            EvaluatorErrorKind::InvalidAssignment,
-                            &connect.left.span().into_location(source),
-                        )
-                        .with_message(format!("Can't connect to `{}`", left_instance_ref)));
+                match (left_instance_ref, right_instance_ref) {
+                    (Some(left), Some(right)) => {
+                        self.connect(
+                            instance,
+                            &Located::new(left, connect.left.span().into_location(source)),
+                            &Located::new(right, connect.right.span().into_location(source)),
+                            &stmt.clone().into_located(source),
+                        )?;
                     }
-                } else {
-                    return Err(EvaluatorError::new(
-                        EvaluatorErrorKind::InvalidAssignment,
-                        &connect.left.span().into_location(source),
-                    )
-                    .with_message(format!("`{}` does not exist", left_instance_ref)));
+                    _ => {}
                 }
-
-                if let Some(right_instance) = self.resolve_instance(&right_instance_ref) {
-                    if !matches!(
-                        right_instance.kind,
-                        InstanceKind::Port | InstanceKind::Interface
-                    ) {
-                        return Err(EvaluatorError::new(
-                            EvaluatorErrorKind::InvalidAssignment,
-                            &connect.right.span().into_location(source),
-                        )
-                        .with_message(format!("Can't connect to `{}`", right_instance_ref)));
-                    }
-                } else {
-                    return Err(EvaluatorError::new(
-                        EvaluatorErrorKind::InvalidAssignment,
-                        &connect.right.span().into_location(source),
-                    )
-                    .with_message(format!("`{}` does not exist", right_instance_ref)));
-                }
-
-                instance
-                    .connections
-                    .push(Connection::new(left_instance_ref, right_instance_ref));
 
                 Ok(())
             }
@@ -832,5 +964,8 @@ impl Evaluator {
             source.path(),
             duration.as_millis()
         );
+
+        let mut file = File::create(source.path().with_extension("json")).unwrap();
+        serde_json::to_writer(&mut file, &self.state).unwrap();
     }
 }
