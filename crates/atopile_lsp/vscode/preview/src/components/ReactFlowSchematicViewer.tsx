@@ -928,6 +928,7 @@ const Visualizer = ({
     hoveredNetId: null,
   });
   const elkInstance = useRef<ELKType | null>(null);
+  const reactFlowInstance = useRef<any>(null);
 
   // Create separate debounced functions for each state field
   const debouncedSetSelectedNet = useMemo(
@@ -973,6 +974,13 @@ const Visualizer = ({
         try {
           let layout = await renderer.render(selectedComponent);
           setElkLayout(layout as ElkGraph);
+          // Center the view after new component is rendered
+          setTimeout(() => {
+            reactFlowInstance.current?.fitView({
+              padding: 0.2,
+              duration: 200,
+            });
+          }, 10);
         } catch (error) {
           console.error("Error rendering component: ", error);
           setLayoutError(
@@ -1071,6 +1079,9 @@ const Visualizer = ({
           nodeTypes={nodeTypes}
           edgeTypes={edgeTypes}
           fitView
+          onInit={(instance) => {
+            reactFlowInstance.current = instance;
+          }}
           onNodeClick={handleNodeClick}
           onEdgeMouseEnter={(_event, edge) => {
             if (
