@@ -1,6 +1,6 @@
 import ELK from "elkjs/lib/elk-api.js";
 import type { ELK as ELKType } from "elkjs/lib/elk-api";
-import { InstanceKind, Netlist } from "./types/NetlistTypes";
+import { InstanceKind, Netlist, AttributeValue } from "./types/NetlistTypes";
 
 export enum NodeType {
   MODULE = "module",
@@ -9,6 +9,7 @@ export enum NodeType {
   CAPACITOR = "capacitor",
   INDUCTOR = "inductor",
   NET_REFERENCE = "net_reference",
+  NET_JUNCTION = "net_junction",
 }
 
 export interface ElkNode {
@@ -39,6 +40,8 @@ export interface ElkLabel {
   text: string;
   x?: number;
   y?: number;
+  width?: number;
+  height?: number;
 }
 
 export interface ElkEdge {
@@ -56,6 +59,7 @@ export interface ElkEdge {
     endPoint: { x: number; y: number };
     bendPoints?: { x: number; y: number }[];
   }[];
+  properties?: Record<string, string>;
 }
 
 export interface ElkGraph {
@@ -182,12 +186,47 @@ export class SchematicRenderer {
     return this.nets;
   }
 
+  _getAttributeValue(attr: AttributeValue | string | undefined): string | null {
+    if (!attr) return null;
+    if (typeof attr === "string") return attr;
+    if (attr.String) return attr.String;
+    if (attr.Boolean !== undefined) return String(attr.Boolean);
+    if (attr.Number !== undefined) return String(attr.Number);
+    return null;
+  }
+
+  _renderValue(value: string | AttributeValue | undefined): string | undefined {
+    if (typeof value === "string") return value;
+    if (value?.String) return value.String;
+    if (value?.Number !== undefined) return String(value.Number);
+    if (value?.Boolean !== undefined) return String(value.Boolean);
+    if (value?.Physical !== undefined) return String(value.Physical);
+
+    return undefined;
+  }
+
   _resistorNode(instance_ref: string): ElkNode {
+    const instance = this.netlist.instances[instance_ref];
+    const footprint =
+      this._getAttributeValue(instance.attributes.package) ||
+      this._getAttributeValue(instance.attributes.footprint);
+
     return {
       id: instance_ref,
       type: NodeType.RESISTOR,
       width: 40,
       height: 100,
+      labels: [
+        {
+          text: `${this._renderValue(instance.attributes.value) || ""}${
+            footprint ? `\n${footprint}` : ""
+          }`,
+          x: 45, // Position label to the right of the resistor
+          y: 50, // Vertically center the label
+          width: 128,
+          height: 100,
+        },
+      ],
       ports: [
         {
           id: `${instance_ref}.p1`,
@@ -217,11 +256,26 @@ export class SchematicRenderer {
   }
 
   _capacitorNode(instance_ref: string): ElkNode {
+    const instance = this.netlist.instances[instance_ref];
+    const value = this._renderValue(instance.attributes.value);
+    const footprint =
+      this._getAttributeValue(instance.attributes.package) ||
+      this._getAttributeValue(instance.attributes.footprint);
+
     return {
       id: instance_ref,
       type: NodeType.CAPACITOR,
       width: 40,
       height: 40,
+      labels: [
+        {
+          text: `${value || ""}${footprint ? `\n${footprint}` : ""}`,
+          x: 45, // Position label to the right of the capacitor
+          y: 20, // Vertically center the label
+          width: 128,
+          height: 100,
+        },
+      ],
       ports: [
         {
           id: `${instance_ref}.p1`,
@@ -388,11 +442,23 @@ export class SchematicRenderer {
     }
 
     if ([InstanceKind.MODULE, InstanceKind.COMPONENT].includes(instance.kind)) {
-      if (instance.attributes.type === "resistor") {
+      // Get the type attribute value
+      const typeAttr = instance.attributes.type;
+      const type =
+        typeof typeAttr === "string"
+          ? typeAttr
+          : typeAttr?.String || // Handle AttributeValue::String
+            (typeAttr?.Boolean !== undefined
+              ? String(typeAttr.Boolean) // Handle AttributeValue::Boolean
+              : typeAttr?.Number !== undefined
+              ? String(typeAttr.Number) // Handle AttributeValue::Number
+              : null); // Handle other cases
+
+      if (type === "resistor") {
         return this._resistorNode(instance_ref);
-      } else if (instance.attributes.type === "capacitor") {
+      } else if (type === "capacitor") {
         return this._capacitorNode(instance_ref);
-      } else if (instance.attributes.type === "inductor") {
+      } else if (type === "inductor") {
         return this._inductorNode(instance_ref);
       } else {
         return this._moduleOrComponentNode(instance_ref);
@@ -418,7 +484,7 @@ export class SchematicRenderer {
     // For each net in the netlist, process its connectivity
     for (const [netName, net] of Array.from(this.nets.entries())) {
       // Set of ports in this graph that are in this net
-      const portsInGraphToInstanceRef = new Map<string, string>();
+      const portsInNetToInstanceRef = new Map<string, string>();
 
       // Check for connections outside the graph
       const outsideConnections = new Set<string>();
@@ -438,7 +504,7 @@ export class SchematicRenderer {
         for (const port of nodePorts) {
           if (net.has(port.id)) {
             foundConnectionInNode = true;
-            portsInGraphToInstanceRef.set(port.id, node.id);
+            portsInNetToInstanceRef.set(port.id, node.id);
             port.netId = netName;
           }
         }
@@ -462,7 +528,7 @@ export class SchematicRenderer {
           });
 
           if (matchingInternalPorts.length > 0) {
-            portsInGraphToInstanceRef.set(matchingInternalPorts[0], node.id);
+            portsInNetToInstanceRef.set(matchingInternalPorts[0], node.id);
             node.ports?.push({
               id: matchingInternalPorts[0],
               labels: [
@@ -473,51 +539,206 @@ export class SchematicRenderer {
         }
       }
 
-      // If we have ports in the graph and outside connections, add a NetReference node
-      if (portsInGraphToInstanceRef.size >= 1 && outsideConnections.size >= 1) {
+      // Add a net reference if we need it.
+      if (portsInNetToInstanceRef.size >= 1 && outsideConnections.size >= 1) {
         const netRefId = `${netName}_ref`;
         const netRefNode = this._netReferenceNode(netRefId, netName);
-
         graph.children.push(netRefNode);
-
-        // Connect the net reference to one of the ports in the graph
-        const firstPort = Array.from(portsInGraphToInstanceRef.keys())[0];
-        const sourceComponentRef =
-          graph.children.find(
-            (node) =>
-              firstPort.startsWith(node.id + ".") ||
-              (node.ports || []).some((port) => port.id === firstPort)
-          )?.id || "";
-
-        graph.edges.push({
-          id: `${netName}_ref_edge`,
-          sources: [firstPort],
-          targets: [netRefId],
-          sourceComponentRef: sourceComponentRef,
-          targetComponentRef: netRefId,
-          netId: netName,
-        });
+        portsInNetToInstanceRef.set(netRefNode.ports![0].id, netRefId);
       }
 
-      // Create edges to connect everything in portsInGraph
-      const portsList = Array.from(portsInGraphToInstanceRef.entries());
-      portsList.sort((a, b) => {
-        return a[0].localeCompare(b[0]);
-      });
+      // Create edges to connect everything in portsInNetToInstanceRef
+      const portsList = Array.from(portsInNetToInstanceRef.entries());
+      portsList.sort((a, b) => a[0].localeCompare(b[0]));
 
-      for (let i = 0; i < portsList.length - 1; i++) {
-        const [sourcePort, sourceInstanceRef] = portsList[i];
-        const [targetPort, targetInstanceRef] = portsList[i + 1];
+      const portToComponentType = (port: string) => {
+        const instanceRef = portsInNetToInstanceRef.get(port);
+        const node = graph.children.find((node) => node.id === instanceRef);
+        return node?.type;
+      };
+
+      const portsOfType = (types: NodeType[]) => {
+        return portsList.filter(([port, _instanceRef]) => {
+          let componentType = portToComponentType(port);
+          if (!componentType) {
+            return false;
+          }
+
+          return types.includes(componentType);
+        });
+      };
+
+      const passivePorts = portsOfType([
+        NodeType.RESISTOR,
+        NodeType.CAPACITOR,
+        NodeType.INDUCTOR,
+      ]);
+
+      const netReferencePorts = portsOfType([NodeType.NET_REFERENCE]);
+
+      const modulePorts = portsOfType([NodeType.COMPONENT, NodeType.MODULE]);
+
+      // First, daisy chain all of the passive ports together.
+      for (let i = 0; i < passivePorts.length - 1; i++) {
+        const sourcePort = passivePorts[i][0];
+        const targetPort = passivePorts[i + 1][0];
+
+        const sourcePortInstanceRef = passivePorts[i][1];
+        const targetPortInstanceRef = passivePorts[i + 1][1];
 
         graph.edges.push({
           id: `${sourcePort}-${targetPort}`,
           sources: [sourcePort],
           targets: [targetPort],
-          sourceComponentRef: sourceInstanceRef,
-          targetComponentRef: targetInstanceRef,
+          sourceComponentRef: sourcePortInstanceRef,
+          targetComponentRef: targetPortInstanceRef,
           netId: netName,
         });
       }
+
+      // Next, connect the last passive port (or if we don't have, to a module
+      // port) to all of the net reference ports.
+      const netReferenceConnectorPort =
+        passivePorts.length > 0
+          ? passivePorts[passivePorts.length - 1]
+          : modulePorts[modulePorts.length - 1];
+
+      for (const netReferencePort of netReferencePorts) {
+        const sourcePort = netReferenceConnectorPort[0];
+        const targetPort = netReferencePort[0];
+
+        const sourcePortInstanceRef = netReferenceConnectorPort[1];
+        const targetPortInstanceRef = netReferencePort[1];
+
+        graph.edges.push({
+          id: `${sourcePort}-${targetPort}`,
+          sources: [sourcePort],
+          targets: [targetPort],
+          sourceComponentRef: sourcePortInstanceRef,
+          targetComponentRef: targetPortInstanceRef,
+          netId: netName,
+        });
+      }
+
+      // And finally, connect all of the module ports to the first passive port
+      // (or else to the last module port).
+      const moduleConnectorPort =
+        passivePorts.length > 0
+          ? passivePorts[0]
+          : modulePorts[modulePorts.length - 1];
+
+      for (const modulePort of modulePorts) {
+        const sourcePort = moduleConnectorPort[0];
+        const targetPort = modulePort[0];
+
+        const sourcePortInstanceRef = moduleConnectorPort[1];
+        const targetPortInstanceRef = modulePort[1];
+
+        graph.edges.push({
+          id: `${sourcePort}-${targetPort}`,
+          sources: [sourcePort],
+          targets: [targetPort],
+          sourceComponentRef: sourcePortInstanceRef,
+          targetComponentRef: targetPortInstanceRef,
+          netId: netName,
+        });
+      }
+
+      //   if (portsList.length > 3) {
+      //     // Create a junction node for this net
+      //     const junctionNodeId = `${netName}_junction`;
+      //     const junctionNodePortId = `${junctionNodeId}_port`;
+      //     graph.children.push({
+      //       id: junctionNodeId,
+      //       width: 0,
+      //       height: 0,
+      //       type: NodeType.NET_JUNCTION,
+      //       ports: [
+      //         {
+      //           id: junctionNodePortId,
+      //           width: -1,
+      //           height: -1,
+      //           properties: {
+      //             "port.anchor": "(0, 0)",
+      //             "port.alignment": "CENTER",
+      //           },
+      //         },
+      //       ],
+      //       properties: {
+      //         "elk.padding": "[top=0, left=0, bottom=0, right=0]",
+      //         "elk.nodeSize.constraints": "MINIMUM_SIZE",
+      //         "elk.nodeSize.minimum": "(0, 0)",
+      //       },
+      //     });
+
+      //     // Connect every port to the junction node
+      //     for (const [port, instanceRef] of portsList) {
+      //       graph.edges.push({
+      //         id: `${junctionNodeId}-${port}`,
+      //         sources: [junctionNodePortId],
+      //         targets: [port],
+      //         sourceComponentRef: junctionNodeId,
+      //         targetComponentRef: instanceRef,
+      //         netId: netName,
+      //         properties: {
+      //           "elk.edge.thickness": "0.1", // Make edges very thin
+      //         },
+      //       });
+      //     }
+
+      //     // If we have a net reference, connect it to the junction node
+      //     if (
+      //       portsInGraphToInstanceRef.size >= 1 &&
+      //       outsideConnections.size >= 1
+      //     ) {
+      //       const netRefId = `${netName}_ref`;
+      //       const netRefNode = this._netReferenceNode(netRefId, netName);
+      //       graph.children.push(netRefNode);
+
+      //       graph.edges.push({
+      //         id: `${netName}_ref_edge`,
+      //         sources: [junctionNodePortId],
+      //         targets: [netRefId],
+      //         sourceComponentRef: junctionNodeId,
+      //         targetComponentRef: netRefId,
+      //         netId: netName,
+      //       });
+      //     }
+      //   } else {
+      //     for (let i = 0; i < portsList.length; i++) {
+      //       for (let j = i + 1; j < portsList.length; j++) {
+      //         graph.edges.push({
+      //           id: `${portsList[i][0]}-${portsList[j][0]}`,
+      //           sources: [portsList[i][0]],
+      //           targets: [portsList[j][0]],
+      //           sourceComponentRef: portsList[i][1],
+      //           targetComponentRef: portsList[j][1],
+      //           netId: netName,
+      //         });
+      //       }
+      //     }
+
+      //     // If we have a net reference, connect it to all nodes
+      //     if (
+      //       portsInGraphToInstanceRef.size >= 1 &&
+      //       outsideConnections.size >= 1
+      //     ) {
+      //       const netRefId = `${netName}_ref`;
+      //       const netRefNode = this._netReferenceNode(netRefId, netName);
+      //       graph.children.push(netRefNode);
+
+      //       for (const [port, instanceRef] of portsList) {
+      //         graph.edges.push({
+      //           id: `${netName}_ref_edge`,
+      //           sources: [port],
+      //           targets: [netRefId],
+      //           sourceComponentRef: instanceRef,
+      //           targetComponentRef: netRefId,
+      //           netId: netName,
+      //         });
+      //       }
+      //     }
+      //   }
     }
 
     return graph;
@@ -584,7 +805,7 @@ export class SchematicRenderer {
       "elk.layered.feedbackEdges.enableSplines": "false",
       "elk.layered.unnecessaryBendpoints": "false",
       // High-quality orthogonal edge routing
-      "elk.layered.considerModelOrder.strategy": "NONE",
+      "elk.layered.considerModelOrder.strategy": "PREFER_EDGES",
       "elk.layered.crossingMinimization.strategy": "LAYER_SWEEP",
       "elk.layered.nodePlacement.strategy": "LONGEST_PATH",
       "elk.layered.crossingMinimization.forceNodeModelOrder": "false",

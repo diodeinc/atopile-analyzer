@@ -218,14 +218,31 @@ pub enum BinaryOperator {
     Within,
 }
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Serialize)]
 pub struct PhysicalValue {
     pub value: Spanned<String>,
     pub unit: Option<Spanned<String>>,
     pub tolerance: Option<Spanned<Tolerance>>,
 }
 
-#[derive(Debug, Clone, PartialEq)]
+impl ToString for PhysicalValue {
+    fn to_string(&self) -> String {
+        format!(
+            "{}{} {}",
+            self.value.0,
+            self.unit
+                .as_ref()
+                .map(|u| u.0.to_string())
+                .unwrap_or("".to_string()),
+            self.tolerance
+                .as_ref()
+                .map(|t| t.to_string())
+                .unwrap_or("".to_string())
+        )
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Serialize)]
 pub enum Tolerance {
     Bilateral {
         value: Spanned<String>,
@@ -235,6 +252,25 @@ pub enum Tolerance {
         min: Spanned<String>,
         max: Spanned<String>,
     },
+}
+
+impl ToString for Tolerance {
+    fn to_string(&self) -> String {
+        match self {
+            Tolerance::Bilateral { value, unit } => {
+                format!(
+                    "± {}{}",
+                    value.0,
+                    unit.as_ref()
+                        .map(|u| u.0.to_string())
+                        .unwrap_or("%".to_string())
+                )
+            }
+            Tolerance::Bound { min, max } => {
+                format!("({} to {})", min.0, max.0)
+            }
+        }
+    }
 }
 
 impl ToString for PortRef {

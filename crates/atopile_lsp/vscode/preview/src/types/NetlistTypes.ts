@@ -30,12 +30,23 @@ export enum InstanceKind {
 }
 
 /**
+ * Represents the possible types of attribute values
+ */
+export interface AttributeValue {
+  String?: string;
+  Number?: number;
+  Boolean?: boolean;
+  Array?: AttributeValue[];
+  Physical?: string;
+}
+
+/**
  * An instance in the netlist
  */
 export interface Instance {
   module: ModuleRef;
   kind: InstanceKind;
-  attributes: Record<string, any>;
+  attributes: Record<string, AttributeValue | string>; // Support both new AttributeValue and legacy string format
   children: Record<string, string>;
   connections: NodeConnection[];
 }

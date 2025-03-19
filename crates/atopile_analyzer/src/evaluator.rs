@@ -6,7 +6,7 @@ use std::{
 };
 
 use atopile_parser::{
-    parser::{BlockKind, BlockStmt, Connectable, Expr, Stmt, Symbol},
+    parser::{BlockKind, BlockStmt, Connectable, Expr, PhysicalValue, Stmt, Symbol},
     AtopileSource, Spanned,
 };
 use log::debug;
@@ -18,7 +18,7 @@ use crate::{
     Location,
 };
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize)]
 pub struct EvaluatorState {
     instances: HashMap<InstanceRef, Instance>,
 }
@@ -136,11 +136,78 @@ impl std::fmt::Display for InstanceKind {
     }
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize)]
+pub(crate) enum AttributeValue {
+    String(String),
+    Number(f64),
+    Boolean(bool),
+    Physical(String),
+    Port(String),
+    Array(Vec<AttributeValue>),
+}
+
+impl From<String> for AttributeValue {
+    fn from(s: String) -> Self {
+        AttributeValue::String(s)
+    }
+}
+
+impl From<&str> for AttributeValue {
+    fn from(s: &str) -> Self {
+        AttributeValue::String(s.to_string())
+    }
+}
+
+impl From<bool> for AttributeValue {
+    fn from(b: bool) -> Self {
+        AttributeValue::Boolean(b)
+    }
+}
+
+impl From<f64> for AttributeValue {
+    fn from(n: f64) -> Self {
+        AttributeValue::Number(n)
+    }
+}
+
+impl<T: Into<AttributeValue>> From<Vec<T>> for AttributeValue {
+    fn from(v: Vec<T>) -> Self {
+        AttributeValue::Array(v.into_iter().map(|x| x.into()).collect())
+    }
+}
+
+impl From<&Expr> for AttributeValue {
+    fn from(expr: &Expr) -> Self {
+        match expr {
+            Expr::String(s) => AttributeValue::String(s.deref().clone()),
+            Expr::Number(n) => {
+                if let Ok(num) = n.deref().parse::<f64>() {
+                    AttributeValue::Number(num)
+                } else {
+                    // If parsing fails, store as string
+                    AttributeValue::String(n.deref().clone())
+                }
+            }
+            Expr::Bool(b) => AttributeValue::Boolean(*b.deref()),
+            Expr::Physical(p) => AttributeValue::Physical(p.deref().to_string()),
+            Expr::Port(p) => AttributeValue::Port(p.deref().to_string()),
+            // For other types, convert to string representation
+            _ => AttributeValue::String("".to_string()),
+        }
+    }
+}
+
+impl From<Expr> for AttributeValue {
+    fn from(expr: Expr) -> Self {
+        (&expr).into()
+    }
+}
+
+#[derive(Debug, Clone, Serialize)]
 pub(crate) struct Instance {
     module: ModuleRef,
     kind: InstanceKind,
-    attributes: HashMap<Symbol, String>,
+    attributes: HashMap<Symbol, AttributeValue>,
     children: HashMap<Symbol, InstanceRef>,
     connections: Vec<Connection>,
 }
@@ -166,8 +233,8 @@ impl Instance {
         }
     }
 
-    fn add_attribute(&mut self, attribute: &Symbol, value: String) {
-        self.attributes.insert(attribute.clone(), value);
+    fn add_attribute(&mut self, attribute: &Symbol, value: impl Into<AttributeValue>) {
+        self.attributes.insert(attribute.clone(), value.into());
     }
 
     fn add_child(&mut self, child: &Symbol, instance_ref: &InstanceRef) {
@@ -766,40 +833,32 @@ impl Evaluator {
 
                         instance.add_child(&child_name.clone().deref().deref().into(), &target_ref);
                     }
-                    Expr::Port(port) => {
-                        return Err(EvaluatorError::new(
-                            EvaluatorErrorKind::InvalidAssignment,
-                            &assign.target.span().into_location(source),
-                        )
-                        .with_message(format!(
-                            "Cannot assign port `{}`. Maybe you meant to connect with `~`?",
-                            port.deref().to_string()
-                        )));
-                    }
-                    Expr::String(string) => {
+                    _ => {
+                        // Handle attribute assignment using the new From<Expr> implementation
                         let attr_name = target_ref.pop().ok_or_else(|| {
                             EvaluatorError::new(
                                 EvaluatorErrorKind::InvalidAssignment,
-                                &string.span().into_location(source),
+                                &assign.value.span().into_location(source),
                             )
                             .with_message("Cannot assign attribute to top-level module".to_string())
                         })?;
 
+                        let attr_value: AttributeValue = assign.value.deref().into();
+
                         if target_ref.len() == 0 {
-                            instance.add_attribute(&attr_name, string.deref().to_string());
+                            instance.add_attribute(&attr_name, attr_value);
                         } else {
                             let target_instance =
                                 self.resolve_instance_mut(&target_ref).ok_or_else(|| {
                                     EvaluatorError::new(
                                         EvaluatorErrorKind::InvalidAssignment,
-                                        &string.span().into_location(source),
+                                        &assign.value.span().into_location(source),
                                     )
                                 })?;
 
-                            target_instance.add_attribute(&attr_name, string.deref().to_string());
+                            target_instance.add_attribute(&attr_name, attr_value);
                         }
                     }
-                    _ => {}
                 }
                 Ok(())
             }

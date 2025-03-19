@@ -452,6 +452,28 @@ const CapacitorNode = ({ data }: { data: any }) => {
             backgroundColor: "var(--vscode-descriptionForeground, #666)",
           }}
         />
+
+        {/* Component Label */}
+        {data.labels?.[0] && (
+          <div
+            style={{
+              position: "absolute",
+              left: centerX + symbolSize + 10, // Position to the right of the symbol
+              top: "50%",
+              transform: "translateY(-50%)",
+              fontSize: "12px",
+              color: "var(--vscode-foreground, #000)",
+              whiteSpace: "pre-line", // Preserve line breaks from renderer
+              width: data.labels?.[0]?.width,
+              height: data.labels?.[0]?.height,
+              textAlign: "left", // Ensure left alignment
+              display: "flex", // Use flexbox for better alignment
+              alignItems: "center", // Center content vertically
+            }}
+          >
+            {data.labels[0].text}
+          </div>
+        )}
       </div>
 
       {/* Hidden port connections with no visible dots */}
@@ -639,6 +661,28 @@ const ResistorNode = ({ data }: { data: any }) => {
             backgroundColor: "var(--vscode-descriptionForeground, #666)",
           }}
         />
+
+        {/* Component Label */}
+        {data.labels?.[0] && (
+          <div
+            style={{
+              position: "absolute",
+              left: centerX + resistorWidth + 10, // Position to the right of the symbol
+              top: "50%",
+              transform: "translateY(-50%)", // Center vertically
+              fontSize: "12px",
+              color: "var(--vscode-foreground, #000)",
+              whiteSpace: "pre-line", // Preserve line breaks from renderer
+              width: data.labels?.[0]?.width,
+              height: data.labels?.[0]?.height,
+              textAlign: "left", // Ensure left alignment
+              display: "flex", // Use flexbox for better alignment
+              alignItems: "center", // Center content vertically
+            }}
+          >
+            {data.labels[0].text}
+          </div>
+        )}
       </div>
 
       {/* Hidden port connections with no visible dots */}
@@ -993,6 +1037,53 @@ const NetReferenceNode = ({ data }: { data: any }) => {
   );
 };
 
+// Define a node specifically for net junctions - invisible in the final rendering
+const NetJunctionNode = ({ data }: { data: SchematicNodeData }) => {
+  console.log(
+    "Rendering net junction node with handles: ",
+    data,
+    `${data.ports?.[0]?.id}-source`,
+    `${data.ports?.[0]?.id}-target`
+  );
+  return (
+    <div
+      className="react-flow-net-junction-node"
+      style={{
+        width: 10,
+        height: 10,
+        backgroundColor: "transparent",
+        border: "none",
+        cursor: "default",
+        pointerEvents: "none",
+        position: "relative",
+        opacity: 0, // Make it completely invisible
+      }}
+    >
+      <div className="module-ports" data-port-id={data.ports?.[0]?.id}>
+        {/* Single handle for connections */}
+        <Handle
+          type="source"
+          id={`${data.ports?.[0]?.id}-source`}
+          position={Position.Left}
+          style={{ opacity: 0 }}
+        />
+        <Handle
+          type="target"
+          id={`${data.ports?.[0]?.id}-target`}
+          position={Position.Left}
+          style={{ opacity: 0 }}
+        />
+        <Handle
+          type="target"
+          id={`${data.ports?.[0]?.id}`}
+          position={Position.Left}
+          style={{ opacity: 0 }}
+        />
+      </div>
+    </div>
+  );
+};
+
 // Define custom edge for electrical connections
 const ElectricalEdge = ({
   id,
@@ -1088,6 +1179,7 @@ const nodeTypes = {
   resistor: ResistorNode,
   inductor: InductorNode,
   net_reference: NetReferenceNode,
+  net_junction: NetJunctionNode,
 };
 
 interface ReactFlowSchematicViewerProps {
@@ -1191,6 +1283,7 @@ const Visualizer = ({
       const edges = elkLayout.edges.map((elkEdge) =>
         createSchematicEdge(elkEdge, selectionState)
       );
+      console.log("Setting edges: ", edges);
       setEdges(edges);
     }
   }, [elkLayout, setNodes, setEdges, selectionState]);

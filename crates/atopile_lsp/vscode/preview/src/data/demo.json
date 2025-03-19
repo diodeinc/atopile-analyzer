@@ -2,8 +2,8 @@
   "instances": {
     "/Users/lenny/code/stdlib/boards/dev_tusb4020/.ato/modules/_KH_TYPE_C_16P/KH_TYPE_C_16P.ato:KH_TYPE_C_16P": {
       "attributes": {
-        "footprint": "USB-C-SMD_KH-TYPE-C-16P",
-        "mpn": "C709357"
+        "footprint": { "String": "USB-C-SMD_KH-TYPE-C-16P" },
+        "mpn": { "String": "C709357" }
       },
       "children": {
         "CC1": "/Users/lenny/code/stdlib/boards/dev_tusb4020/.ato/modules/_KH_TYPE_C_16P/KH_TYPE_C_16P.ato:KH_TYPE_C_16P.CC1",
@@ -104,11 +104,13 @@
     },
     "/Users/lenny/code/stdlib/boards/dev_tusb4020/.ato/modules/_LM3674MF_ADJ_NOPB/LM3674MFADJ_NOPB.ato:LM3674MFADJ_NOPB": {
       "attributes": {
-        "datasheet": "http://www.ti.com/lit/gpn/lm3674",
-        "description": "2MHz, 600mA Step-Down DC-DC Converter in SOT 23-5",
-        "footprint": "SOT95P280X145-5N",
-        "manufacturer": "Texas Instruments",
-        "mpn": "LM3674MF-ADJ/NOPB"
+        "datasheet": { "String": "http://www.ti.com/lit/gpn/lm3674" },
+        "description": {
+          "String": "2MHz, 600mA Step-Down DC-DC Converter in SOT 23-5"
+        },
+        "footprint": { "String": "SOT95P280X145-5N" },
+        "manufacturer": { "String": "Texas Instruments" },
+        "mpn": { "String": "LM3674MF-ADJ/NOPB" }
       },
       "children": {
         "EN": "/Users/lenny/code/stdlib/boards/dev_tusb4020/.ato/modules/_LM3674MF_ADJ_NOPB/LM3674MFADJ_NOPB.ato:LM3674MFADJ_NOPB.EN",
@@ -161,11 +163,13 @@
     },
     "/Users/lenny/code/stdlib/boards/dev_tusb4020/.ato/modules/_TLV75533PDBVR/TLV75533PDBVR.ato:TLV75533PDBVR": {
       "attributes": {
-        "datasheet": "http://www.ti.com/lit/gpn/tlv755p",
-        "description": "LDO Voltage Regulators 500-mA, Low IQ, Small Size, Low Dropout Regulator 5-SOT-23 -40 to 125",
-        "footprint": "SOT95P280X145-5N",
-        "manufacturer": "Texas Instruments",
-        "mpn": "TLV75533PDBVR"
+        "datasheet": { "String": "http://www.ti.com/lit/gpn/tlv755p" },
+        "description": {
+          "String": "LDO Voltage Regulators 500-mA, Low IQ, Small Size, Low Dropout Regulator 5-SOT-23 -40 to 125"
+        },
+        "footprint": { "String": "SOT95P280X145-5N" },
+        "manufacturer": { "String": "Texas Instruments" },
+        "mpn": { "String": "TLV75533PDBVR" }
       },
       "children": {
         "EN": "/Users/lenny/code/stdlib/boards/dev_tusb4020/.ato/modules/_TLV75533PDBVR/TLV75533PDBVR.ato:TLV75533PDBVR.EN",
@@ -218,11 +222,13 @@
     },
     "/Users/lenny/code/stdlib/boards/dev_tusb4020/.ato/modules/_TPS2561DRCR/TPS2561DRCR.ato:TPS2561DRCR": {
       "attributes": {
-        "datasheet": "https://www.ti.com/lit/gpn/TPS2561",
-        "description": "Power Switch ICs - Power Distribution Dual Ch Prec Adj Current-Ltd Pwr Sw",
-        "footprint": "TPS74901DRCR",
-        "manufacturer": "Texas Instruments",
-        "mpn": "TPS2561DRCR"
+        "datasheet": { "String": "https://www.ti.com/lit/gpn/TPS2561" },
+        "description": {
+          "String": "Power Switch ICs - Power Distribution Dual Ch Prec Adj Current-Ltd Pwr Sw"
+        },
+        "footprint": { "String": "TPS74901DRCR" },
+        "manufacturer": { "String": "Texas Instruments" },
+        "mpn": { "String": "TPS2561DRCR" }
       },
       "children": {
         "EN1": "/Users/lenny/code/stdlib/boards/dev_tusb4020/.ato/modules/_TPS2561DRCR/TPS2561DRCR.ato:TPS2561DRCR.EN1",
@@ -323,11 +329,15 @@
     },
     "/Users/lenny/code/stdlib/boards/dev_tusb4020/.ato/modules/_TSX_322524.0000MF15X_AC0/TSX3225240000MF15XAC0.ato:TSX3225240000MF15XAC0": {
       "attributes": {
-        "datasheet": "https://support.epson.biz/td/api/doc_check.php?dl=brief_TSX-3225&lang=en",
-        "description": "24 MHz +/-10ppm Crystal 9pF 40 Ohms 4-SMD, No Lead",
-        "footprint": "TSX3225240000MF15XAC0",
-        "manufacturer": "Miyazaki Epson Corporation",
-        "mpn": "TSX-322524.0000MF15X-AC0"
+        "datasheet": {
+          "String": "https://support.epson.biz/td/api/doc_check.php?dl=brief_TSX-3225&lang=en"
+        },
+        "description": {
+          "String": "24 MHz +/-10ppm Crystal 9pF 40 Ohms 4-SMD, No Lead"
+        },
+        "footprint": { "String": "TSX3225240000MF15XAC0" },
+        "manufacturer": { "String": "Miyazaki Epson Corporation" },
+        "mpn": { "String": "TSX-322524.0000MF15X-AC0" }
       },
       "children": {
         "CRYSTAL_1": "/Users/lenny/code/stdlib/boards/dev_tusb4020/.ato/modules/_TSX_322524.0000MF15X_AC0/TSX3225240000MF15XAC0.ato:TSX3225240000MF15XAC0.CRYSTAL_1",
@@ -372,11 +382,15 @@
     },
     "/Users/lenny/code/stdlib/boards/dev_tusb4020/.ato/modules/_TUSB4020BIPHP/TUSB4020BIPHP.ato:TUSB4020BIPHP": {
       "attributes": {
-        "datasheet": "http://www.ti.com/lit/ds/symlink/tusb4020bi.pdf",
-        "description": "TEXAS INSTRUMENTS - TUSB4020BIPHP - USB 2.0 HUB, 480MBPS, HTQFP-48",
-        "footprint": "QFP50P900X900X120-49N",
-        "manufacturer": "Texas Instruments",
-        "mpn": "TUSB4020BIPHP"
+        "datasheet": {
+          "String": "http://www.ti.com/lit/ds/symlink/tusb4020bi.pdf"
+        },
+        "description": {
+          "String": "TEXAS INSTRUMENTS - TUSB4020BIPHP - USB 2.0 HUB, 480MBPS, HTQFP-48"
+        },
+        "footprint": { "String": "QFP50P900X900X120-49N" },
+        "manufacturer": { "String": "Texas Instruments" },
+        "mpn": { "String": "TUSB4020BIPHP" }
       },
       "children": {
         "FULLPWRMGMTZ_SMBA1": "/Users/lenny/code/stdlib/boards/dev_tusb4020/.ato/modules/_TUSB4020BIPHP/TUSB4020BIPHP.ato:TUSB4020BIPHP.FULLPWRMGMTZ_SMBA1",
@@ -781,9 +795,9 @@
     },
     "/Users/lenny/code/stdlib/boards/dev_tusb4020/.ato/modules/generics/capacitors.ato:Capacitor": {
       "attributes": {
-        "designator_prefix": "C",
-        "mpn": "generic_capacitor",
-        "type": "capacitor"
+        "designator_prefix": { "String": "C" },
+        "mpn": { "String": "generic_capacitor" },
+        "type": { "String": "capacitor" }
       },
       "children": {
         "p1": "/Users/lenny/code/stdlib/boards/dev_tusb4020/.ato/modules/generics/capacitors.ato:Capacitor.p1",
@@ -848,7 +862,10 @@
       "module": { "module_name": "", "source_path": "" }
     },
     "/Users/lenny/code/stdlib/boards/dev_tusb4020/.ato/modules/generics/capacitors.ato:CapacitorElectrolytic": {
-      "attributes": { "designator_prefix": "C", "mpn": "generic_capacitor" },
+      "attributes": {
+        "designator_prefix": { "String": "C" },
+        "mpn": { "String": "generic_capacitor" }
+      },
       "children": {
         "anode": "/Users/lenny/code/stdlib/boards/dev_tusb4020/.ato/modules/generics/capacitors.ato:CapacitorElectrolytic.anode",
         "cathode": "/Users/lenny/code/stdlib/boards/dev_tusb4020/.ato/modules/generics/capacitors.ato:CapacitorElectrolytic.cathode",
@@ -913,9 +930,9 @@
     },
     "/Users/lenny/code/stdlib/boards/dev_tusb4020/.ato/modules/generics/inductors.ato:Inductor": {
       "attributes": {
-        "designator_prefix": "L",
-        "mpn": "generic_inductor",
-        "type": "inductor"
+        "designator_prefix": { "String": "L" },
+        "mpn": { "String": "generic_inductor" },
+        "type": { "String": "inductor" }
       },
       "children": {
         "p1": "/Users/lenny/code/stdlib/boards/dev_tusb4020/.ato/modules/generics/inductors.ato:Inductor.p1",
@@ -2137,10 +2154,11 @@
     },
     "/Users/lenny/code/stdlib/boards/dev_tusb4020/.ato/modules/generics/resistors.ato:I2CPullup.r_scl": {
       "attributes": {
-        "designator_prefix": "R",
-        "mpn": "generic_resistor",
-        "package": "0402",
-        "type": "resistor"
+        "designator_prefix": { "String": "R" },
+        "mpn": { "String": "generic_resistor" },
+        "package": { "String": "0402" },
+        "type": { "String": "resistor" },
+        "value": { "Physical": "10kohm ± 20%" }
       },
       "children": {
         "p1": "/Users/lenny/code/stdlib/boards/dev_tusb4020/.ato/modules/generics/resistors.ato:I2CPullup.r_scl.p1",
@@ -2169,10 +2187,11 @@
     },
     "/Users/lenny/code/stdlib/boards/dev_tusb4020/.ato/modules/generics/resistors.ato:I2CPullup.r_sda": {
       "attributes": {
-        "designator_prefix": "R",
-        "mpn": "generic_resistor",
-        "package": "0402",
-        "type": "resistor"
+        "designator_prefix": { "String": "R" },
+        "mpn": { "String": "generic_resistor" },
+        "package": { "String": "0402" },
+        "type": { "String": "resistor" },
+        "value": { "Physical": "10kohm ± 20%" }
       },
       "children": {
         "p1": "/Users/lenny/code/stdlib/boards/dev_tusb4020/.ato/modules/generics/resistors.ato:I2CPullup.r_sda.p1",
@@ -2201,9 +2220,9 @@
     },
     "/Users/lenny/code/stdlib/boards/dev_tusb4020/.ato/modules/generics/resistors.ato:Resistor": {
       "attributes": {
-        "designator_prefix": "R",
-        "mpn": "generic_resistor",
-        "type": "resistor"
+        "designator_prefix": { "String": "R" },
+        "mpn": { "String": "generic_resistor" },
+        "type": { "String": "resistor" }
       },
       "children": {
         "p1": "/Users/lenny/code/stdlib/boards/dev_tusb4020/.ato/modules/generics/resistors.ato:Resistor.p1",
@@ -2232,8 +2251,9 @@
     },
     "/Users/lenny/code/stdlib/boards/dev_tusb4020/.ato/modules/headers/pins.ato:PinHeader_1x01_2mm54_Vertical": {
       "attributes": {
-        "designator_prefix": "J",
-        "footprint": "PinHeader_1x01_P2.54mm_Vertical"
+        "designator_prefix": { "String": "J" },
+        "do_not_populate": { "Boolean": true },
+        "footprint": { "String": "PinHeader_1x01_P2.54mm_Vertical" }
       },
       "children": {
         "P1": "/Users/lenny/code/stdlib/boards/dev_tusb4020/.ato/modules/headers/pins.ato:PinHeader_1x01_2mm54_Vertical.P1"
@@ -2254,8 +2274,9 @@
     },
     "/Users/lenny/code/stdlib/boards/dev_tusb4020/.ato/modules/headers/pins.ato:PinHeader_1x02_2mm54_Vertical": {
       "attributes": {
-        "designator_prefix": "J",
-        "footprint": "PinHeader_1x02_P2.54mm_Vertical"
+        "designator_prefix": { "String": "J" },
+        "do_not_populate": { "Boolean": true },
+        "footprint": { "String": "PinHeader_1x02_P2.54mm_Vertical" }
       },
       "children": {
         "P1": "/Users/lenny/code/stdlib/boards/dev_tusb4020/.ato/modules/headers/pins.ato:PinHeader_1x02_2mm54_Vertical.P1",
@@ -2284,8 +2305,9 @@
     },
     "/Users/lenny/code/stdlib/boards/dev_tusb4020/.ato/modules/headers/pins.ato:PinHeader_1x03_2mm54_Vertical": {
       "attributes": {
-        "designator_prefix": "J",
-        "footprint": "PinHeader_1x03_P2.54mm_Vertical"
+        "designator_prefix": { "String": "J" },
+        "do_not_populate": { "Boolean": true },
+        "footprint": { "String": "PinHeader_1x03_P2.54mm_Vertical" }
       },
       "children": {
         "P1": "/Users/lenny/code/stdlib/boards/dev_tusb4020/.ato/modules/headers/pins.ato:PinHeader_1x03_2mm54_Vertical.P1",
@@ -2321,7 +2343,10 @@
       "module": { "module_name": "", "source_path": "" }
     },
     "/Users/lenny/code/stdlib/boards/dev_tusb4020/.ato/modules/headers/pins.ato:PinHeader_1x04_2mm54_Vertical": {
-      "attributes": { "footprint": "PinHeader_1x04_P2.54mm_Vertical" },
+      "attributes": {
+        "do_not_populate": { "Boolean": true },
+        "footprint": { "String": "PinHeader_1x04_P2.54mm_Vertical" }
+      },
       "children": {
         "P1": "/Users/lenny/code/stdlib/boards/dev_tusb4020/.ato/modules/headers/pins.ato:PinHeader_1x04_2mm54_Vertical.P1",
         "P2": "/Users/lenny/code/stdlib/boards/dev_tusb4020/.ato/modules/headers/pins.ato:PinHeader_1x04_2mm54_Vertical.P2",
@@ -2365,8 +2390,9 @@
     },
     "/Users/lenny/code/stdlib/boards/dev_tusb4020/.ato/modules/headers/pins.ato:PinHeader_1x05_2mm54_Vertical": {
       "attributes": {
-        "designator_prefix": "J",
-        "footprint": "PinHeader_1x05_P2.54mm_Vertical"
+        "designator_prefix": { "String": "J" },
+        "do_not_populate": { "Boolean": true },
+        "footprint": { "String": "PinHeader_1x05_P2.54mm_Vertical" }
       },
       "children": {
         "P1": "/Users/lenny/code/stdlib/boards/dev_tusb4020/.ato/modules/headers/pins.ato:PinHeader_1x05_2mm54_Vertical.P1",
@@ -2419,8 +2445,9 @@
     },
     "/Users/lenny/code/stdlib/boards/dev_tusb4020/.ato/modules/headers/pins.ato:PinHeader_1x06_2mm54_Vertical": {
       "attributes": {
-        "designator_prefix": "J",
-        "footprint": "PinHeader_1x06_P2.54mm_Vertical"
+        "designator_prefix": { "String": "J" },
+        "do_not_populate": { "Boolean": true },
+        "footprint": { "String": "PinHeader_1x06_P2.54mm_Vertical" }
       },
       "children": {
         "P1": "/Users/lenny/code/stdlib/boards/dev_tusb4020/.ato/modules/headers/pins.ato:PinHeader_1x06_2mm54_Vertical.P1",
@@ -2481,8 +2508,9 @@
     },
     "/Users/lenny/code/stdlib/boards/dev_tusb4020/.ato/modules/headers/pins.ato:PinHeader_1x07_2mm54_Vertical": {
       "attributes": {
-        "designator_prefix": "J",
-        "footprint": "PinHeader_1x07_P2.54mm_Vertical"
+        "designator_prefix": { "String": "J" },
+        "do_not_populate": { "Boolean": true },
+        "footprint": { "String": "PinHeader_1x07_P2.54mm_Vertical" }
       },
       "children": {
         "P1": "/Users/lenny/code/stdlib/boards/dev_tusb4020/.ato/modules/headers/pins.ato:PinHeader_1x07_2mm54_Vertical.P1",
@@ -2551,8 +2579,9 @@
     },
     "/Users/lenny/code/stdlib/boards/dev_tusb4020/.ato/modules/headers/pins.ato:PinHeader_1x08_2mm54_Vertical": {
       "attributes": {
-        "designator_prefix": "J",
-        "footprint": "PinHeader_1x08_P2.54mm_Vertical"
+        "designator_prefix": { "String": "J" },
+        "do_not_populate": { "Boolean": true },
+        "footprint": { "String": "PinHeader_1x08_P2.54mm_Vertical" }
       },
       "children": {
         "P1": "/Users/lenny/code/stdlib/boards/dev_tusb4020/.ato/modules/headers/pins.ato:PinHeader_1x08_2mm54_Vertical.P1",
@@ -2629,8 +2658,9 @@
     },
     "/Users/lenny/code/stdlib/boards/dev_tusb4020/.ato/modules/headers/pins.ato:PinHeader_1x09_2mm54_Vertical": {
       "attributes": {
-        "designator_prefix": "J",
-        "footprint": "PinHeader_1x09_P2.54mm_Vertical"
+        "designator_prefix": { "String": "J" },
+        "do_not_populate": { "Boolean": true },
+        "footprint": { "String": "PinHeader_1x09_P2.54mm_Vertical" }
       },
       "children": {
         "P1": "/Users/lenny/code/stdlib/boards/dev_tusb4020/.ato/modules/headers/pins.ato:PinHeader_1x09_2mm54_Vertical.P1",
@@ -2715,8 +2745,9 @@
     },
     "/Users/lenny/code/stdlib/boards/dev_tusb4020/.ato/modules/headers/pins.ato:PinHeader_1x10_2mm54_Vertical": {
       "attributes": {
-        "designator_prefix": "J",
-        "footprint": "PinHeader_1x10_P2.54mm_Vertical"
+        "designator_prefix": { "String": "J" },
+        "do_not_populate": { "Boolean": true },
+        "footprint": { "String": "PinHeader_1x10_P2.54mm_Vertical" }
       },
       "children": {
         "P1": "/Users/lenny/code/stdlib/boards/dev_tusb4020/.ato/modules/headers/pins.ato:PinHeader_1x10_2mm54_Vertical.P1",
@@ -2809,9 +2840,9 @@
     },
     "/Users/lenny/code/stdlib/boards/dev_tusb4020/.ato/modules/headers/pins.ato:PinHeader_SWD": {
       "attributes": {
-        "designator_prefix": "J",
-        "footprint": "CONN_BD125-10-x-0305-0580-L-x_GCT",
-        "mpn": "BD125-10-A-0305-0580-L-B"
+        "designator_prefix": { "String": "J" },
+        "footprint": { "String": "CONN_BD125-10-x-0305-0580-L-x_GCT" },
+        "mpn": { "String": "BD125-10-A-0305-0580-L-B" }
       },
       "children": {
         "GND": "/Users/lenny/code/stdlib/boards/dev_tusb4020/.ato/modules/headers/pins.ato:PinHeader_SWD.GND",
@@ -3205,8 +3236,8 @@
     },
     "/Users/lenny/code/stdlib/boards/dev_tusb4020/.ato/modules/kh_type_c_16p/kh_type_c_16p.ato:KhTypeC16p.connector": {
       "attributes": {
-        "footprint": "USB-C-SMD_KH-TYPE-C-16P",
-        "mpn": "C709357"
+        "footprint": { "String": "USB-C-SMD_KH-TYPE-C-16P" },
+        "mpn": { "String": "C709357" }
       },
       "children": {
         "CC1": "/Users/lenny/code/stdlib/boards/dev_tusb4020/.ato/modules/kh_type_c_16p/kh_type_c_16p.ato:KhTypeC16p.connector.CC1",
@@ -3384,7 +3415,7 @@
       "module": { "module_name": "", "source_path": "" }
     },
     "/Users/lenny/code/stdlib/boards/dev_tusb4020/.ato/modules/kh_type_c_16p/kh_type_c_16p.ato:KhTypeC16pSink": {
-      "attributes": {},
+      "attributes": { "rd_value": { "Physical": "5.1kohm ± 5%" } },
       "children": {
         "cc1": "/Users/lenny/code/stdlib/boards/dev_tusb4020/.ato/modules/kh_type_c_16p/kh_type_c_16p.ato:KhTypeC16pSink.cc1",
         "cc1_rd": "/Users/lenny/code/stdlib/boards/dev_tusb4020/.ato/modules/kh_type_c_16p/kh_type_c_16p.ato:KhTypeC16pSink.cc1_rd",
@@ -3492,10 +3523,11 @@
     },
     "/Users/lenny/code/stdlib/boards/dev_tusb4020/.ato/modules/kh_type_c_16p/kh_type_c_16p.ato:KhTypeC16pSink.cc1_rd": {
       "attributes": {
-        "designator_prefix": "R",
-        "mpn": "generic_resistor",
-        "package": "0402",
-        "type": "resistor"
+        "designator_prefix": { "String": "R" },
+        "mpn": { "String": "generic_resistor" },
+        "package": { "String": "0402" },
+        "type": { "String": "resistor" },
+        "value": { "Port": "rd_value" }
       },
       "children": {
         "p1": "/Users/lenny/code/stdlib/boards/dev_tusb4020/.ato/modules/kh_type_c_16p/kh_type_c_16p.ato:KhTypeC16pSink.cc1_rd.p1",
@@ -3551,10 +3583,11 @@
     },
     "/Users/lenny/code/stdlib/boards/dev_tusb4020/.ato/modules/kh_type_c_16p/kh_type_c_16p.ato:KhTypeC16pSink.cc2_rd": {
       "attributes": {
-        "designator_prefix": "R",
-        "mpn": "generic_resistor",
-        "package": "0402",
-        "type": "resistor"
+        "designator_prefix": { "String": "R" },
+        "mpn": { "String": "generic_resistor" },
+        "package": { "String": "0402" },
+        "type": { "String": "resistor" },
+        "value": { "Port": "rd_value" }
       },
       "children": {
         "p1": "/Users/lenny/code/stdlib/boards/dev_tusb4020/.ato/modules/kh_type_c_16p/kh_type_c_16p.ato:KhTypeC16pSink.cc2_rd.p1",
@@ -3583,8 +3616,8 @@
     },
     "/Users/lenny/code/stdlib/boards/dev_tusb4020/.ato/modules/kh_type_c_16p/kh_type_c_16p.ato:KhTypeC16pSink.connector": {
       "attributes": {
-        "footprint": "USB-C-SMD_KH-TYPE-C-16P",
-        "mpn": "C709357"
+        "footprint": { "String": "USB-C-SMD_KH-TYPE-C-16P" },
+        "mpn": { "String": "C709357" }
       },
       "children": {
         "CC1": "/Users/lenny/code/stdlib/boards/dev_tusb4020/.ato/modules/kh_type_c_16p/kh_type_c_16p.ato:KhTypeC16pSink.connector.CC1",
@@ -3762,7 +3795,7 @@
       "module": { "module_name": "", "source_path": "" }
     },
     "/Users/lenny/code/stdlib/boards/dev_tusb4020/.ato/modules/kh_type_c_16p/kh_type_c_16p.ato:KhTypeC16pSource": {
-      "attributes": {},
+      "attributes": { "rp_value": { "Physical": "5.1kohm ± 5%" } },
       "children": {
         "cc1": "/Users/lenny/code/stdlib/boards/dev_tusb4020/.ato/modules/kh_type_c_16p/kh_type_c_16p.ato:KhTypeC16pSource.cc1",
         "cc1_rp": "/Users/lenny/code/stdlib/boards/dev_tusb4020/.ato/modules/kh_type_c_16p/kh_type_c_16p.ato:KhTypeC16pSource.cc1_rp",
@@ -3870,10 +3903,11 @@
     },
     "/Users/lenny/code/stdlib/boards/dev_tusb4020/.ato/modules/kh_type_c_16p/kh_type_c_16p.ato:KhTypeC16pSource.cc1_rp": {
       "attributes": {
-        "designator_prefix": "R",
-        "mpn": "generic_resistor",
-        "package": "0402",
-        "type": "resistor"
+        "designator_prefix": { "String": "R" },
+        "mpn": { "String": "generic_resistor" },
+        "package": { "String": "0402" },
+        "type": { "String": "resistor" },
+        "value": { "Port": "rp_value" }
       },
       "children": {
         "p1": "/Users/lenny/code/stdlib/boards/dev_tusb4020/.ato/modules/kh_type_c_16p/kh_type_c_16p.ato:KhTypeC16pSource.cc1_rp.p1",
@@ -3929,10 +3963,11 @@
     },
     "/Users/lenny/code/stdlib/boards/dev_tusb4020/.ato/modules/kh_type_c_16p/kh_type_c_16p.ato:KhTypeC16pSource.cc2_rp": {
       "attributes": {
-        "designator_prefix": "R",
-        "mpn": "generic_resistor",
-        "package": "0402",
-        "type": "resistor"
+        "designator_prefix": { "String": "R" },
+        "mpn": { "String": "generic_resistor" },
+        "package": { "String": "0402" },
+        "type": { "String": "resistor" },
+        "value": { "Port": "rp_value" }
       },
       "children": {
         "p1": "/Users/lenny/code/stdlib/boards/dev_tusb4020/.ato/modules/kh_type_c_16p/kh_type_c_16p.ato:KhTypeC16pSource.cc2_rp.p1",
@@ -3961,8 +3996,8 @@
     },
     "/Users/lenny/code/stdlib/boards/dev_tusb4020/.ato/modules/kh_type_c_16p/kh_type_c_16p.ato:KhTypeC16pSource.connector": {
       "attributes": {
-        "footprint": "USB-C-SMD_KH-TYPE-C-16P",
-        "mpn": "C709357"
+        "footprint": { "String": "USB-C-SMD_KH-TYPE-C-16P" },
+        "mpn": { "String": "C709357" }
       },
       "children": {
         "CC1": "/Users/lenny/code/stdlib/boards/dev_tusb4020/.ato/modules/kh_type_c_16p/kh_type_c_16p.ato:KhTypeC16pSource.connector.CC1",
@@ -4140,7 +4175,7 @@
       "module": { "module_name": "", "source_path": "" }
     },
     "/Users/lenny/code/stdlib/boards/dev_tusb4020/.ato/modules/lm3674/lm3674.ato:Lm3674": {
-      "attributes": {},
+      "attributes": { "v_fb": { "Physical": "0.5V " } },
       "children": {
         "c_fb": "/Users/lenny/code/stdlib/boards/dev_tusb4020/.ato/modules/lm3674/lm3674.ato:Lm3674.c_fb",
         "c_in": "/Users/lenny/code/stdlib/boards/dev_tusb4020/.ato/modules/lm3674/lm3674.ato:Lm3674.c_in",
@@ -4245,10 +4280,11 @@
     },
     "/Users/lenny/code/stdlib/boards/dev_tusb4020/.ato/modules/lm3674/lm3674.ato:Lm3674.c_fb": {
       "attributes": {
-        "designator_prefix": "C",
-        "mpn": "generic_capacitor",
-        "package": "0402",
-        "type": "capacitor"
+        "designator_prefix": { "String": "C" },
+        "mpn": { "String": "generic_capacitor" },
+        "package": { "String": "0402" },
+        "type": { "String": "capacitor" },
+        "value": { "Physical": "15pF ± 1%" }
       },
       "children": {
         "p1": "/Users/lenny/code/stdlib/boards/dev_tusb4020/.ato/modules/lm3674/lm3674.ato:Lm3674.c_fb.p1",
@@ -4314,10 +4350,11 @@
     },
     "/Users/lenny/code/stdlib/boards/dev_tusb4020/.ato/modules/lm3674/lm3674.ato:Lm3674.c_in": {
       "attributes": {
-        "designator_prefix": "C",
-        "mpn": "generic_capacitor",
-        "package": "0402",
-        "type": "capacitor"
+        "designator_prefix": { "String": "C" },
+        "mpn": { "String": "generic_capacitor" },
+        "package": { "String": "0402" },
+        "type": { "String": "capacitor" },
+        "value": { "Physical": "2.2uF ± 10%" }
       },
       "children": {
         "p1": "/Users/lenny/code/stdlib/boards/dev_tusb4020/.ato/modules/lm3674/lm3674.ato:Lm3674.c_in.p1",
@@ -4383,10 +4420,11 @@
     },
     "/Users/lenny/code/stdlib/boards/dev_tusb4020/.ato/modules/lm3674/lm3674.ato:Lm3674.c_in_decoupling": {
       "attributes": {
-        "designator_prefix": "C",
-        "mpn": "generic_capacitor",
-        "package": "0402",
-        "type": "capacitor"
+        "designator_prefix": { "String": "C" },
+        "mpn": { "String": "generic_capacitor" },
+        "package": { "String": "0402" },
+        "type": { "String": "capacitor" },
+        "value": { "Physical": "0.1uF ± 10%" }
       },
       "children": {
         "p1": "/Users/lenny/code/stdlib/boards/dev_tusb4020/.ato/modules/lm3674/lm3674.ato:Lm3674.c_in_decoupling.p1",
@@ -4452,10 +4490,11 @@
     },
     "/Users/lenny/code/stdlib/boards/dev_tusb4020/.ato/modules/lm3674/lm3674.ato:Lm3674.c_out": {
       "attributes": {
-        "designator_prefix": "C",
-        "mpn": "generic_capacitor",
-        "package": "0603",
-        "type": "capacitor"
+        "designator_prefix": { "String": "C" },
+        "mpn": { "String": "generic_capacitor" },
+        "package": { "String": "0603" },
+        "type": { "String": "capacitor" },
+        "value": { "Physical": "10uF ± 10%" }
       },
       "children": {
         "p1": "/Users/lenny/code/stdlib/boards/dev_tusb4020/.ato/modules/lm3674/lm3674.ato:Lm3674.c_out.p1",
@@ -4528,11 +4567,13 @@
     },
     "/Users/lenny/code/stdlib/boards/dev_tusb4020/.ato/modules/lm3674/lm3674.ato:Lm3674.ic": {
       "attributes": {
-        "datasheet": "http://www.ti.com/lit/gpn/lm3674",
-        "description": "2MHz, 600mA Step-Down DC-DC Converter in SOT 23-5",
-        "footprint": "SOT95P280X145-5N",
-        "manufacturer": "Texas Instruments",
-        "mpn": "LM3674MF-ADJ/NOPB"
+        "datasheet": { "String": "http://www.ti.com/lit/gpn/lm3674" },
+        "description": {
+          "String": "2MHz, 600mA Step-Down DC-DC Converter in SOT 23-5"
+        },
+        "footprint": { "String": "SOT95P280X145-5N" },
+        "manufacturer": { "String": "Texas Instruments" },
+        "mpn": { "String": "LM3674MF-ADJ/NOPB" }
       },
       "children": {
         "EN": "/Users/lenny/code/stdlib/boards/dev_tusb4020/.ato/modules/lm3674/lm3674.ato:Lm3674.ic.EN",
@@ -4585,11 +4626,12 @@
     },
     "/Users/lenny/code/stdlib/boards/dev_tusb4020/.ato/modules/lm3674/lm3674.ato:Lm3674.l1": {
       "attributes": {
-        "designator_prefix": "L",
-        "footprint": "L_1008_2520Metric",
-        "mpn": "LQM2HPN2R2MG0L",
-        "package": "1008",
-        "type": "inductor"
+        "designator_prefix": { "String": "L" },
+        "footprint": { "String": "L_1008_2520Metric" },
+        "mpn": { "String": "LQM2HPN2R2MG0L" },
+        "package": { "String": "1008" },
+        "type": { "String": "inductor" },
+        "value": { "Physical": "2.2uH ± 1%" }
       },
       "children": {
         "p1": "/Users/lenny/code/stdlib/boards/dev_tusb4020/.ato/modules/lm3674/lm3674.ato:Lm3674.l1.p1",
@@ -4644,7 +4686,7 @@
       "module": { "module_name": "", "source_path": "" }
     },
     "/Users/lenny/code/stdlib/boards/dev_tusb4020/.ato/modules/lm3674/lm3674.ato:Lm3674.power_out": {
-      "attributes": {},
+      "attributes": { "voltage": { "String": "" } },
       "children": {
         "gnd": "/Users/lenny/code/stdlib/boards/dev_tusb4020/.ato/modules/lm3674/lm3674.ato:Lm3674.power_out.gnd",
         "vcc": "/Users/lenny/code/stdlib/boards/dev_tusb4020/.ato/modules/lm3674/lm3674.ato:Lm3674.power_out.vcc"
@@ -4672,10 +4714,11 @@
     },
     "/Users/lenny/code/stdlib/boards/dev_tusb4020/.ato/modules/lm3674/lm3674.ato:Lm3674.r_en": {
       "attributes": {
-        "designator_prefix": "R",
-        "mpn": "generic_resistor",
-        "package": "0402",
-        "type": "resistor"
+        "designator_prefix": { "String": "R" },
+        "mpn": { "String": "generic_resistor" },
+        "package": { "String": "0402" },
+        "type": { "String": "resistor" },
+        "value": { "Physical": "10kohm ± 10%" }
       },
       "children": {
         "p1": "/Users/lenny/code/stdlib/boards/dev_tusb4020/.ato/modules/lm3674/lm3674.ato:Lm3674.r_en.p1",
@@ -4704,10 +4747,11 @@
     },
     "/Users/lenny/code/stdlib/boards/dev_tusb4020/.ato/modules/lm3674/lm3674.ato:Lm3674.r_fbb": {
       "attributes": {
-        "designator_prefix": "R",
-        "mpn": "generic_resistor",
-        "package": "0402",
-        "type": "resistor"
+        "designator_prefix": { "String": "R" },
+        "mpn": { "String": "generic_resistor" },
+        "package": { "String": "0402" },
+        "type": { "String": "resistor" },
+        "value": { "Physical": "200kohm ± 1%" }
       },
       "children": {
         "p1": "/Users/lenny/code/stdlib/boards/dev_tusb4020/.ato/modules/lm3674/lm3674.ato:Lm3674.r_fbb.p1",
@@ -4736,10 +4780,11 @@
     },
     "/Users/lenny/code/stdlib/boards/dev_tusb4020/.ato/modules/lm3674/lm3674.ato:Lm3674.r_fbt": {
       "attributes": {
-        "designator_prefix": "R",
-        "mpn": "generic_resistor",
-        "package": "0402",
-        "type": "resistor"
+        "designator_prefix": { "String": "R" },
+        "mpn": { "String": "generic_resistor" },
+        "package": { "String": "0402" },
+        "type": { "String": "resistor" },
+        "value": { "Physical": "237kohm ± 1%" }
       },
       "children": {
         "p1": "/Users/lenny/code/stdlib/boards/dev_tusb4020/.ato/modules/lm3674/lm3674.ato:Lm3674.r_fbt.p1",
@@ -5034,7 +5079,7 @@
       "module": { "module_name": "", "source_path": "" }
     },
     "/Users/lenny/code/stdlib/boards/dev_tusb4020/.ato/modules/tps2561/tps2561.ato:Tps2561": {
-      "attributes": {},
+      "attributes": { "i_max": { "Physical": "2.2A " } },
       "children": {
         "c29": "/Users/lenny/code/stdlib/boards/dev_tusb4020/.ato/modules/tps2561/tps2561.ato:Tps2561.c29",
         "ctrl1": "/Users/lenny/code/stdlib/boards/dev_tusb4020/.ato/modules/tps2561/tps2561.ato:Tps2561.ctrl1",
@@ -5115,10 +5160,11 @@
     },
     "/Users/lenny/code/stdlib/boards/dev_tusb4020/.ato/modules/tps2561/tps2561.ato:Tps2561.c29": {
       "attributes": {
-        "designator_prefix": "C",
-        "mpn": "generic_capacitor",
-        "package": "0201",
-        "type": "capacitor"
+        "designator_prefix": { "String": "C" },
+        "mpn": { "String": "generic_capacitor" },
+        "package": { "String": "0201" },
+        "type": { "String": "capacitor" },
+        "value": { "Physical": "0.1uF ± 10%" }
       },
       "children": {
         "p1": "/Users/lenny/code/stdlib/boards/dev_tusb4020/.ato/modules/tps2561/tps2561.ato:Tps2561.c29.p1",
@@ -5238,11 +5284,13 @@
     },
     "/Users/lenny/code/stdlib/boards/dev_tusb4020/.ato/modules/tps2561/tps2561.ato:Tps2561.ic": {
       "attributes": {
-        "datasheet": "https://www.ti.com/lit/gpn/TPS2561",
-        "description": "Power Switch ICs - Power Distribution Dual Ch Prec Adj Current-Ltd Pwr Sw",
-        "footprint": "TPS74901DRCR",
-        "manufacturer": "Texas Instruments",
-        "mpn": "TPS2561DRCR"
+        "datasheet": { "String": "https://www.ti.com/lit/gpn/TPS2561" },
+        "description": {
+          "String": "Power Switch ICs - Power Distribution Dual Ch Prec Adj Current-Ltd Pwr Sw"
+        },
+        "footprint": { "String": "TPS74901DRCR" },
+        "manufacturer": { "String": "Texas Instruments" },
+        "mpn": { "String": "TPS2561DRCR" }
       },
       "children": {
         "EN1": "/Users/lenny/code/stdlib/boards/dev_tusb4020/.ato/modules/tps2561/tps2561.ato:Tps2561.ic.EN1",
@@ -5424,10 +5472,11 @@
     },
     "/Users/lenny/code/stdlib/boards/dev_tusb4020/.ato/modules/tps2561/tps2561.ato:Tps2561.r16": {
       "attributes": {
-        "designator_prefix": "R",
-        "mpn": "generic_resistor",
-        "package": "0201",
-        "type": "resistor"
+        "designator_prefix": { "String": "R" },
+        "mpn": { "String": "generic_resistor" },
+        "package": { "String": "0201" },
+        "type": { "String": "resistor" },
+        "value": { "Physical": "25.5kohm ± 5%" }
       },
       "children": {
         "p1": "/Users/lenny/code/stdlib/boards/dev_tusb4020/.ato/modules/tps2561/tps2561.ato:Tps2561.r16.p1",
@@ -5953,7 +6002,7 @@
       "module": { "module_name": "", "source_path": "" }
     },
     "/Users/lenny/code/stdlib/boards/dev_tusb4020/.ato/modules/tusb4020/tusb4020.ato:Oscillator24Mhz": {
-      "attributes": {},
+      "attributes": { "load_capacitance": { "Physical": "18pF ± 10%" } },
       "children": {
         "c1": "/Users/lenny/code/stdlib/boards/dev_tusb4020/.ato/modules/tusb4020/tusb4020.ato:Oscillator24Mhz.c1",
         "c2": "/Users/lenny/code/stdlib/boards/dev_tusb4020/.ato/modules/tusb4020/tusb4020.ato:Oscillator24Mhz.c2",
@@ -6004,10 +6053,11 @@
     },
     "/Users/lenny/code/stdlib/boards/dev_tusb4020/.ato/modules/tusb4020/tusb4020.ato:Oscillator24Mhz.c1": {
       "attributes": {
-        "designator_prefix": "C",
-        "mpn": "generic_capacitor",
-        "package": "0201",
-        "type": "capacitor"
+        "designator_prefix": { "String": "C" },
+        "mpn": { "String": "generic_capacitor" },
+        "package": { "String": "0201" },
+        "type": { "String": "capacitor" },
+        "value": { "Port": "load_capacitance" }
       },
       "children": {
         "p1": "/Users/lenny/code/stdlib/boards/dev_tusb4020/.ato/modules/tusb4020/tusb4020.ato:Oscillator24Mhz.c1.p1",
@@ -6073,10 +6123,11 @@
     },
     "/Users/lenny/code/stdlib/boards/dev_tusb4020/.ato/modules/tusb4020/tusb4020.ato:Oscillator24Mhz.c2": {
       "attributes": {
-        "designator_prefix": "C",
-        "mpn": "generic_capacitor",
-        "package": "0201",
-        "type": "capacitor"
+        "designator_prefix": { "String": "C" },
+        "mpn": { "String": "generic_capacitor" },
+        "package": { "String": "0201" },
+        "type": { "String": "capacitor" },
+        "value": { "Port": "load_capacitance" }
       },
       "children": {
         "p1": "/Users/lenny/code/stdlib/boards/dev_tusb4020/.ato/modules/tusb4020/tusb4020.ato:Oscillator24Mhz.c2.p1",
@@ -6142,11 +6193,15 @@
     },
     "/Users/lenny/code/stdlib/boards/dev_tusb4020/.ato/modules/tusb4020/tusb4020.ato:Oscillator24Mhz.crystal": {
       "attributes": {
-        "datasheet": "https://support.epson.biz/td/api/doc_check.php?dl=brief_TSX-3225&lang=en",
-        "description": "24 MHz +/-10ppm Crystal 9pF 40 Ohms 4-SMD, No Lead",
-        "footprint": "TSX3225240000MF15XAC0",
-        "manufacturer": "Miyazaki Epson Corporation",
-        "mpn": "TSX-322524.0000MF15X-AC0"
+        "datasheet": {
+          "String": "https://support.epson.biz/td/api/doc_check.php?dl=brief_TSX-3225&lang=en"
+        },
+        "description": {
+          "String": "24 MHz +/-10ppm Crystal 9pF 40 Ohms 4-SMD, No Lead"
+        },
+        "footprint": { "String": "TSX3225240000MF15XAC0" },
+        "manufacturer": { "String": "Miyazaki Epson Corporation" },
+        "mpn": { "String": "TSX-322524.0000MF15X-AC0" }
       },
       "children": {
         "CRYSTAL_1": "/Users/lenny/code/stdlib/boards/dev_tusb4020/.ato/modules/tusb4020/tusb4020.ato:Oscillator24Mhz.crystal.CRYSTAL_1",
@@ -6677,10 +6732,11 @@
     },
     "/Users/lenny/code/stdlib/boards/dev_tusb4020/.ato/modules/tusb4020/tusb4020.ato:Tusb4020.c1": {
       "attributes": {
-        "designator_prefix": "C",
-        "mpn": "generic_capacitor",
-        "package": "0402",
-        "type": "capacitor"
+        "designator_prefix": { "String": "C" },
+        "mpn": { "String": "generic_capacitor" },
+        "package": { "String": "0402" },
+        "type": { "String": "capacitor" },
+        "value": { "Physical": "10uF ± 10%" }
       },
       "children": {
         "p1": "/Users/lenny/code/stdlib/boards/dev_tusb4020/.ato/modules/tusb4020/tusb4020.ato:Tusb4020.c1.p1",
@@ -6746,10 +6802,11 @@
     },
     "/Users/lenny/code/stdlib/boards/dev_tusb4020/.ato/modules/tusb4020/tusb4020.ato:Tusb4020.c11": {
       "attributes": {
-        "designator_prefix": "C",
-        "mpn": "generic_capacitor",
-        "package": "0201",
-        "type": "capacitor"
+        "designator_prefix": { "String": "C" },
+        "mpn": { "String": "generic_capacitor" },
+        "package": { "String": "0201" },
+        "type": { "String": "capacitor" },
+        "value": { "Physical": "0.1uF ± 10%" }
       },
       "children": {
         "p1": "/Users/lenny/code/stdlib/boards/dev_tusb4020/.ato/modules/tusb4020/tusb4020.ato:Tusb4020.c11.p1",
@@ -6815,10 +6872,11 @@
     },
     "/Users/lenny/code/stdlib/boards/dev_tusb4020/.ato/modules/tusb4020/tusb4020.ato:Tusb4020.c12": {
       "attributes": {
-        "designator_prefix": "C",
-        "mpn": "generic_capacitor",
-        "package": "0201",
-        "type": "capacitor"
+        "designator_prefix": { "String": "C" },
+        "mpn": { "String": "generic_capacitor" },
+        "package": { "String": "0201" },
+        "type": { "String": "capacitor" },
+        "value": { "Physical": "0.1uF ± 10%" }
       },
       "children": {
         "p1": "/Users/lenny/code/stdlib/boards/dev_tusb4020/.ato/modules/tusb4020/tusb4020.ato:Tusb4020.c12.p1",
@@ -6884,10 +6942,11 @@
     },
     "/Users/lenny/code/stdlib/boards/dev_tusb4020/.ato/modules/tusb4020/tusb4020.ato:Tusb4020.c13": {
       "attributes": {
-        "designator_prefix": "C",
-        "mpn": "generic_capacitor",
-        "package": "0201",
-        "type": "capacitor"
+        "designator_prefix": { "String": "C" },
+        "mpn": { "String": "generic_capacitor" },
+        "package": { "String": "0201" },
+        "type": { "String": "capacitor" },
+        "value": { "Physical": "0.1uF ± 10%" }
       },
       "children": {
         "p1": "/Users/lenny/code/stdlib/boards/dev_tusb4020/.ato/modules/tusb4020/tusb4020.ato:Tusb4020.c13.p1",
@@ -6953,10 +7012,11 @@
     },
     "/Users/lenny/code/stdlib/boards/dev_tusb4020/.ato/modules/tusb4020/tusb4020.ato:Tusb4020.c14": {
       "attributes": {
-        "designator_prefix": "C",
-        "mpn": "generic_capacitor",
-        "package": "0201",
-        "type": "capacitor"
+        "designator_prefix": { "String": "C" },
+        "mpn": { "String": "generic_capacitor" },
+        "package": { "String": "0201" },
+        "type": { "String": "capacitor" },
+        "value": { "Physical": "0.1uF ± 10%" }
       },
       "children": {
         "p1": "/Users/lenny/code/stdlib/boards/dev_tusb4020/.ato/modules/tusb4020/tusb4020.ato:Tusb4020.c14.p1",
@@ -7022,10 +7082,11 @@
     },
     "/Users/lenny/code/stdlib/boards/dev_tusb4020/.ato/modules/tusb4020/tusb4020.ato:Tusb4020.c15": {
       "attributes": {
-        "designator_prefix": "C",
-        "mpn": "generic_capacitor",
-        "package": "0201",
-        "type": "capacitor"
+        "designator_prefix": { "String": "C" },
+        "mpn": { "String": "generic_capacitor" },
+        "package": { "String": "0201" },
+        "type": { "String": "capacitor" },
+        "value": { "Physical": "0.1uF ± 10%" }
       },
       "children": {
         "p1": "/Users/lenny/code/stdlib/boards/dev_tusb4020/.ato/modules/tusb4020/tusb4020.ato:Tusb4020.c15.p1",
@@ -7091,10 +7152,11 @@
     },
     "/Users/lenny/code/stdlib/boards/dev_tusb4020/.ato/modules/tusb4020/tusb4020.ato:Tusb4020.c16": {
       "attributes": {
-        "designator_prefix": "C",
-        "mpn": "generic_capacitor",
-        "package": "0402",
-        "type": "capacitor"
+        "designator_prefix": { "String": "C" },
+        "mpn": { "String": "generic_capacitor" },
+        "package": { "String": "0402" },
+        "type": { "String": "capacitor" },
+        "value": { "Physical": "10uF ± 10%" }
       },
       "children": {
         "p1": "/Users/lenny/code/stdlib/boards/dev_tusb4020/.ato/modules/tusb4020/tusb4020.ato:Tusb4020.c16.p1",
@@ -7160,10 +7222,11 @@
     },
     "/Users/lenny/code/stdlib/boards/dev_tusb4020/.ato/modules/tusb4020/tusb4020.ato:Tusb4020.c17": {
       "attributes": {
-        "designator_prefix": "C",
-        "mpn": "generic_capacitor",
-        "package": "0201",
-        "type": "capacitor"
+        "designator_prefix": { "String": "C" },
+        "mpn": { "String": "generic_capacitor" },
+        "package": { "String": "0201" },
+        "type": { "String": "capacitor" },
+        "value": { "Physical": "0.1uF ± 10%" }
       },
       "children": {
         "p1": "/Users/lenny/code/stdlib/boards/dev_tusb4020/.ato/modules/tusb4020/tusb4020.ato:Tusb4020.c17.p1",
@@ -7229,10 +7292,11 @@
     },
     "/Users/lenny/code/stdlib/boards/dev_tusb4020/.ato/modules/tusb4020/tusb4020.ato:Tusb4020.c18": {
       "attributes": {
-        "designator_prefix": "C",
-        "mpn": "generic_capacitor",
-        "package": "0201",
-        "type": "capacitor"
+        "designator_prefix": { "String": "C" },
+        "mpn": { "String": "generic_capacitor" },
+        "package": { "String": "0201" },
+        "type": { "String": "capacitor" },
+        "value": { "Physical": "0.1uF ± 10%" }
       },
       "children": {
         "p1": "/Users/lenny/code/stdlib/boards/dev_tusb4020/.ato/modules/tusb4020/tusb4020.ato:Tusb4020.c18.p1",
@@ -7298,10 +7362,11 @@
     },
     "/Users/lenny/code/stdlib/boards/dev_tusb4020/.ato/modules/tusb4020/tusb4020.ato:Tusb4020.c19": {
       "attributes": {
-        "designator_prefix": "C",
-        "mpn": "generic_capacitor",
-        "package": "0201",
-        "type": "capacitor"
+        "designator_prefix": { "String": "C" },
+        "mpn": { "String": "generic_capacitor" },
+        "package": { "String": "0201" },
+        "type": { "String": "capacitor" },
+        "value": { "Physical": "0.1uF ± 10%" }
       },
       "children": {
         "p1": "/Users/lenny/code/stdlib/boards/dev_tusb4020/.ato/modules/tusb4020/tusb4020.ato:Tusb4020.c19.p1",
@@ -7367,10 +7432,11 @@
     },
     "/Users/lenny/code/stdlib/boards/dev_tusb4020/.ato/modules/tusb4020/tusb4020.ato:Tusb4020.c20": {
       "attributes": {
-        "designator_prefix": "C",
-        "mpn": "generic_capacitor",
-        "package": "0201",
-        "type": "capacitor"
+        "designator_prefix": { "String": "C" },
+        "mpn": { "String": "generic_capacitor" },
+        "package": { "String": "0201" },
+        "type": { "String": "capacitor" },
+        "value": { "Physical": "0.1uF ± 10%" }
       },
       "children": {
         "p1": "/Users/lenny/code/stdlib/boards/dev_tusb4020/.ato/modules/tusb4020/tusb4020.ato:Tusb4020.c20.p1",
@@ -7436,10 +7502,11 @@
     },
     "/Users/lenny/code/stdlib/boards/dev_tusb4020/.ato/modules/tusb4020/tusb4020.ato:Tusb4020.c21": {
       "attributes": {
-        "designator_prefix": "C",
-        "mpn": "generic_capacitor",
-        "package": "0201",
-        "type": "capacitor"
+        "designator_prefix": { "String": "C" },
+        "mpn": { "String": "generic_capacitor" },
+        "package": { "String": "0201" },
+        "type": { "String": "capacitor" },
+        "value": { "Physical": "0.1uF ± 10%" }
       },
       "children": {
         "p1": "/Users/lenny/code/stdlib/boards/dev_tusb4020/.ato/modules/tusb4020/tusb4020.ato:Tusb4020.c21.p1",
@@ -7505,10 +7572,11 @@
     },
     "/Users/lenny/code/stdlib/boards/dev_tusb4020/.ato/modules/tusb4020/tusb4020.ato:Tusb4020.c22": {
       "attributes": {
-        "designator_prefix": "C",
-        "mpn": "generic_capacitor",
-        "package": "0201",
-        "type": "capacitor"
+        "designator_prefix": { "String": "C" },
+        "mpn": { "String": "generic_capacitor" },
+        "package": { "String": "0201" },
+        "type": { "String": "capacitor" },
+        "value": { "Physical": "0.1uF ± 10%" }
       },
       "children": {
         "p1": "/Users/lenny/code/stdlib/boards/dev_tusb4020/.ato/modules/tusb4020/tusb4020.ato:Tusb4020.c22.p1",
@@ -7574,10 +7642,11 @@
     },
     "/Users/lenny/code/stdlib/boards/dev_tusb4020/.ato/modules/tusb4020/tusb4020.ato:Tusb4020.c23": {
       "attributes": {
-        "designator_prefix": "C",
-        "mpn": "generic_capacitor",
-        "package": "0201",
-        "type": "capacitor"
+        "designator_prefix": { "String": "C" },
+        "mpn": { "String": "generic_capacitor" },
+        "package": { "String": "0201" },
+        "type": { "String": "capacitor" },
+        "value": { "Physical": "0.1uF ± 10%" }
       },
       "children": {
         "p1": "/Users/lenny/code/stdlib/boards/dev_tusb4020/.ato/modules/tusb4020/tusb4020.ato:Tusb4020.c23.p1",
@@ -7643,10 +7712,11 @@
     },
     "/Users/lenny/code/stdlib/boards/dev_tusb4020/.ato/modules/tusb4020/tusb4020.ato:Tusb4020.c24": {
       "attributes": {
-        "designator_prefix": "C",
-        "mpn": "generic_capacitor",
-        "package": "0201",
-        "type": "capacitor"
+        "designator_prefix": { "String": "C" },
+        "mpn": { "String": "generic_capacitor" },
+        "package": { "String": "0201" },
+        "type": { "String": "capacitor" },
+        "value": { "Physical": "0.1uF ± 10%" }
       },
       "children": {
         "p1": "/Users/lenny/code/stdlib/boards/dev_tusb4020/.ato/modules/tusb4020/tusb4020.ato:Tusb4020.c24.p1",
@@ -7712,10 +7782,11 @@
     },
     "/Users/lenny/code/stdlib/boards/dev_tusb4020/.ato/modules/tusb4020/tusb4020.ato:Tusb4020.c25": {
       "attributes": {
-        "designator_prefix": "C",
-        "mpn": "generic_capacitor",
-        "package": "0402",
-        "type": "capacitor"
+        "designator_prefix": { "String": "C" },
+        "mpn": { "String": "generic_capacitor" },
+        "package": { "String": "0402" },
+        "type": { "String": "capacitor" },
+        "value": { "Physical": "1uF ± 10%" }
       },
       "children": {
         "p1": "/Users/lenny/code/stdlib/boards/dev_tusb4020/.ato/modules/tusb4020/tusb4020.ato:Tusb4020.c25.p1",
@@ -7781,10 +7852,11 @@
     },
     "/Users/lenny/code/stdlib/boards/dev_tusb4020/.ato/modules/tusb4020/tusb4020.ato:Tusb4020.c26": {
       "attributes": {
-        "designator_prefix": "C",
-        "mpn": "generic_capacitor",
-        "package": "0201",
-        "type": "capacitor"
+        "designator_prefix": { "String": "C" },
+        "mpn": { "String": "generic_capacitor" },
+        "package": { "String": "0201" },
+        "type": { "String": "capacitor" },
+        "value": { "Physical": "1uF ± 5%" }
       },
       "children": {
         "p1": "/Users/lenny/code/stdlib/boards/dev_tusb4020/.ato/modules/tusb4020/tusb4020.ato:Tusb4020.c26.p1",
@@ -8231,11 +8303,15 @@
     },
     "/Users/lenny/code/stdlib/boards/dev_tusb4020/.ato/modules/tusb4020/tusb4020.ato:Tusb4020.hub": {
       "attributes": {
-        "datasheet": "http://www.ti.com/lit/ds/symlink/tusb4020bi.pdf",
-        "description": "TEXAS INSTRUMENTS - TUSB4020BIPHP - USB 2.0 HUB, 480MBPS, HTQFP-48",
-        "footprint": "QFP50P900X900X120-49N",
-        "manufacturer": "Texas Instruments",
-        "mpn": "TUSB4020BIPHP"
+        "datasheet": {
+          "String": "http://www.ti.com/lit/ds/symlink/tusb4020bi.pdf"
+        },
+        "description": {
+          "String": "TEXAS INSTRUMENTS - TUSB4020BIPHP - USB 2.0 HUB, 480MBPS, HTQFP-48"
+        },
+        "footprint": { "String": "QFP50P900X900X120-49N" },
+        "manufacturer": { "String": "Texas Instruments" },
+        "mpn": { "String": "TUSB4020BIPHP" }
       },
       "children": {
         "FULLPWRMGMTZ_SMBA1": "/Users/lenny/code/stdlib/boards/dev_tusb4020/.ato/modules/tusb4020/tusb4020.ato:Tusb4020.hub.FULLPWRMGMTZ_SMBA1",
@@ -8639,7 +8715,7 @@
       "module": { "module_name": "", "source_path": "" }
     },
     "/Users/lenny/code/stdlib/boards/dev_tusb4020/.ato/modules/tusb4020/tusb4020.ato:Tusb4020.osc": {
-      "attributes": {},
+      "attributes": { "load_capacitance": { "Physical": "18pF ± 10%" } },
       "children": {
         "c1": "/Users/lenny/code/stdlib/boards/dev_tusb4020/.ato/modules/tusb4020/tusb4020.ato:Tusb4020.osc.c1",
         "c2": "/Users/lenny/code/stdlib/boards/dev_tusb4020/.ato/modules/tusb4020/tusb4020.ato:Tusb4020.osc.c2",
@@ -8690,10 +8766,11 @@
     },
     "/Users/lenny/code/stdlib/boards/dev_tusb4020/.ato/modules/tusb4020/tusb4020.ato:Tusb4020.osc.c1": {
       "attributes": {
-        "designator_prefix": "C",
-        "mpn": "generic_capacitor",
-        "package": "0201",
-        "type": "capacitor"
+        "designator_prefix": { "String": "C" },
+        "mpn": { "String": "generic_capacitor" },
+        "package": { "String": "0201" },
+        "type": { "String": "capacitor" },
+        "value": { "Port": "load_capacitance" }
       },
       "children": {
         "p1": "/Users/lenny/code/stdlib/boards/dev_tusb4020/.ato/modules/tusb4020/tusb4020.ato:Tusb4020.osc.c1.p1",
@@ -8759,10 +8836,11 @@
     },
     "/Users/lenny/code/stdlib/boards/dev_tusb4020/.ato/modules/tusb4020/tusb4020.ato:Tusb4020.osc.c2": {
       "attributes": {
-        "designator_prefix": "C",
-        "mpn": "generic_capacitor",
-        "package": "0201",
-        "type": "capacitor"
+        "designator_prefix": { "String": "C" },
+        "mpn": { "String": "generic_capacitor" },
+        "package": { "String": "0201" },
+        "type": { "String": "capacitor" },
+        "value": { "Port": "load_capacitance" }
       },
       "children": {
         "p1": "/Users/lenny/code/stdlib/boards/dev_tusb4020/.ato/modules/tusb4020/tusb4020.ato:Tusb4020.osc.c2.p1",
@@ -8828,11 +8906,15 @@
     },
     "/Users/lenny/code/stdlib/boards/dev_tusb4020/.ato/modules/tusb4020/tusb4020.ato:Tusb4020.osc.crystal": {
       "attributes": {
-        "datasheet": "https://support.epson.biz/td/api/doc_check.php?dl=brief_TSX-3225&lang=en",
-        "description": "24 MHz +/-10ppm Crystal 9pF 40 Ohms 4-SMD, No Lead",
-        "footprint": "TSX3225240000MF15XAC0",
-        "manufacturer": "Miyazaki Epson Corporation",
-        "mpn": "TSX-322524.0000MF15X-AC0"
+        "datasheet": {
+          "String": "https://support.epson.biz/td/api/doc_check.php?dl=brief_TSX-3225&lang=en"
+        },
+        "description": {
+          "String": "24 MHz +/-10ppm Crystal 9pF 40 Ohms 4-SMD, No Lead"
+        },
+        "footprint": { "String": "TSX3225240000MF15XAC0" },
+        "manufacturer": { "String": "Miyazaki Epson Corporation" },
+        "mpn": { "String": "TSX-322524.0000MF15X-AC0" }
       },
       "children": {
         "CRYSTAL_1": "/Users/lenny/code/stdlib/boards/dev_tusb4020/.ato/modules/tusb4020/tusb4020.ato:Tusb4020.osc.crystal.CRYSTAL_1",
@@ -9093,10 +9175,11 @@
     },
     "/Users/lenny/code/stdlib/boards/dev_tusb4020/.ato/modules/tusb4020/tusb4020.ato:Tusb4020.r1": {
       "attributes": {
-        "designator_prefix": "R",
-        "mpn": "generic_resistor",
-        "package": "0201",
-        "type": "resistor"
+        "designator_prefix": { "String": "R" },
+        "mpn": { "String": "generic_resistor" },
+        "package": { "String": "0201" },
+        "type": { "String": "resistor" },
+        "value": { "Physical": "90.9kohm ± 1%" }
       },
       "children": {
         "p1": "/Users/lenny/code/stdlib/boards/dev_tusb4020/.ato/modules/tusb4020/tusb4020.ato:Tusb4020.r1.p1",
@@ -9125,10 +9208,11 @@
     },
     "/Users/lenny/code/stdlib/boards/dev_tusb4020/.ato/modules/tusb4020/tusb4020.ato:Tusb4020.r12": {
       "attributes": {
-        "designator_prefix": "R",
-        "mpn": "generic_resistor",
-        "package": "0201",
-        "type": "resistor"
+        "designator_prefix": { "String": "R" },
+        "mpn": { "String": "generic_resistor" },
+        "package": { "String": "0201" },
+        "type": { "String": "resistor" },
+        "value": { "Physical": "9.53kohm ± 1%" }
       },
       "children": {
         "p1": "/Users/lenny/code/stdlib/boards/dev_tusb4020/.ato/modules/tusb4020/tusb4020.ato:Tusb4020.r12.p1",
@@ -9157,10 +9241,11 @@
     },
     "/Users/lenny/code/stdlib/boards/dev_tusb4020/.ato/modules/tusb4020/tusb4020.ato:Tusb4020.r13": {
       "attributes": {
-        "designator_prefix": "R",
-        "mpn": "generic_resistor",
-        "package": "0201",
-        "type": "resistor"
+        "designator_prefix": { "String": "R" },
+        "mpn": { "String": "generic_resistor" },
+        "package": { "String": "0201" },
+        "type": { "String": "resistor" },
+        "value": { "Physical": "1kohm ± 10%" }
       },
       "children": {
         "p1": "/Users/lenny/code/stdlib/boards/dev_tusb4020/.ato/modules/tusb4020/tusb4020.ato:Tusb4020.r13.p1",
@@ -9189,10 +9274,11 @@
     },
     "/Users/lenny/code/stdlib/boards/dev_tusb4020/.ato/modules/tusb4020/tusb4020.ato:Tusb4020.r2": {
       "attributes": {
-        "designator_prefix": "R",
-        "mpn": "generic_resistor",
-        "package": "0201",
-        "type": "resistor"
+        "designator_prefix": { "String": "R" },
+        "mpn": { "String": "generic_resistor" },
+        "package": { "String": "0201" },
+        "type": { "String": "resistor" },
+        "value": { "Physical": "10kohm ± 1%" }
       },
       "children": {
         "p1": "/Users/lenny/code/stdlib/boards/dev_tusb4020/.ato/modules/tusb4020/tusb4020.ato:Tusb4020.r2.p1",
@@ -9221,10 +9307,11 @@
     },
     "/Users/lenny/code/stdlib/boards/dev_tusb4020/.ato/modules/tusb4020/tusb4020.ato:Tusb4020.r3": {
       "attributes": {
-        "designator_prefix": "R",
-        "mpn": "generic_resistor",
-        "package": "0201",
-        "type": "resistor"
+        "designator_prefix": { "String": "R" },
+        "mpn": { "String": "generic_resistor" },
+        "package": { "String": "0201" },
+        "type": { "String": "resistor" },
+        "value": { "Physical": "4.7kohm ± 10%" }
       },
       "children": {
         "p1": "/Users/lenny/code/stdlib/boards/dev_tusb4020/.ato/modules/tusb4020/tusb4020.ato:Tusb4020.r3.p1",
@@ -9253,10 +9340,11 @@
     },
     "/Users/lenny/code/stdlib/boards/dev_tusb4020/.ato/modules/tusb4020/tusb4020.ato:Tusb4020.r4": {
       "attributes": {
-        "designator_prefix": "R",
-        "mpn": "generic_resistor",
-        "package": "0201",
-        "type": "resistor"
+        "designator_prefix": { "String": "R" },
+        "mpn": { "String": "generic_resistor" },
+        "package": { "String": "0201" },
+        "type": { "String": "resistor" },
+        "value": { "Physical": "4.7kohm ± 10%" }
       },
       "children": {
         "p1": "/Users/lenny/code/stdlib/boards/dev_tusb4020/.ato/modules/tusb4020/tusb4020.ato:Tusb4020.r4.p1",
@@ -9285,10 +9373,11 @@
     },
     "/Users/lenny/code/stdlib/boards/dev_tusb4020/.ato/modules/tusb4020/tusb4020.ato:Tusb4020.r6": {
       "attributes": {
-        "designator_prefix": "R",
-        "mpn": "generic_resistor",
-        "package": "0201",
-        "type": "resistor"
+        "designator_prefix": { "String": "R" },
+        "mpn": { "String": "generic_resistor" },
+        "package": { "String": "0201" },
+        "type": { "String": "resistor" },
+        "value": { "Physical": "4.7kohm ± 10%" }
       },
       "children": {
         "p1": "/Users/lenny/code/stdlib/boards/dev_tusb4020/.ato/modules/tusb4020/tusb4020.ato:Tusb4020.r6.p1",
@@ -9317,10 +9406,11 @@
     },
     "/Users/lenny/code/stdlib/boards/dev_tusb4020/.ato/modules/tusb4020/tusb4020.ato:Tusb4020.r7": {
       "attributes": {
-        "designator_prefix": "R",
-        "mpn": "generic_resistor",
-        "package": "0201",
-        "type": "resistor"
+        "designator_prefix": { "String": "R" },
+        "mpn": { "String": "generic_resistor" },
+        "package": { "String": "0201" },
+        "type": { "String": "resistor" },
+        "value": { "Physical": "4.7kohm ± 10%" }
       },
       "children": {
         "p1": "/Users/lenny/code/stdlib/boards/dev_tusb4020/.ato/modules/tusb4020/tusb4020.ato:Tusb4020.r7.p1",
@@ -9349,10 +9439,11 @@
     },
     "/Users/lenny/code/stdlib/boards/dev_tusb4020/.ato/modules/tusb4020/tusb4020.ato:Tusb4020.r8": {
       "attributes": {
-        "designator_prefix": "R",
-        "mpn": "generic_resistor",
-        "package": "0201",
-        "type": "resistor"
+        "designator_prefix": { "String": "R" },
+        "mpn": { "String": "generic_resistor" },
+        "package": { "String": "0201" },
+        "type": { "String": "resistor" },
+        "value": { "Physical": "4.7kohm ± 10%" }
       },
       "children": {
         "p1": "/Users/lenny/code/stdlib/boards/dev_tusb4020/.ato/modules/tusb4020/tusb4020.ato:Tusb4020.r8.p1",
@@ -10388,10 +10479,11 @@
     },
     "/Users/lenny/code/stdlib/boards/dev_tusb4020/eval_tusb4020.ato:EvalTusb4020.hub.c1": {
       "attributes": {
-        "designator_prefix": "C",
-        "mpn": "generic_capacitor",
-        "package": "0402",
-        "type": "capacitor"
+        "designator_prefix": { "String": "C" },
+        "mpn": { "String": "generic_capacitor" },
+        "package": { "String": "0402" },
+        "type": { "String": "capacitor" },
+        "value": { "Physical": "10uF ± 10%" }
       },
       "children": {
         "p1": "/Users/lenny/code/stdlib/boards/dev_tusb4020/eval_tusb4020.ato:EvalTusb4020.hub.c1.p1",
@@ -10457,10 +10549,11 @@
     },
     "/Users/lenny/code/stdlib/boards/dev_tusb4020/eval_tusb4020.ato:EvalTusb4020.hub.c11": {
       "attributes": {
-        "designator_prefix": "C",
-        "mpn": "generic_capacitor",
-        "package": "0201",
-        "type": "capacitor"
+        "designator_prefix": { "String": "C" },
+        "mpn": { "String": "generic_capacitor" },
+        "package": { "String": "0201" },
+        "type": { "String": "capacitor" },
+        "value": { "Physical": "0.1uF ± 10%" }
       },
       "children": {
         "p1": "/Users/lenny/code/stdlib/boards/dev_tusb4020/eval_tusb4020.ato:EvalTusb4020.hub.c11.p1",
@@ -10526,10 +10619,11 @@
     },
     "/Users/lenny/code/stdlib/boards/dev_tusb4020/eval_tusb4020.ato:EvalTusb4020.hub.c12": {
       "attributes": {
-        "designator_prefix": "C",
-        "mpn": "generic_capacitor",
-        "package": "0201",
-        "type": "capacitor"
+        "designator_prefix": { "String": "C" },
+        "mpn": { "String": "generic_capacitor" },
+        "package": { "String": "0201" },
+        "type": { "String": "capacitor" },
+        "value": { "Physical": "0.1uF ± 10%" }
       },
       "children": {
         "p1": "/Users/lenny/code/stdlib/boards/dev_tusb4020/eval_tusb4020.ato:EvalTusb4020.hub.c12.p1",
@@ -10595,10 +10689,11 @@
     },
     "/Users/lenny/code/stdlib/boards/dev_tusb4020/eval_tusb4020.ato:EvalTusb4020.hub.c13": {
       "attributes": {
-        "designator_prefix": "C",
-        "mpn": "generic_capacitor",
-        "package": "0201",
-        "type": "capacitor"
+        "designator_prefix": { "String": "C" },
+        "mpn": { "String": "generic_capacitor" },
+        "package": { "String": "0201" },
+        "type": { "String": "capacitor" },
+        "value": { "Physical": "0.1uF ± 10%" }
       },
       "children": {
         "p1": "/Users/lenny/code/stdlib/boards/dev_tusb4020/eval_tusb4020.ato:EvalTusb4020.hub.c13.p1",
@@ -10664,10 +10759,11 @@
     },
     "/Users/lenny/code/stdlib/boards/dev_tusb4020/eval_tusb4020.ato:EvalTusb4020.hub.c14": {
       "attributes": {
-        "designator_prefix": "C",
-        "mpn": "generic_capacitor",
-        "package": "0201",
-        "type": "capacitor"
+        "designator_prefix": { "String": "C" },
+        "mpn": { "String": "generic_capacitor" },
+        "package": { "String": "0201" },
+        "type": { "String": "capacitor" },
+        "value": { "Physical": "0.1uF ± 10%" }
       },
       "children": {
         "p1": "/Users/lenny/code/stdlib/boards/dev_tusb4020/eval_tusb4020.ato:EvalTusb4020.hub.c14.p1",
@@ -10733,10 +10829,11 @@
     },
     "/Users/lenny/code/stdlib/boards/dev_tusb4020/eval_tusb4020.ato:EvalTusb4020.hub.c15": {
       "attributes": {
-        "designator_prefix": "C",
-        "mpn": "generic_capacitor",
-        "package": "0201",
-        "type": "capacitor"
+        "designator_prefix": { "String": "C" },
+        "mpn": { "String": "generic_capacitor" },
+        "package": { "String": "0201" },
+        "type": { "String": "capacitor" },
+        "value": { "Physical": "0.1uF ± 10%" }
       },
       "children": {
         "p1": "/Users/lenny/code/stdlib/boards/dev_tusb4020/eval_tusb4020.ato:EvalTusb4020.hub.c15.p1",
@@ -10802,10 +10899,11 @@
     },
     "/Users/lenny/code/stdlib/boards/dev_tusb4020/eval_tusb4020.ato:EvalTusb4020.hub.c16": {
       "attributes": {
-        "designator_prefix": "C",
-        "mpn": "generic_capacitor",
-        "package": "0402",
-        "type": "capacitor"
+        "designator_prefix": { "String": "C" },
+        "mpn": { "String": "generic_capacitor" },
+        "package": { "String": "0402" },
+        "type": { "String": "capacitor" },
+        "value": { "Physical": "10uF ± 10%" }
       },
       "children": {
         "p1": "/Users/lenny/code/stdlib/boards/dev_tusb4020/eval_tusb4020.ato:EvalTusb4020.hub.c16.p1",
@@ -10871,10 +10969,11 @@
     },
     "/Users/lenny/code/stdlib/boards/dev_tusb4020/eval_tusb4020.ato:EvalTusb4020.hub.c17": {
       "attributes": {
-        "designator_prefix": "C",
-        "mpn": "generic_capacitor",
-        "package": "0201",
-        "type": "capacitor"
+        "designator_prefix": { "String": "C" },
+        "mpn": { "String": "generic_capacitor" },
+        "package": { "String": "0201" },
+        "type": { "String": "capacitor" },
+        "value": { "Physical": "0.1uF ± 10%" }
       },
       "children": {
         "p1": "/Users/lenny/code/stdlib/boards/dev_tusb4020/eval_tusb4020.ato:EvalTusb4020.hub.c17.p1",
@@ -10940,10 +11039,11 @@
     },
     "/Users/lenny/code/stdlib/boards/dev_tusb4020/eval_tusb4020.ato:EvalTusb4020.hub.c18": {
       "attributes": {
-        "designator_prefix": "C",
-        "mpn": "generic_capacitor",
-        "package": "0201",
-        "type": "capacitor"
+        "designator_prefix": { "String": "C" },
+        "mpn": { "String": "generic_capacitor" },
+        "package": { "String": "0201" },
+        "type": { "String": "capacitor" },
+        "value": { "Physical": "0.1uF ± 10%" }
       },
       "children": {
         "p1": "/Users/lenny/code/stdlib/boards/dev_tusb4020/eval_tusb4020.ato:EvalTusb4020.hub.c18.p1",
@@ -11009,10 +11109,11 @@
     },
     "/Users/lenny/code/stdlib/boards/dev_tusb4020/eval_tusb4020.ato:EvalTusb4020.hub.c19": {
       "attributes": {
-        "designator_prefix": "C",
-        "mpn": "generic_capacitor",
-        "package": "0201",
-        "type": "capacitor"
+        "designator_prefix": { "String": "C" },
+        "mpn": { "String": "generic_capacitor" },
+        "package": { "String": "0201" },
+        "type": { "String": "capacitor" },
+        "value": { "Physical": "0.1uF ± 10%" }
       },
       "children": {
         "p1": "/Users/lenny/code/stdlib/boards/dev_tusb4020/eval_tusb4020.ato:EvalTusb4020.hub.c19.p1",
@@ -11078,10 +11179,11 @@
     },
     "/Users/lenny/code/stdlib/boards/dev_tusb4020/eval_tusb4020.ato:EvalTusb4020.hub.c20": {
       "attributes": {
-        "designator_prefix": "C",
-        "mpn": "generic_capacitor",
-        "package": "0201",
-        "type": "capacitor"
+        "designator_prefix": { "String": "C" },
+        "mpn": { "String": "generic_capacitor" },
+        "package": { "String": "0201" },
+        "type": { "String": "capacitor" },
+        "value": { "Physical": "0.1uF ± 10%" }
       },
       "children": {
         "p1": "/Users/lenny/code/stdlib/boards/dev_tusb4020/eval_tusb4020.ato:EvalTusb4020.hub.c20.p1",
@@ -11147,10 +11249,11 @@
     },
     "/Users/lenny/code/stdlib/boards/dev_tusb4020/eval_tusb4020.ato:EvalTusb4020.hub.c21": {
       "attributes": {
-        "designator_prefix": "C",
-        "mpn": "generic_capacitor",
-        "package": "0201",
-        "type": "capacitor"
+        "designator_prefix": { "String": "C" },
+        "mpn": { "String": "generic_capacitor" },
+        "package": { "String": "0201" },
+        "type": { "String": "capacitor" },
+        "value": { "Physical": "0.1uF ± 10%" }
       },
       "children": {
         "p1": "/Users/lenny/code/stdlib/boards/dev_tusb4020/eval_tusb4020.ato:EvalTusb4020.hub.c21.p1",
@@ -11216,10 +11319,11 @@
     },
     "/Users/lenny/code/stdlib/boards/dev_tusb4020/eval_tusb4020.ato:EvalTusb4020.hub.c22": {
       "attributes": {
-        "designator_prefix": "C",
-        "mpn": "generic_capacitor",
-        "package": "0201",
-        "type": "capacitor"
+        "designator_prefix": { "String": "C" },
+        "mpn": { "String": "generic_capacitor" },
+        "package": { "String": "0201" },
+        "type": { "String": "capacitor" },
+        "value": { "Physical": "0.1uF ± 10%" }
       },
       "children": {
         "p1": "/Users/lenny/code/stdlib/boards/dev_tusb4020/eval_tusb4020.ato:EvalTusb4020.hub.c22.p1",
@@ -11285,10 +11389,11 @@
     },
     "/Users/lenny/code/stdlib/boards/dev_tusb4020/eval_tusb4020.ato:EvalTusb4020.hub.c23": {
       "attributes": {
-        "designator_prefix": "C",
-        "mpn": "generic_capacitor",
-        "package": "0201",
-        "type": "capacitor"
+        "designator_prefix": { "String": "C" },
+        "mpn": { "String": "generic_capacitor" },
+        "package": { "String": "0201" },
+        "type": { "String": "capacitor" },
+        "value": { "Physical": "0.1uF ± 10%" }
       },
       "children": {
         "p1": "/Users/lenny/code/stdlib/boards/dev_tusb4020/eval_tusb4020.ato:EvalTusb4020.hub.c23.p1",
@@ -11354,10 +11459,11 @@
     },
     "/Users/lenny/code/stdlib/boards/dev_tusb4020/eval_tusb4020.ato:EvalTusb4020.hub.c24": {
       "attributes": {
-        "designator_prefix": "C",
-        "mpn": "generic_capacitor",
-        "package": "0201",
-        "type": "capacitor"
+        "designator_prefix": { "String": "C" },
+        "mpn": { "String": "generic_capacitor" },
+        "package": { "String": "0201" },
+        "type": { "String": "capacitor" },
+        "value": { "Physical": "0.1uF ± 10%" }
       },
       "children": {
         "p1": "/Users/lenny/code/stdlib/boards/dev_tusb4020/eval_tusb4020.ato:EvalTusb4020.hub.c24.p1",
@@ -11423,10 +11529,11 @@
     },
     "/Users/lenny/code/stdlib/boards/dev_tusb4020/eval_tusb4020.ato:EvalTusb4020.hub.c25": {
       "attributes": {
-        "designator_prefix": "C",
-        "mpn": "generic_capacitor",
-        "package": "0402",
-        "type": "capacitor"
+        "designator_prefix": { "String": "C" },
+        "mpn": { "String": "generic_capacitor" },
+        "package": { "String": "0402" },
+        "type": { "String": "capacitor" },
+        "value": { "Physical": "1uF ± 10%" }
       },
       "children": {
         "p1": "/Users/lenny/code/stdlib/boards/dev_tusb4020/eval_tusb4020.ato:EvalTusb4020.hub.c25.p1",
@@ -11492,10 +11599,11 @@
     },
     "/Users/lenny/code/stdlib/boards/dev_tusb4020/eval_tusb4020.ato:EvalTusb4020.hub.c26": {
       "attributes": {
-        "designator_prefix": "C",
-        "mpn": "generic_capacitor",
-        "package": "0201",
-        "type": "capacitor"
+        "designator_prefix": { "String": "C" },
+        "mpn": { "String": "generic_capacitor" },
+        "package": { "String": "0201" },
+        "type": { "String": "capacitor" },
+        "value": { "Physical": "1uF ± 5%" }
       },
       "children": {
         "p1": "/Users/lenny/code/stdlib/boards/dev_tusb4020/eval_tusb4020.ato:EvalTusb4020.hub.c26.p1",
@@ -11942,11 +12050,15 @@
     },
     "/Users/lenny/code/stdlib/boards/dev_tusb4020/eval_tusb4020.ato:EvalTusb4020.hub.hub": {
       "attributes": {
-        "datasheet": "http://www.ti.com/lit/ds/symlink/tusb4020bi.pdf",
-        "description": "TEXAS INSTRUMENTS - TUSB4020BIPHP - USB 2.0 HUB, 480MBPS, HTQFP-48",
-        "footprint": "QFP50P900X900X120-49N",
-        "manufacturer": "Texas Instruments",
-        "mpn": "TUSB4020BIPHP"
+        "datasheet": {
+          "String": "http://www.ti.com/lit/ds/symlink/tusb4020bi.pdf"
+        },
+        "description": {
+          "String": "TEXAS INSTRUMENTS - TUSB4020BIPHP - USB 2.0 HUB, 480MBPS, HTQFP-48"
+        },
+        "footprint": { "String": "QFP50P900X900X120-49N" },
+        "manufacturer": { "String": "Texas Instruments" },
+        "mpn": { "String": "TUSB4020BIPHP" }
       },
       "children": {
         "FULLPWRMGMTZ_SMBA1": "/Users/lenny/code/stdlib/boards/dev_tusb4020/eval_tusb4020.ato:EvalTusb4020.hub.hub.FULLPWRMGMTZ_SMBA1",
@@ -12350,7 +12462,7 @@
       "module": { "module_name": "", "source_path": "" }
     },
     "/Users/lenny/code/stdlib/boards/dev_tusb4020/eval_tusb4020.ato:EvalTusb4020.hub.osc": {
-      "attributes": {},
+      "attributes": { "load_capacitance": { "Physical": "18pF ± 10%" } },
       "children": {
         "c1": "/Users/lenny/code/stdlib/boards/dev_tusb4020/eval_tusb4020.ato:EvalTusb4020.hub.osc.c1",
         "c2": "/Users/lenny/code/stdlib/boards/dev_tusb4020/eval_tusb4020.ato:EvalTusb4020.hub.osc.c2",
@@ -12401,10 +12513,11 @@
     },
     "/Users/lenny/code/stdlib/boards/dev_tusb4020/eval_tusb4020.ato:EvalTusb4020.hub.osc.c1": {
       "attributes": {
-        "designator_prefix": "C",
-        "mpn": "generic_capacitor",
-        "package": "0201",
-        "type": "capacitor"
+        "designator_prefix": { "String": "C" },
+        "mpn": { "String": "generic_capacitor" },
+        "package": { "String": "0201" },
+        "type": { "String": "capacitor" },
+        "value": { "Port": "load_capacitance" }
       },
       "children": {
         "p1": "/Users/lenny/code/stdlib/boards/dev_tusb4020/eval_tusb4020.ato:EvalTusb4020.hub.osc.c1.p1",
@@ -12470,10 +12583,11 @@
     },
     "/Users/lenny/code/stdlib/boards/dev_tusb4020/eval_tusb4020.ato:EvalTusb4020.hub.osc.c2": {
       "attributes": {
-        "designator_prefix": "C",
-        "mpn": "generic_capacitor",
-        "package": "0201",
-        "type": "capacitor"
+        "designator_prefix": { "String": "C" },
+        "mpn": { "String": "generic_capacitor" },
+        "package": { "String": "0201" },
+        "type": { "String": "capacitor" },
+        "value": { "Port": "load_capacitance" }
       },
       "children": {
         "p1": "/Users/lenny/code/stdlib/boards/dev_tusb4020/eval_tusb4020.ato:EvalTusb4020.hub.osc.c2.p1",
@@ -12539,11 +12653,15 @@
     },
     "/Users/lenny/code/stdlib/boards/dev_tusb4020/eval_tusb4020.ato:EvalTusb4020.hub.osc.crystal": {
       "attributes": {
-        "datasheet": "https://support.epson.biz/td/api/doc_check.php?dl=brief_TSX-3225&lang=en",
-        "description": "24 MHz +/-10ppm Crystal 9pF 40 Ohms 4-SMD, No Lead",
-        "footprint": "TSX3225240000MF15XAC0",
-        "manufacturer": "Miyazaki Epson Corporation",
-        "mpn": "C160455"
+        "datasheet": {
+          "String": "https://support.epson.biz/td/api/doc_check.php?dl=brief_TSX-3225&lang=en"
+        },
+        "description": {
+          "String": "24 MHz +/-10ppm Crystal 9pF 40 Ohms 4-SMD, No Lead"
+        },
+        "footprint": { "String": "TSX3225240000MF15XAC0" },
+        "manufacturer": { "String": "Miyazaki Epson Corporation" },
+        "mpn": { "String": "C160455" }
       },
       "children": {
         "CRYSTAL_1": "/Users/lenny/code/stdlib/boards/dev_tusb4020/eval_tusb4020.ato:EvalTusb4020.hub.osc.crystal.CRYSTAL_1",
@@ -12804,10 +12922,11 @@
     },
     "/Users/lenny/code/stdlib/boards/dev_tusb4020/eval_tusb4020.ato:EvalTusb4020.hub.r1": {
       "attributes": {
-        "designator_prefix": "R",
-        "mpn": "generic_resistor",
-        "package": "0201",
-        "type": "resistor"
+        "designator_prefix": { "String": "R" },
+        "mpn": { "String": "generic_resistor" },
+        "package": { "String": "0201" },
+        "type": { "String": "resistor" },
+        "value": { "Physical": "90.9kohm ± 1%" }
       },
       "children": {
         "p1": "/Users/lenny/code/stdlib/boards/dev_tusb4020/eval_tusb4020.ato:EvalTusb4020.hub.r1.p1",
@@ -12836,10 +12955,11 @@
     },
     "/Users/lenny/code/stdlib/boards/dev_tusb4020/eval_tusb4020.ato:EvalTusb4020.hub.r12": {
       "attributes": {
-        "designator_prefix": "R",
-        "mpn": "generic_resistor",
-        "package": "0201",
-        "type": "resistor"
+        "designator_prefix": { "String": "R" },
+        "mpn": { "String": "generic_resistor" },
+        "package": { "String": "0201" },
+        "type": { "String": "resistor" },
+        "value": { "Physical": "9.53kohm ± 1%" }
       },
       "children": {
         "p1": "/Users/lenny/code/stdlib/boards/dev_tusb4020/eval_tusb4020.ato:EvalTusb4020.hub.r12.p1",
@@ -12868,10 +12988,11 @@
     },
     "/Users/lenny/code/stdlib/boards/dev_tusb4020/eval_tusb4020.ato:EvalTusb4020.hub.r13": {
       "attributes": {
-        "designator_prefix": "R",
-        "mpn": "generic_resistor",
-        "package": "0201",
-        "type": "resistor"
+        "designator_prefix": { "String": "R" },
+        "mpn": { "String": "generic_resistor" },
+        "package": { "String": "0201" },
+        "type": { "String": "resistor" },
+        "value": { "Physical": "1kohm ± 10%" }
       },
       "children": {
         "p1": "/Users/lenny/code/stdlib/boards/dev_tusb4020/eval_tusb4020.ato:EvalTusb4020.hub.r13.p1",
@@ -12900,10 +13021,11 @@
     },
     "/Users/lenny/code/stdlib/boards/dev_tusb4020/eval_tusb4020.ato:EvalTusb4020.hub.r2": {
       "attributes": {
-        "designator_prefix": "R",
-        "mpn": "generic_resistor",
-        "package": "0201",
-        "type": "resistor"
+        "designator_prefix": { "String": "R" },
+        "mpn": { "String": "generic_resistor" },
+        "package": { "String": "0201" },
+        "type": { "String": "resistor" },
+        "value": { "Physical": "10kohm ± 1%" }
       },
       "children": {
         "p1": "/Users/lenny/code/stdlib/boards/dev_tusb4020/eval_tusb4020.ato:EvalTusb4020.hub.r2.p1",
@@ -12932,10 +13054,11 @@
     },
     "/Users/lenny/code/stdlib/boards/dev_tusb4020/eval_tusb4020.ato:EvalTusb4020.hub.r3": {
       "attributes": {
-        "designator_prefix": "R",
-        "mpn": "generic_resistor",
-        "package": "0201",
-        "type": "resistor"
+        "designator_prefix": { "String": "R" },
+        "mpn": { "String": "generic_resistor" },
+        "package": { "String": "0201" },
+        "type": { "String": "resistor" },
+        "value": { "Physical": "4.7kohm ± 10%" }
       },
       "children": {
         "p1": "/Users/lenny/code/stdlib/boards/dev_tusb4020/eval_tusb4020.ato:EvalTusb4020.hub.r3.p1",
@@ -12964,10 +13087,11 @@
     },
     "/Users/lenny/code/stdlib/boards/dev_tusb4020/eval_tusb4020.ato:EvalTusb4020.hub.r4": {
       "attributes": {
-        "designator_prefix": "R",
-        "mpn": "generic_resistor",
-        "package": "0201",
-        "type": "resistor"
+        "designator_prefix": { "String": "R" },
+        "mpn": { "String": "generic_resistor" },
+        "package": { "String": "0201" },
+        "type": { "String": "resistor" },
+        "value": { "Physical": "4.7kohm ± 10%" }
       },
       "children": {
         "p1": "/Users/lenny/code/stdlib/boards/dev_tusb4020/eval_tusb4020.ato:EvalTusb4020.hub.r4.p1",
@@ -12996,10 +13120,11 @@
     },
     "/Users/lenny/code/stdlib/boards/dev_tusb4020/eval_tusb4020.ato:EvalTusb4020.hub.r6": {
       "attributes": {
-        "designator_prefix": "R",
-        "mpn": "generic_resistor",
-        "package": "0201",
-        "type": "resistor"
+        "designator_prefix": { "String": "R" },
+        "mpn": { "String": "generic_resistor" },
+        "package": { "String": "0201" },
+        "type": { "String": "resistor" },
+        "value": { "Physical": "4.7kohm ± 10%" }
       },
       "children": {
         "p1": "/Users/lenny/code/stdlib/boards/dev_tusb4020/eval_tusb4020.ato:EvalTusb4020.hub.r6.p1",
@@ -13028,10 +13153,11 @@
     },
     "/Users/lenny/code/stdlib/boards/dev_tusb4020/eval_tusb4020.ato:EvalTusb4020.hub.r7": {
       "attributes": {
-        "designator_prefix": "R",
-        "mpn": "generic_resistor",
-        "package": "0201",
-        "type": "resistor"
+        "designator_prefix": { "String": "R" },
+        "mpn": { "String": "generic_resistor" },
+        "package": { "String": "0201" },
+        "type": { "String": "resistor" },
+        "value": { "Physical": "4.7kohm ± 10%" }
       },
       "children": {
         "p1": "/Users/lenny/code/stdlib/boards/dev_tusb4020/eval_tusb4020.ato:EvalTusb4020.hub.r7.p1",
@@ -13060,10 +13186,11 @@
     },
     "/Users/lenny/code/stdlib/boards/dev_tusb4020/eval_tusb4020.ato:EvalTusb4020.hub.r8": {
       "attributes": {
-        "designator_prefix": "R",
-        "mpn": "generic_resistor",
-        "package": "0201",
-        "type": "resistor"
+        "designator_prefix": { "String": "R" },
+        "mpn": { "String": "generic_resistor" },
+        "package": { "String": "0201" },
+        "type": { "String": "resistor" },
+        "value": { "Physical": "4.7kohm ± 10%" }
       },
       "children": {
         "p1": "/Users/lenny/code/stdlib/boards/dev_tusb4020/eval_tusb4020.ato:EvalTusb4020.hub.r8.p1",
@@ -13603,8 +13730,8 @@
     },
     "/Users/lenny/code/stdlib/boards/dev_tusb4020/eval_tusb4020.ato:TypeCPort.connector.connector": {
       "attributes": {
-        "footprint": "USB-C-SMD_KH-TYPE-C-16P",
-        "mpn": "C709357"
+        "footprint": { "String": "USB-C-SMD_KH-TYPE-C-16P" },
+        "mpn": { "String": "C709357" }
       },
       "children": {
         "CC1": "/Users/lenny/code/stdlib/boards/dev_tusb4020/eval_tusb4020.ato:TypeCPort.connector.connector.CC1",
@@ -13783,10 +13910,11 @@
     },
     "/Users/lenny/code/stdlib/boards/dev_tusb4020/eval_tusb4020.ato:TypeCPort.r_cc1": {
       "attributes": {
-        "designator_prefix": "R",
-        "mpn": "generic_resistor",
-        "package": "0402",
-        "type": "resistor"
+        "designator_prefix": { "String": "R" },
+        "mpn": { "String": "generic_resistor" },
+        "package": { "String": "0402" },
+        "type": { "String": "resistor" },
+        "value": { "Port": "cc_resistance" }
       },
       "children": {
         "p1": "/Users/lenny/code/stdlib/boards/dev_tusb4020/eval_tusb4020.ato:TypeCPort.r_cc1.p1",
@@ -13815,10 +13943,11 @@
     },
     "/Users/lenny/code/stdlib/boards/dev_tusb4020/eval_tusb4020.ato:TypeCPort.r_cc2": {
       "attributes": {
-        "designator_prefix": "R",
-        "mpn": "generic_resistor",
-        "package": "0402",
-        "type": "resistor"
+        "designator_prefix": { "String": "R" },
+        "mpn": { "String": "generic_resistor" },
+        "package": { "String": "0402" },
+        "type": { "String": "resistor" },
+        "value": { "Port": "cc_resistance" }
       },
       "children": {
         "p1": "/Users/lenny/code/stdlib/boards/dev_tusb4020/eval_tusb4020.ato:TypeCPort.r_cc2.p1",
@@ -13975,7 +14104,7 @@
       "module": { "module_name": "", "source_path": "" }
     },
     "/Users/lenny/code/stdlib/boards/dev_tusb4020/eval_tusb4020.ato:TypeCPort_Downstream": {
-      "attributes": {},
+      "attributes": { "cc_resistance": { "Physical": "56kohm ± 5%" } },
       "children": {
         "connector": "/Users/lenny/code/stdlib/boards/dev_tusb4020/eval_tusb4020.ato:TypeCPort_Downstream.connector",
         "r_cc1": "/Users/lenny/code/stdlib/boards/dev_tusb4020/eval_tusb4020.ato:TypeCPort_Downstream.r_cc1",
@@ -14162,8 +14291,8 @@
     },
     "/Users/lenny/code/stdlib/boards/dev_tusb4020/eval_tusb4020.ato:TypeCPort_Downstream.connector.connector": {
       "attributes": {
-        "footprint": "USB-C-SMD_KH-TYPE-C-16P",
-        "mpn": "C709357"
+        "footprint": { "String": "USB-C-SMD_KH-TYPE-C-16P" },
+        "mpn": { "String": "C709357" }
       },
       "children": {
         "CC1": "/Users/lenny/code/stdlib/boards/dev_tusb4020/eval_tusb4020.ato:TypeCPort_Downstream.connector.connector.CC1",
@@ -14342,10 +14471,11 @@
     },
     "/Users/lenny/code/stdlib/boards/dev_tusb4020/eval_tusb4020.ato:TypeCPort_Downstream.r_cc1": {
       "attributes": {
-        "designator_prefix": "R",
-        "mpn": "generic_resistor",
-        "package": "0402",
-        "type": "resistor"
+        "designator_prefix": { "String": "R" },
+        "mpn": { "String": "generic_resistor" },
+        "package": { "String": "0402" },
+        "type": { "String": "resistor" },
+        "value": { "Port": "cc_resistance" }
       },
       "children": {
         "p1": "/Users/lenny/code/stdlib/boards/dev_tusb4020/eval_tusb4020.ato:TypeCPort_Downstream.r_cc1.p1",
@@ -14374,10 +14504,11 @@
     },
     "/Users/lenny/code/stdlib/boards/dev_tusb4020/eval_tusb4020.ato:TypeCPort_Downstream.r_cc2": {
       "attributes": {
-        "designator_prefix": "R",
-        "mpn": "generic_resistor",
-        "package": "0402",
-        "type": "resistor"
+        "designator_prefix": { "String": "R" },
+        "mpn": { "String": "generic_resistor" },
+        "package": { "String": "0402" },
+        "type": { "String": "resistor" },
+        "value": { "Port": "cc_resistance" }
       },
       "children": {
         "p1": "/Users/lenny/code/stdlib/boards/dev_tusb4020/eval_tusb4020.ato:TypeCPort_Downstream.r_cc2.p1",
@@ -14534,7 +14665,7 @@
       "module": { "module_name": "", "source_path": "" }
     },
     "/Users/lenny/code/stdlib/boards/dev_tusb4020/eval_tusb4020.ato:TypeCPort_Upstream": {
-      "attributes": {},
+      "attributes": { "cc_resistance": { "Physical": "5.1kohm ± 5%" } },
       "children": {
         "connector": "/Users/lenny/code/stdlib/boards/dev_tusb4020/eval_tusb4020.ato:TypeCPort_Upstream.connector",
         "r_cc1": "/Users/lenny/code/stdlib/boards/dev_tusb4020/eval_tusb4020.ato:TypeCPort_Upstream.r_cc1",
@@ -14721,8 +14852,8 @@
     },
     "/Users/lenny/code/stdlib/boards/dev_tusb4020/eval_tusb4020.ato:TypeCPort_Upstream.connector.connector": {
       "attributes": {
-        "footprint": "USB-C-SMD_KH-TYPE-C-16P",
-        "mpn": "C709357"
+        "footprint": { "String": "USB-C-SMD_KH-TYPE-C-16P" },
+        "mpn": { "String": "C709357" }
       },
       "children": {
         "CC1": "/Users/lenny/code/stdlib/boards/dev_tusb4020/eval_tusb4020.ato:TypeCPort_Upstream.connector.connector.CC1",
@@ -14901,10 +15032,11 @@
     },
     "/Users/lenny/code/stdlib/boards/dev_tusb4020/eval_tusb4020.ato:TypeCPort_Upstream.r_cc1": {
       "attributes": {
-        "designator_prefix": "R",
-        "mpn": "generic_resistor",
-        "package": "0402",
-        "type": "resistor"
+        "designator_prefix": { "String": "R" },
+        "mpn": { "String": "generic_resistor" },
+        "package": { "String": "0402" },
+        "type": { "String": "resistor" },
+        "value": { "Port": "cc_resistance" }
       },
       "children": {
         "p1": "/Users/lenny/code/stdlib/boards/dev_tusb4020/eval_tusb4020.ato:TypeCPort_Upstream.r_cc1.p1",
@@ -14933,10 +15065,11 @@
     },
     "/Users/lenny/code/stdlib/boards/dev_tusb4020/eval_tusb4020.ato:TypeCPort_Upstream.r_cc2": {
       "attributes": {
-        "designator_prefix": "R",
-        "mpn": "generic_resistor",
-        "package": "0402",
-        "type": "resistor"
+        "designator_prefix": { "String": "R" },
+        "mpn": { "String": "generic_resistor" },
+        "package": { "String": "0402" },
+        "type": { "String": "resistor" },
+        "value": { "Port": "cc_resistance" }
       },
       "children": {
         "p1": "/Users/lenny/code/stdlib/boards/dev_tusb4020/eval_tusb4020.ato:TypeCPort_Upstream.r_cc2.p1",
@@ -15134,7 +15267,7 @@
       }
     },
     "/Users/lenny/code/stdlib/boards/dev_tusb4020/eval_tusb4020.ato:Usb1v1.buck": {
-      "attributes": {},
+      "attributes": { "v_fb": { "Physical": "0.5V " } },
       "children": {
         "c_fb": "/Users/lenny/code/stdlib/boards/dev_tusb4020/eval_tusb4020.ato:Usb1v1.buck.c_fb",
         "c_in": "/Users/lenny/code/stdlib/boards/dev_tusb4020/eval_tusb4020.ato:Usb1v1.buck.c_in",
@@ -15239,10 +15372,11 @@
     },
     "/Users/lenny/code/stdlib/boards/dev_tusb4020/eval_tusb4020.ato:Usb1v1.buck.c_fb": {
       "attributes": {
-        "designator_prefix": "C",
-        "mpn": "generic_capacitor",
-        "package": "0402",
-        "type": "capacitor"
+        "designator_prefix": { "String": "C" },
+        "mpn": { "String": "generic_capacitor" },
+        "package": { "String": "0402" },
+        "type": { "String": "capacitor" },
+        "value": { "Physical": "15pF ± 1%" }
       },
       "children": {
         "p1": "/Users/lenny/code/stdlib/boards/dev_tusb4020/eval_tusb4020.ato:Usb1v1.buck.c_fb.p1",
@@ -15308,10 +15442,11 @@
     },
     "/Users/lenny/code/stdlib/boards/dev_tusb4020/eval_tusb4020.ato:Usb1v1.buck.c_in": {
       "attributes": {
-        "designator_prefix": "C",
-        "mpn": "generic_capacitor",
-        "package": "0402",
-        "type": "capacitor"
+        "designator_prefix": { "String": "C" },
+        "mpn": { "String": "generic_capacitor" },
+        "package": { "String": "0402" },
+        "type": { "String": "capacitor" },
+        "value": { "Physical": "2.2uF ± 10%" }
       },
       "children": {
         "p1": "/Users/lenny/code/stdlib/boards/dev_tusb4020/eval_tusb4020.ato:Usb1v1.buck.c_in.p1",
@@ -15377,10 +15512,11 @@
     },
     "/Users/lenny/code/stdlib/boards/dev_tusb4020/eval_tusb4020.ato:Usb1v1.buck.c_in_decoupling": {
       "attributes": {
-        "designator_prefix": "C",
-        "mpn": "generic_capacitor",
-        "package": "0402",
-        "type": "capacitor"
+        "designator_prefix": { "String": "C" },
+        "mpn": { "String": "generic_capacitor" },
+        "package": { "String": "0402" },
+        "type": { "String": "capacitor" },
+        "value": { "Physical": "0.1uF ± 10%" }
       },
       "children": {
         "p1": "/Users/lenny/code/stdlib/boards/dev_tusb4020/eval_tusb4020.ato:Usb1v1.buck.c_in_decoupling.p1",
@@ -15446,10 +15582,11 @@
     },
     "/Users/lenny/code/stdlib/boards/dev_tusb4020/eval_tusb4020.ato:Usb1v1.buck.c_out": {
       "attributes": {
-        "designator_prefix": "C",
-        "mpn": "generic_capacitor",
-        "package": "0603",
-        "type": "capacitor"
+        "designator_prefix": { "String": "C" },
+        "mpn": { "String": "generic_capacitor" },
+        "package": { "String": "0603" },
+        "type": { "String": "capacitor" },
+        "value": { "Physical": "10uF ± 10%" }
       },
       "children": {
         "p1": "/Users/lenny/code/stdlib/boards/dev_tusb4020/eval_tusb4020.ato:Usb1v1.buck.c_out.p1",
@@ -15522,11 +15659,13 @@
     },
     "/Users/lenny/code/stdlib/boards/dev_tusb4020/eval_tusb4020.ato:Usb1v1.buck.ic": {
       "attributes": {
-        "datasheet": "http://www.ti.com/lit/gpn/lm3674",
-        "description": "2MHz, 600mA Step-Down DC-DC Converter in SOT 23-5",
-        "footprint": "SOT95P280X145-5N",
-        "manufacturer": "Texas Instruments",
-        "mpn": "LM3674MF-ADJ/NOPB"
+        "datasheet": { "String": "http://www.ti.com/lit/gpn/lm3674" },
+        "description": {
+          "String": "2MHz, 600mA Step-Down DC-DC Converter in SOT 23-5"
+        },
+        "footprint": { "String": "SOT95P280X145-5N" },
+        "manufacturer": { "String": "Texas Instruments" },
+        "mpn": { "String": "LM3674MF-ADJ/NOPB" }
       },
       "children": {
         "EN": "/Users/lenny/code/stdlib/boards/dev_tusb4020/eval_tusb4020.ato:Usb1v1.buck.ic.EN",
@@ -15579,11 +15718,12 @@
     },
     "/Users/lenny/code/stdlib/boards/dev_tusb4020/eval_tusb4020.ato:Usb1v1.buck.l1": {
       "attributes": {
-        "designator_prefix": "L",
-        "footprint": "L_1008_2520Metric",
-        "mpn": "LQM2HPN2R2MG0L",
-        "package": "1008",
-        "type": "inductor"
+        "designator_prefix": { "String": "L" },
+        "footprint": { "String": "L_1008_2520Metric" },
+        "mpn": { "String": "LQM2HPN2R2MG0L" },
+        "package": { "String": "1008" },
+        "type": { "String": "inductor" },
+        "value": { "Physical": "2.2uH ± 1%" }
       },
       "children": {
         "p1": "/Users/lenny/code/stdlib/boards/dev_tusb4020/eval_tusb4020.ato:Usb1v1.buck.l1.p1",
@@ -15638,7 +15778,7 @@
       "module": { "module_name": "", "source_path": "" }
     },
     "/Users/lenny/code/stdlib/boards/dev_tusb4020/eval_tusb4020.ato:Usb1v1.buck.power_out": {
-      "attributes": {},
+      "attributes": { "voltage": { "String": "" } },
       "children": {
         "gnd": "/Users/lenny/code/stdlib/boards/dev_tusb4020/eval_tusb4020.ato:Usb1v1.buck.power_out.gnd",
         "vcc": "/Users/lenny/code/stdlib/boards/dev_tusb4020/eval_tusb4020.ato:Usb1v1.buck.power_out.vcc"
@@ -15666,10 +15806,11 @@
     },
     "/Users/lenny/code/stdlib/boards/dev_tusb4020/eval_tusb4020.ato:Usb1v1.buck.r_en": {
       "attributes": {
-        "designator_prefix": "R",
-        "mpn": "generic_resistor",
-        "package": "0402",
-        "type": "resistor"
+        "designator_prefix": { "String": "R" },
+        "mpn": { "String": "generic_resistor" },
+        "package": { "String": "0402" },
+        "type": { "String": "resistor" },
+        "value": { "Physical": "10kohm ± 10%" }
       },
       "children": {
         "p1": "/Users/lenny/code/stdlib/boards/dev_tusb4020/eval_tusb4020.ato:Usb1v1.buck.r_en.p1",
@@ -15698,10 +15839,11 @@
     },
     "/Users/lenny/code/stdlib/boards/dev_tusb4020/eval_tusb4020.ato:Usb1v1.buck.r_fbb": {
       "attributes": {
-        "designator_prefix": "R",
-        "mpn": "generic_resistor",
-        "package": "0402",
-        "type": "resistor"
+        "designator_prefix": { "String": "R" },
+        "mpn": { "String": "generic_resistor" },
+        "package": { "String": "0402" },
+        "type": { "String": "resistor" },
+        "value": { "Physical": "200kohm ± 1%" }
       },
       "children": {
         "p1": "/Users/lenny/code/stdlib/boards/dev_tusb4020/eval_tusb4020.ato:Usb1v1.buck.r_fbb.p1",
@@ -15730,10 +15872,11 @@
     },
     "/Users/lenny/code/stdlib/boards/dev_tusb4020/eval_tusb4020.ato:Usb1v1.buck.r_fbt": {
       "attributes": {
-        "designator_prefix": "R",
-        "mpn": "generic_resistor",
-        "package": "0402",
-        "type": "resistor"
+        "designator_prefix": { "String": "R" },
+        "mpn": { "String": "generic_resistor" },
+        "package": { "String": "0402" },
+        "type": { "String": "resistor" },
+        "value": { "Physical": "237kohm ± 1%" }
       },
       "children": {
         "p1": "/Users/lenny/code/stdlib/boards/dev_tusb4020/eval_tusb4020.ato:Usb1v1.buck.r_fbt.p1",
@@ -15823,8 +15966,9 @@
     },
     "/Users/lenny/code/stdlib/boards/dev_tusb4020/eval_tusb4020.ato:Usb1v1.switch": {
       "attributes": {
-        "designator_prefix": "J",
-        "footprint": "PinHeader_1x02_P2.54mm_Vertical"
+        "designator_prefix": { "String": "J" },
+        "do_not_populate": { "Boolean": true },
+        "footprint": { "String": "PinHeader_1x02_P2.54mm_Vertical" }
       },
       "children": {
         "P1": "/Users/lenny/code/stdlib/boards/dev_tusb4020/eval_tusb4020.ato:Usb1v1.switch.P1",
@@ -15920,10 +16064,11 @@
     },
     "/Users/lenny/code/stdlib/boards/dev_tusb4020/eval_tusb4020.ato:Usb3v3.c_in": {
       "attributes": {
-        "designator_prefix": "C",
-        "mpn": "generic_capacitor",
-        "package": "0402",
-        "type": "capacitor"
+        "designator_prefix": { "String": "C" },
+        "mpn": { "String": "generic_capacitor" },
+        "package": { "String": "0402" },
+        "type": { "String": "capacitor" },
+        "value": { "Physical": "10uF ± 10%" }
       },
       "children": {
         "p1": "/Users/lenny/code/stdlib/boards/dev_tusb4020/eval_tusb4020.ato:Usb3v3.c_in.p1",
@@ -15989,10 +16134,11 @@
     },
     "/Users/lenny/code/stdlib/boards/dev_tusb4020/eval_tusb4020.ato:Usb3v3.c_out": {
       "attributes": {
-        "designator_prefix": "C",
-        "mpn": "generic_capacitor",
-        "package": "0402",
-        "type": "capacitor"
+        "designator_prefix": { "String": "C" },
+        "mpn": { "String": "generic_capacitor" },
+        "package": { "String": "0402" },
+        "type": { "String": "capacitor" },
+        "value": { "Physical": "1uF ± 10%" }
       },
       "children": {
         "p1": "/Users/lenny/code/stdlib/boards/dev_tusb4020/eval_tusb4020.ato:Usb3v3.c_out.p1",
@@ -16065,11 +16211,13 @@
     },
     "/Users/lenny/code/stdlib/boards/dev_tusb4020/eval_tusb4020.ato:Usb3v3.ldo": {
       "attributes": {
-        "datasheet": "http://www.ti.com/lit/gpn/tlv755p",
-        "description": "LDO Voltage Regulators 500-mA, Low IQ, Small Size, Low Dropout Regulator 5-SOT-23 -40 to 125",
-        "footprint": "SOT95P280X145-5N",
-        "manufacturer": "Texas Instruments",
-        "mpn": "TLV75533PDBVR"
+        "datasheet": { "String": "http://www.ti.com/lit/gpn/tlv755p" },
+        "description": {
+          "String": "LDO Voltage Regulators 500-mA, Low IQ, Small Size, Low Dropout Regulator 5-SOT-23 -40 to 125"
+        },
+        "footprint": { "String": "SOT95P280X145-5N" },
+        "manufacturer": { "String": "Texas Instruments" },
+        "mpn": { "String": "TLV75533PDBVR" }
       },
       "children": {
         "EN": "/Users/lenny/code/stdlib/boards/dev_tusb4020/eval_tusb4020.ato:Usb3v3.ldo.EN",
@@ -16176,8 +16324,9 @@
     },
     "/Users/lenny/code/stdlib/boards/dev_tusb4020/eval_tusb4020.ato:Usb3v3.switch": {
       "attributes": {
-        "designator_prefix": "J",
-        "footprint": "PinHeader_1x02_P2.54mm_Vertical"
+        "designator_prefix": { "String": "J" },
+        "do_not_populate": { "Boolean": true },
+        "footprint": { "String": "PinHeader_1x02_P2.54mm_Vertical" }
       },
       "children": {
         "P1": "/Users/lenny/code/stdlib/boards/dev_tusb4020/eval_tusb4020.ato:Usb3v3.switch.P1",
