@@ -7,6 +7,7 @@ export enum NodeType {
   COMPONENT = "component",
   RESISTOR = "resistor",
   CAPACITOR = "capacitor",
+  INDUCTOR = "inductor",
   NET_REFERENCE = "net_reference",
 }
 
@@ -31,6 +32,7 @@ export interface ElkPort {
   y?: number;
   labels?: ElkLabel[];
   properties?: Record<string, string>;
+  netId?: string;
 }
 
 export interface ElkLabel {
@@ -248,6 +250,40 @@ export class SchematicRenderer {
     };
   }
 
+  _inductorNode(instance_ref: string): ElkNode {
+    return {
+      id: instance_ref,
+      type: NodeType.INDUCTOR,
+      width: 40,
+      height: 60,
+      ports: [
+        {
+          id: `${instance_ref}.p1`,
+          properties: {
+            "port.side": "NORTH",
+            "port.index": "0",
+            "port.anchor": "CENTER",
+            "port.alignment": "CENTER",
+          },
+        },
+        {
+          id: `${instance_ref}.p2`,
+          properties: {
+            "port.side": "SOUTH",
+            "port.index": "0",
+            "port.anchor": "CENTER",
+            "port.alignment": "CENTER",
+          },
+        },
+      ],
+      properties: {
+        "elk.padding": "[top=10, left=10, bottom=10, right=10]",
+        "elk.portConstraints": "FIXED_SIDE",
+        "elk.nodeSize.minimum": "(40, 60)",
+      },
+    };
+  }
+
   _netReferenceNode(ref_id: string, name: string): ElkNode {
     return {
       id: ref_id,
@@ -356,6 +392,8 @@ export class SchematicRenderer {
         return this._resistorNode(instance_ref);
       } else if (instance.attributes.type === "capacitor") {
         return this._capacitorNode(instance_ref);
+      } else if (instance.attributes.type === "inductor") {
+        return this._inductorNode(instance_ref);
       } else {
         return this._moduleOrComponentNode(instance_ref);
       }
@@ -401,6 +439,7 @@ export class SchematicRenderer {
           if (net.has(port.id)) {
             foundConnectionInNode = true;
             portsInGraphToInstanceRef.set(port.id, node.id);
+            port.netId = netName;
           }
         }
 

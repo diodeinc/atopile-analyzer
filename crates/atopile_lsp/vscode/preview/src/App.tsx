@@ -65,7 +65,9 @@ function App() {
       // Browser environment - use demo data
       setIsLoading(false);
       setNetlistData(demoData);
-      setCurrentFile("/Users/lenny/code/sandbox/demo/elec/src/demo.ato");
+      setCurrentFile(
+        "/Users/lenny/code/stdlib/boards/dev_tusb4020/eval_tusb4020.ato"
+      );
     }
   }, []);
 

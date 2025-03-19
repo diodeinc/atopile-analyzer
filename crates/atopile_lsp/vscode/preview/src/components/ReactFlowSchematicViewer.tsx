@@ -370,7 +370,16 @@ const CapacitorNode = ({ data }: { data: any }) => {
   const selectionState = data.selectionState;
   const shouldDim =
     selectionState?.selectedNetId || selectionState?.hoveredNetId;
-  const opacity = shouldDim ? 0.2 : 1;
+  const isConnectedToHighlightedNet =
+    shouldDim &&
+    data.ports?.some((port: any) => {
+      const netId = port.netId;
+      return (
+        netId === selectionState.selectedNetId ||
+        netId === selectionState.hoveredNetId
+      );
+    });
+  const opacity = shouldDim && !isConnectedToHighlightedNet ? 0.2 : 1;
 
   return (
     <div
@@ -527,7 +536,16 @@ const ResistorNode = ({ data }: { data: any }) => {
   const selectionState = data.selectionState;
   const shouldDim =
     selectionState?.selectedNetId || selectionState?.hoveredNetId;
-  const opacity = shouldDim ? 0.2 : 1;
+  const isConnectedToHighlightedNet =
+    shouldDim &&
+    data.ports?.some((port: any) => {
+      const netId = port.netId;
+      return (
+        netId === selectionState.selectedNetId ||
+        netId === selectionState.hoveredNetId
+      );
+    });
+  const opacity = shouldDim && !isConnectedToHighlightedNet ? 0.2 : 1;
 
   // Zigzag parameters for a more professional look
   const numZigzags = 4;
@@ -566,6 +584,7 @@ const ResistorNode = ({ data }: { data: any }) => {
         pointerEvents: "none",
         position: "relative",
         opacity: opacity,
+        transform: "translate(-0.3px, 0px)",
       }}
     >
       {/* Resistor Symbol */}
@@ -680,6 +699,173 @@ const ResistorNode = ({ data }: { data: any }) => {
             type="target"
             position={Position.Bottom}
             id={`${data.ports[1].id}-target`}
+            style={{ ...portHandleStyle, opacity: 0 }}
+          />
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// Define a node specifically for inductors with authentic schematic symbol
+const InductorNode = ({ data }: { data: SchematicNodeData }) => {
+  // Calculate center point for drawing the symbol
+  const centerX = (data.width || 0) / 2;
+
+  // Size of the inductor symbol
+  const inductorHeight = 40;
+  const numArcs = 4;
+  const arcRadius = inductorHeight / (2 * numArcs);
+  const lineLength = ((data.height || 0) - inductorHeight) / 2;
+
+  // Number of arcs
+
+  // Determine if this node should be dimmed based on selection state
+  const selectionState = data.selectionState;
+  const shouldDim =
+    selectionState?.selectedNetId || selectionState?.hoveredNetId;
+  const isConnectedToHighlightedNet =
+    shouldDim &&
+    data.ports?.some((port) => {
+      const netId = port.netId;
+      return (
+        netId === selectionState.selectedNetId ||
+        netId === selectionState.hoveredNetId
+      );
+    });
+  const opacity = shouldDim && !isConnectedToHighlightedNet ? 0.2 : 1;
+
+  return (
+    <div
+      className="react-flow-inductor-node"
+      style={{
+        width: data.width,
+        height: data.height,
+        backgroundColor: "transparent",
+        border: "none",
+        cursor: "default",
+        pointerEvents: "none",
+        position: "relative",
+        opacity: opacity,
+        transform: "translate(-0.2px, 0)",
+      }}
+    >
+      {/* Inductor Symbol */}
+      <div
+        className="inductor-symbol"
+        style={{
+          position: "absolute",
+          width: data.width,
+          height: data.height,
+        }}
+      >
+        {/* Top vertical line connecting to inductor */}
+        <div
+          style={{
+            position: "absolute",
+            top: 0,
+            left: centerX - 0.75,
+            width: "1.5px",
+            height: lineLength,
+            backgroundColor: "var(--vscode-descriptionForeground, #666)",
+          }}
+        />
+
+        {/* Inductor arcs */}
+        <svg
+          style={{
+            position: "absolute",
+            top: lineLength,
+            left: 0,
+            width: data.width,
+            height: inductorHeight,
+          }}
+        >
+          <path
+            d={`M ${centerX} 0 ${Array.from(
+              { length: numArcs },
+              (_, i) =>
+                `A ${arcRadius} ${arcRadius} 0 0 0 ${centerX} ${
+                  (i + 1) * 2 * arcRadius
+                }`
+            ).join(" ")}`}
+            fill="none"
+            stroke="var(--vscode-descriptionForeground, #666)"
+            strokeWidth="1.5"
+          />
+        </svg>
+
+        {/* Bottom vertical line connecting to inductor */}
+        <div
+          style={{
+            position: "absolute",
+            top: lineLength + inductorHeight,
+            left: centerX - 0.75,
+            width: "1.5px",
+            height: lineLength,
+            backgroundColor: "var(--vscode-descriptionForeground, #666)",
+          }}
+        />
+      </div>
+
+      {/* Hidden port connections with no visible dots */}
+      <div className="component-ports">
+        {/* Port 1 - Top */}
+        <div
+          key={data.ports?.[0]?.id}
+          className="component-port"
+          style={{
+            position: "absolute",
+            left: centerX,
+            top: 0,
+            width: 1,
+            height: 1,
+            opacity: 0,
+            zIndex: 10,
+            pointerEvents: "auto",
+          }}
+          data-port-id={data.ports?.[0]?.id}
+        >
+          <Handle
+            type="source"
+            position={Position.Top}
+            id={`${data.ports?.[0]?.id}-source`}
+            style={{ ...portHandleStyle, opacity: 0 }}
+          />
+          <Handle
+            type="target"
+            position={Position.Top}
+            id={`${data.ports?.[0]?.id}-target`}
+            style={{ ...portHandleStyle, opacity: 0 }}
+          />
+        </div>
+
+        {/* Port 2 - Bottom */}
+        <div
+          key={data.ports?.[1]?.id}
+          className="component-port"
+          style={{
+            position: "absolute",
+            left: centerX,
+            top: data.height,
+            width: 1,
+            height: 1,
+            opacity: 0,
+            zIndex: 10,
+            pointerEvents: "auto",
+          }}
+          data-port-id={data.ports?.[1]?.id}
+        >
+          <Handle
+            type="source"
+            position={Position.Bottom}
+            id={`${data.ports?.[1]?.id}-source`}
+            style={{ ...portHandleStyle, opacity: 0 }}
+          />
+          <Handle
+            type="target"
+            position={Position.Bottom}
+            id={`${data.ports?.[1]?.id}-target`}
             style={{ ...portHandleStyle, opacity: 0 }}
           />
         </div>
@@ -900,6 +1086,7 @@ const nodeTypes = {
   component: ModuleNode,
   capacitor: CapacitorNode,
   resistor: ResistorNode,
+  inductor: InductorNode,
   net_reference: NetReferenceNode,
 };
 
