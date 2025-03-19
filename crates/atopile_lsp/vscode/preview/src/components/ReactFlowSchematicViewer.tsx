@@ -105,6 +105,25 @@ function createSchematicEdge(
 
 // Custom CSS to override ReactFlow default hover effects
 const customStyles = `
+  /* Use VSCode theme colors for nodes and edges with fallbacks */
+  .react-flow__node {
+    color: var(--vscode-foreground, #000);
+    border-color: var(--vscode-descriptionForeground, #666);
+  }
+
+  .react-flow__edge {
+    stroke: var(--vscode-descriptionForeground, #666);
+  }
+
+  .react-flow__edge-path {
+    stroke: var(--vscode-descriptionForeground, #666) !important;
+  }
+
+  /* Style the graph background */
+  .react-flow {
+    background-color: var(--vscode-editor-background, #fff);
+  }
+
   /* Disable hover effects for component nodes */
   .react-flow__node-componentNode {
     pointer-events: none !important;
@@ -116,8 +135,8 @@ const customStyles = `
   
   /* Prevent hover color change for component nodes */
   .react-flow__node-componentNode:hover {
-    background-color: #f5f5f5 !important;
-    border-color: #ddd !important;
+    background-color: var(--vscode-editor-background, #f5f5f5) !important;
+    border-color: var(--vscode-descriptionForeground, #666) !important;
     box-shadow: none !important;
     cursor: default !important;
   }
@@ -126,17 +145,49 @@ const customStyles = `
   .react-flow__node-moduleNode {
     cursor: pointer;
   }
+
+  /* Module node hover state */
+  .react-flow__node-moduleNode:hover {
+    border-color: var(--vscode-focusBorder, #0066cc) !important;
+    box-shadow: 0 0 0 2px var(--vscode-focusBorder, #0066cc) !important;
+  }
   
   /* Make sure the port connection points remain interactive */
   .react-flow__handle {
     pointer-events: all !important;
   }
+
+  /* Style the minimap */
+  .react-flow__minimap {
+    background-color: var(--vscode-editor-background, #fff);
+  }
+
+  /* Style the controls */
+  .react-flow__controls {
+    background-color: var(--vscode-editor-background, #fff);
+    border-color: var(--vscode-descriptionForeground, #666);
+  }
+
+  .react-flow__controls button {
+    background-color: var(--vscode-button-background, #0066cc);
+    color: var(--vscode-button-foreground, #fff);
+    border-color: var(--vscode-button-border, transparent);
+  }
+
+  .react-flow__controls button:hover {
+    background-color: var(--vscode-button-hoverBackground, #0052a3);
+  }
+
+  /* Style port labels */
+  .port-label {
+    color: var(--vscode-descriptionForeground, #666);
+  }
 `;
 
 // Common style for all handles - subtle dots on component borders
 const portHandleStyle = {
-  background: "#000",
-  border: "1px solid #000",
+  background: "var(--vscode-descriptionForeground, #666)",
+  border: `1px solid var(--vscode-descriptionForeground, #666)`,
   borderRadius: "50%",
   width: "4px",
   height: "4px",
@@ -155,8 +206,8 @@ const ModuleNode = ({ data }: { data: SchematicNodeData }) => {
       style={{
         width: data.width,
         height: data.height,
-        backgroundColor: isModule ? "#ffffff" : "#f5f5f5",
-        border: "1px solid #ddd",
+        backgroundColor: "var(--vscode-editor-background, #fff)",
+        border: "1px solid var(--vscode-descriptionForeground, #666)",
         opacity: 0.9,
         cursor: isModule ? "pointer" : "default",
         pointerEvents: isModule ? "auto" : "none", // Only enable pointer events for modules
@@ -172,6 +223,7 @@ const ModuleNode = ({ data }: { data: SchematicNodeData }) => {
           padding: "4px",
           fontSize: "12px",
           fontWeight: "bold",
+          color: "var(--vscode-foreground, #000)",
         }}
       >
         {data.labels?.[0]?.text}
@@ -352,7 +404,7 @@ const CapacitorNode = ({ data }: { data: any }) => {
             left: centerX,
             width: "1.5px",
             height: lineLength,
-            backgroundColor: "black",
+            backgroundColor: "var(--vscode-descriptionForeground, #666)",
           }}
         />
 
@@ -364,7 +416,7 @@ const CapacitorNode = ({ data }: { data: any }) => {
             left: centerX - symbolSize / 2,
             width: symbolSize,
             height: "2px",
-            backgroundColor: "black",
+            backgroundColor: "var(--vscode-descriptionForeground, #666)",
           }}
         />
 
@@ -376,7 +428,7 @@ const CapacitorNode = ({ data }: { data: any }) => {
             left: centerX - symbolSize / 2,
             width: symbolSize,
             height: "2px",
-            backgroundColor: "black",
+            backgroundColor: "var(--vscode-descriptionForeground, #666)",
           }}
         />
 
@@ -388,7 +440,7 @@ const CapacitorNode = ({ data }: { data: any }) => {
             left: centerX,
             width: "1.5px",
             height: lineLength,
-            backgroundColor: "black",
+            backgroundColor: "var(--vscode-descriptionForeground, #666)",
           }}
         />
       </div>
@@ -533,7 +585,7 @@ const ResistorNode = ({ data }: { data: any }) => {
             left: centerX - 0.75,
             width: "1.5px",
             height: lineLength,
-            backgroundColor: "black",
+            backgroundColor: "var(--vscode-descriptionForeground, #666)",
           }}
         />
 
@@ -550,7 +602,7 @@ const ResistorNode = ({ data }: { data: any }) => {
           <polyline
             points={zigzagPoints}
             fill="none"
-            stroke="black"
+            stroke="var(--vscode-descriptionForeground, #666)"
             strokeWidth="1.5"
             strokeLinejoin="round"
             strokeLinecap="round"
@@ -565,7 +617,7 @@ const ResistorNode = ({ data }: { data: any }) => {
             left: centerX - 0.75,
             width: "1.5px",
             height: lineLength,
-            backgroundColor: "black",
+            backgroundColor: "var(--vscode-descriptionForeground, #666)",
           }}
         />
       </div>
@@ -693,7 +745,7 @@ const NetReferenceNode = ({ data }: { data: any }) => {
             cx={centerX}
             cy={centerY}
             r={circleRadius}
-            stroke="black"
+            stroke="var(--vscode-descriptionForeground, #666)"
             strokeWidth="1.5"
             fill="transparent"
           />
@@ -745,6 +797,7 @@ const NetReferenceNode = ({ data }: { data: any }) => {
             textAlign: "center",
             fontSize: "10px",
             fontWeight: "bold",
+            color: "var(--vscode-descriptionForeground, #666)",
           }}
         >
           {data.labels[0].text}
@@ -797,8 +850,8 @@ const ElectricalEdge = ({
         id={id}
         style={{
           strokeWidth: 1.5,
-          stroke: "#000",
-          pointerEvents: "none", // Disable pointer events on the visible path
+          stroke: "var(--vscode-descriptionForeground, #666)",
+          pointerEvents: "none",
           ...style,
           opacity: opacity,
         }}
@@ -823,7 +876,7 @@ const ElectricalEdge = ({
               cx={point.x}
               cy={point.y}
               r={3.5}
-              fill={style.stroke || "#000"}
+              fill={style.stroke || "var(--vscode-descriptionForeground, #666)"}
               style={{
                 ...style,
                 opacity: opacity,
@@ -982,13 +1035,33 @@ const Visualizer = ({
       <style>{customStyles}</style>
 
       {layoutError && (
-        <div className="error-message">
+        <div
+          className="error-message"
+          style={{
+            color: "var(--vscode-errorForeground, #f44336)",
+            backgroundColor:
+              "var(--vscode-inputValidation-errorBackground, #fde7e9)",
+            border:
+              "1px solid var(--vscode-inputValidation-errorBorder, #f44336)",
+            padding: "10px",
+            margin: "10px",
+            borderRadius: "4px",
+          }}
+        >
           <h3>Layout Error</h3>
           <p>{layoutError}</p>
         </div>
       )}
 
-      <div className="react-flow-schematic-viewer">
+      <div
+        className="react-flow-schematic-viewer"
+        style={{
+          backgroundColor: "var(--vscode-editor-background, #fff)",
+          color: "var(--vscode-foreground, #000)",
+          height: "100%",
+          width: "100%",
+        }}
+      >
         <ReactFlow
           proOptions={{ hideAttribution: true }}
           nodes={nodes}
@@ -1000,7 +1073,6 @@ const Visualizer = ({
           fitView
           onNodeClick={handleNodeClick}
           onEdgeMouseEnter={(_event, edge) => {
-            console.log("Edge mouse entered: ", edge);
             if (
               edge.data?.netId &&
               edge.data?.netId !== selectionState.selectedNetId &&
@@ -1010,13 +1082,18 @@ const Visualizer = ({
             }
           }}
           onEdgeMouseLeave={() => {
-            console.log("Edge mouse left");
             debouncedSetHoveredNet(null);
           }}
           defaultEdgeOptions={{
             type: "electrical",
-            style: { stroke: "#000", strokeWidth: 1.5 },
+            style: {
+              stroke: "var(--vscode-descriptionForeground, #666)",
+              strokeWidth: 1.5,
+            },
             interactionWidth: 10,
+          }}
+          style={{
+            backgroundColor: "var(--vscode-editor-background, #fff)",
           }}
           nodesDraggable={false}
           nodesConnectable={false}

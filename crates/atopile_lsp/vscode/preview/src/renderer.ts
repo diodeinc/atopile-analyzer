@@ -219,7 +219,7 @@ export class SchematicRenderer {
       id: instance_ref,
       type: NodeType.CAPACITOR,
       width: 40,
-      height: 80,
+      height: 40,
       ports: [
         {
           id: `${instance_ref}.p1`,
@@ -243,7 +243,7 @@ export class SchematicRenderer {
       properties: {
         "elk.padding": "[top=10, left=10, bottom=10, right=10]",
         "elk.portConstraints": "FIXED_SIDE",
-        "elk.nodeSize.minimum": "(40, 80)",
+        "elk.nodeSize.minimum": "(40, 40)",
       },
     };
   }
