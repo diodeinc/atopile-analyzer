@@ -5,7 +5,7 @@ mod unused_interface;
 
 use std::{
     cell::RefCell,
-    collections::HashMap,
+    collections::{HashMap, HashSet},
     fmt::Debug,
     ops::Deref,
     path::{Path, PathBuf},
@@ -13,13 +13,18 @@ use std::{
 };
 
 use anyhow::{Context, Result};
-use atopile_parser::{parser::*, AtopileError, AtopileSource, Position, Span, Spanned};
+use atopile_parser::{
+    parser::{BlockKind, BlockStmt, Connectable, Expr, PortRef, Stmt, Symbol},
+    AtopileError, AtopileSource, Position, Span, Spanned,
+};
 use evaluator::{resolve_import_path, Evaluator};
-use log::{debug, warn};
+use log::{debug, info, warn};
 use module::{Connection, Instantiation, Interface, Module, ModuleKind};
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
 
 use diagnostics::*;
+
+pub use crate::evaluator::EvaluatorState;
 
 #[derive(Debug, Clone, Serialize)]
 pub struct Location {
@@ -321,12 +326,16 @@ pub struct AtopileAnalyzer {
 
 impl AtopileAnalyzer {
     pub fn new() -> Self {
-        let cache = FileCache::new();
         Self {
-            files: cache,
+            files: FileCache::new(),
             evaluator: Evaluator::new(),
             open_files: std::collections::HashSet::new(),
         }
+    }
+
+    /// Get the source for a file from the cache, if it exists.
+    pub fn get_source_from_cache(&self, path: &Path) -> Option<AtopileSource> {
+        self.files.get(path).map(|(source, _)| source)
     }
 
     fn analyze_source(&self, source: AtopileSource) -> Result<AnalyzerSource> {
@@ -580,16 +589,17 @@ impl AtopileAnalyzer {
         let source = self.load_source(path)?;
 
         let index = source.file.position_to_index(position);
-        // let stmt = source.file.stmt_at(index).map(|s| s.deref());
-        // let port_ref = source.port_ref_at(index).map(|p| p.deref());
         let symbol = source.symbol_name_at(index);
         let file_path = source.file_path_at(index);
 
         if let Some(symbol) = symbol {
+            info!("goto definition for symbol: {:?}", symbol);
             self.handle_goto_definition_for_symbol(&source.file, symbol)
         } else if let Some(file_path) = file_path {
+            info!("goto definition for path: {:?}", file_path);
             self.handle_goto_definition_path(&source.file, path, file_path)
         } else {
+            info!("no goto definition found");
             Ok(None)
         }
     }
@@ -729,6 +739,11 @@ impl AtopileAnalyzer {
                 _ => unreachable!(),
             },
         })
+    }
+
+    pub fn get_netlist(&mut self, source: &AtopileSource) -> Result<EvaluatorState> {
+        self.evaluator.reset();
+        Ok(self.evaluator.evaluate(source))
     }
 }
 

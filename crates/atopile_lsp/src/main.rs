@@ -1,15 +1,32 @@
 use std::time::Instant;
 
+use anyhow::Context;
 use atopile_analyzer::diagnostics::{
     AnalyzerDiagnostic, AnalyzerDiagnosticKind, AnalyzerDiagnosticSeverity,
 };
 use atopile_analyzer::AtopileAnalyzer;
 use atopile_parser::AtopileSource;
 use log::{info, Level, LevelFilter, Log, Metadata, Record};
+use serde::{Deserialize, Serialize};
+use serde_json::Value;
 use tokio::sync::Mutex;
 use tower_lsp::jsonrpc::Result;
+use tower_lsp::lsp_types::notification::Notification;
 use tower_lsp::lsp_types::*;
 use tower_lsp::{Client, LanguageServer, LspService, Server};
+
+const NETLIST_UPDATED_METHOD: &str = "atopile/netlistUpdated";
+
+#[derive(Serialize, Deserialize)]
+struct NetlistUpdatedNotification {
+    uri: String,
+    netlist: Value,
+}
+
+impl Notification for NetlistUpdatedNotification {
+    const METHOD: &'static str = NETLIST_UPDATED_METHOD;
+    type Params = NetlistUpdatedNotification;
+}
 
 struct Backend {
     client: Client,
@@ -22,7 +39,6 @@ struct LspLogger {
 
 impl Log for LspLogger {
     fn enabled(&self, _metadata: &Metadata) -> bool {
-        // metadata.level() <= Level::Warn
         true
     }
 
@@ -134,7 +150,7 @@ impl Backend {
             .expect("Failed to convert URI to file path");
 
         let parsing_start = Instant::now();
-        let (source, _) = AtopileSource::new(text.to_string(), path.clone());
+        let source = AtopileSource::new(text.to_string(), path.clone()).0;
 
         info!(
             "[profile] parsing source took {}ms",
@@ -143,11 +159,7 @@ impl Backend {
 
         let analyzer_start = Instant::now();
         let mut analyzer = self.analyzer.lock().await;
-        match analyzer.set_source(
-            &uri.to_file_path()
-                .expect("Failed to convert URI to file path"),
-            source,
-        ) {
+        match analyzer.set_source(&path, source.clone()) {
             Ok(_) => (),
             Err(e) => {
                 self.client
@@ -159,6 +171,20 @@ impl Backend {
             "[profile] set_source took {}ms",
             analyzer_start.elapsed().as_millis()
         );
+
+        // Generate and push the netlist
+        let netlist = analyzer
+            .get_netlist(&source)
+            .context("Failed to evaluate netlist")?;
+
+        let netlist_json = serde_json::to_value(netlist).context("Failed to serialize netlist")?;
+
+        self.client
+            .send_notification::<NetlistUpdatedNotification>(NetlistUpdatedNotification {
+                uri: path.to_string_lossy().to_string(),
+                netlist: netlist_json,
+            })
+            .await;
 
         let diagnostics_start = Instant::now();
         let diagnostics_result = analyzer.diagnostics_for_all_open_files();
@@ -207,6 +233,40 @@ impl Backend {
             update_start.elapsed().as_millis()
         );
         Ok(())
+    }
+
+    async fn get_netlist(&self, params: Value) -> Result<Value> {
+        let uri_str = params.get("uri").and_then(|v| v.as_str()).ok_or_else(|| {
+            tower_lsp::jsonrpc::Error::invalid_params("Expected URI string parameter")
+        })?;
+
+        let uri = Url::parse(uri_str).map_err(|e| {
+            tower_lsp::jsonrpc::Error::invalid_params(format!("Invalid URI: {}", e))
+        })?;
+
+        let path = uri
+            .to_file_path()
+            .map_err(|_| tower_lsp::jsonrpc::Error::invalid_params("Invalid file path"))?;
+
+        let mut analyzer = self.analyzer.lock().await;
+
+        // Get the source from the analyzer's state
+        let source = analyzer.get_source_from_cache(&path).ok_or_else(|| {
+            tower_lsp::jsonrpc::Error::invalid_params(
+                "File not found in analyzer state. Make sure the file is open in the editor.",
+            )
+        })?;
+
+        let netlist = analyzer
+            .get_netlist(&source)
+            .map_err(|_| tower_lsp::jsonrpc::Error::internal_error())?;
+
+        let netlist_json = serde_json::to_value(netlist)
+            .map_err(|_| tower_lsp::jsonrpc::Error::internal_error())?;
+
+        info!("netlist: {}", netlist_json.to_string());
+
+        Ok(netlist_json)
     }
 }
 
@@ -369,6 +429,9 @@ async fn main() {
     let stdin = tokio::io::stdin();
     let stdout = tokio::io::stdout();
 
-    let (service, socket) = LspService::new(Backend::new);
+    let (service, socket) = LspService::build(Backend::new)
+        .custom_method("atopile/getNetlist", Backend::get_netlist)
+        .finish();
+
     Server::new(stdin, stdout, socket).serve(service).await;
 }

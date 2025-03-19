@@ -7,7 +7,6 @@ use std::{
 
 #[cfg(test)]
 use insta::assert_debug_snapshot;
-use log::info;
 use serde::Serialize;
 
 pub mod lexer;
@@ -100,7 +99,6 @@ impl AtopileSource {
         let mut errors: Vec<AtopileError> = Vec::new();
 
         let (tokens, lexer_errors) = lexer::lex(&raw);
-        info!("tokens: {:?}", tokens);
         errors.extend(
             lexer_errors
                 .into_iter()
@@ -108,7 +106,6 @@ impl AtopileSource {
         );
 
         let (mut ast, parser_errors) = parser::parse(&tokens);
-        info!("ast: {:?}", ast);
         errors.extend(
             parser_errors
                 .into_iter()

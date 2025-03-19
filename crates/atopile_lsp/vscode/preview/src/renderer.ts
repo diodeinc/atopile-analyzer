@@ -10,40 +10,17 @@ export enum NodeType {
   NET_REFERENCE = "net_reference",
 }
 
-export class ElkNode {
+export interface ElkNode {
   id: string;
   width?: number;
   height?: number;
-  x: number;
-  y: number;
+  x?: number;
+  y?: number;
   ports?: ElkPort[];
   labels?: ElkLabel[];
   properties?: Record<string, string>;
   type: NodeType;
-
-  constructor(
-    id: string,
-    type: NodeType,
-    options: {
-      width?: number;
-      height?: number;
-      x?: number;
-      y?: number;
-      ports?: ElkPort[];
-      labels?: ElkLabel[];
-      properties?: Record<string, string>;
-    } = {}
-  ) {
-    this.id = id;
-    this.type = type;
-    this.width = options.width;
-    this.height = options.height;
-    this.x = options.x || 0;
-    this.y = options.y || 0;
-    this.ports = options.ports;
-    this.labels = options.labels;
-    this.properties = options.properties;
-  }
+  netId?: string; // Only used for net reference nodes
 }
 
 export interface ElkPort {
@@ -64,6 +41,7 @@ export interface ElkLabel {
 
 export interface ElkEdge {
   id: string;
+  netId: string;
   sources: string[];
   targets: string[];
   sourceComponentRef: string;
@@ -93,7 +71,6 @@ export class SchematicRenderer {
     this.netlist = netlist;
     this.elk = new ELK({
       workerFactory: function (url) {
-        // the value of 'url' is irrelevant here
         const { Worker } = require("elkjs/lib/elk-worker.js"); // non-minified
         return new Worker(url);
       },
@@ -161,9 +138,7 @@ export class SchematicRenderer {
     const uf = new UnionFind();
 
     // Traverse all instances in the netlist
-    for (const [_instanceRef, instance] of Object.entries(
-      this.netlist.instances
-    )) {
+    for (const instance of Object.values(this.netlist.instances)) {
       // Process all connections in each instance
       for (const connection of instance.connections) {
         const left = connection.left;
@@ -206,7 +181,9 @@ export class SchematicRenderer {
   }
 
   _resistorNode(instance_ref: string): ElkNode {
-    return new ElkNode(instance_ref, NodeType.RESISTOR, {
+    return {
+      id: instance_ref,
+      type: NodeType.RESISTOR,
       width: 40,
       height: 100,
       ports: [
@@ -234,11 +211,13 @@ export class SchematicRenderer {
         "elk.portConstraints": "FIXED_SIDE",
         "elk.nodeSize.minimum": "(40, 100)",
       },
-    });
+    };
   }
 
   _capacitorNode(instance_ref: string): ElkNode {
-    return new ElkNode(instance_ref, NodeType.CAPACITOR, {
+    return {
+      id: instance_ref,
+      type: NodeType.CAPACITOR,
       width: 40,
       height: 80,
       ports: [
@@ -266,13 +245,16 @@ export class SchematicRenderer {
         "elk.portConstraints": "FIXED_SIDE",
         "elk.nodeSize.minimum": "(40, 80)",
       },
-    });
+    };
   }
 
   _netReferenceNode(ref_id: string, name: string): ElkNode {
-    return new ElkNode(ref_id, NodeType.NET_REFERENCE, {
+    return {
+      id: ref_id,
+      type: NodeType.NET_REFERENCE,
       width: 15,
       height: 15,
+      netId: name,
       labels: [{ text: name }],
       ports: [
         {
@@ -286,12 +268,12 @@ export class SchematicRenderer {
         },
       ],
       properties: {
-        "elk.padding": "[top=5, left=5, bottom=5, right=5]",
+        "elk.padding": "[top=30, left=30, bottom=30, right=30]",
         "elk.portConstraints": "FIXED_POS",
         "elk.nodeSize.constraints": "MINIMUM_SIZE",
         "elk.nodeSize.minimum": "(15, 15)",
       },
-    });
+    };
   }
 
   _moduleOrComponentNode(instance_ref: string): ElkNode {
@@ -300,7 +282,9 @@ export class SchematicRenderer {
       throw new Error(`Instance ${instance_ref} not found`);
     }
 
-    let node = new ElkNode(instance_ref, NodeType.MODULE, {
+    let node: ElkNode = {
+      id: instance_ref,
+      type: NodeType.MODULE,
       width: 256,
       height: 128,
       ports: [],
@@ -308,7 +292,7 @@ export class SchematicRenderer {
         "elk.padding": "[top=20, left=20, bottom=20, right=20]",
       },
       labels: [{ text: instance_ref.split(".").pop() || "" }],
-    });
+    };
 
     // Add a port on this node for (a) every child of type Port, and (b) every Port of an Interface.
     for (let [child_name, child_ref] of Object.entries(instance.children)) {
@@ -336,7 +320,7 @@ export class SchematicRenderer {
       node.type = NodeType.COMPONENT;
       node.properties = {
         ...node.properties,
-        "elk.portConstraints": "FIXED_SIDE",
+        "elk.portConstraints": "FIXED_ORDER",
       };
 
       node.ports?.sort((a, b) => {
@@ -344,10 +328,16 @@ export class SchematicRenderer {
       });
 
       node.ports?.forEach((port, index) => {
+        const totalPorts = node.ports?.length || 0;
+        const halfLength = Math.floor(totalPorts / 2);
+        const isFirstHalf = index < halfLength;
+
         port.properties = {
           ...port.properties,
-          "port.side": index % 2 === 0 ? "WEST" : "EAST",
-          "port.index": `${Math.floor(index / 2)}`, // Stack in order
+          "port.side": isFirstHalf ? "WEST" : "EAST",
+          "port.index": isFirstHalf
+            ? `${halfLength - 1 - (index % halfLength)}`
+            : `${index % halfLength}`,
         };
       });
     }
@@ -362,9 +352,9 @@ export class SchematicRenderer {
     }
 
     if ([InstanceKind.MODULE, InstanceKind.COMPONENT].includes(instance.kind)) {
-      if (instance.module.module_name.includes("Resistor")) {
+      if (instance.attributes.type === "resistor") {
         return this._resistorNode(instance_ref);
-      } else if (instance.module.module_name.includes("Capacitor")) {
+      } else if (instance.attributes.type === "capacitor") {
         return this._capacitorNode(instance_ref);
       } else {
         return this._moduleOrComponentNode(instance_ref);
@@ -392,6 +382,15 @@ export class SchematicRenderer {
       // Set of ports in this graph that are in this net
       const portsInGraphToInstanceRef = new Map<string, string>();
 
+      // Check for connections outside the graph
+      const outsideConnections = new Set<string>();
+      for (const portRef of Array.from(net)) {
+        const isInGraph = portRef.startsWith(graph.id + ".");
+        if (!isInGraph) {
+          outsideConnections.add(portRef);
+        }
+      }
+
       // For each node in the graph
       for (const node of graph.children) {
         let foundConnectionInNode = false;
@@ -406,7 +405,11 @@ export class SchematicRenderer {
         }
 
         // If this is a MODULE, check for internal connections that need new ports
-        if (node.type === NodeType.MODULE && !foundConnectionInNode) {
+        if (
+          node.type === NodeType.MODULE &&
+          !foundConnectionInNode &&
+          outsideConnections.size >= 1
+        ) {
           let matchingInternalPorts = [];
           for (const portRef of Array.from(net)) {
             // Check if this port reference belongs inside this node
@@ -428,15 +431,6 @@ export class SchematicRenderer {
               ],
             });
           }
-        }
-      }
-
-      // Check for connections outside the graph
-      const outsideConnections = new Set<string>();
-      for (const portRef of Array.from(net)) {
-        const isInGraph = portRef.startsWith(graph.id + ".");
-        if (!isInGraph) {
-          outsideConnections.add(portRef);
         }
       }
 
@@ -462,15 +456,19 @@ export class SchematicRenderer {
           targets: [netRefId],
           sourceComponentRef: sourceComponentRef,
           targetComponentRef: netRefId,
+          netId: netName,
         });
       }
 
       // Create edges to connect everything in portsInGraph
       const portsList = Array.from(portsInGraphToInstanceRef.entries());
+      portsList.sort((a, b) => {
+        return a[0].localeCompare(b[0]);
+      });
 
       for (let i = 0; i < portsList.length - 1; i++) {
         const [sourcePort, sourceInstanceRef] = portsList[i];
-        const [targetPort, targetInstanceRef] = portsList[portsList.length - 1];
+        const [targetPort, targetInstanceRef] = portsList[i + 1];
 
         graph.edges.push({
           id: `${sourcePort}-${targetPort}`,
@@ -478,6 +476,7 @@ export class SchematicRenderer {
           targets: [targetPort],
           sourceComponentRef: sourceInstanceRef,
           targetComponentRef: targetInstanceRef,
+          netId: netName,
         });
       }
     }
@@ -518,39 +517,6 @@ export class SchematicRenderer {
     };
 
     return this._addConnectivity(graph);
-
-    // const portIdsToInstanceRef = new Map(
-    //   nodes.flatMap(
-    //     (node) => node.ports?.map((port) => [port.id, node.id]) || []
-    //   )
-    // );
-
-    // const edges: ElkEdge[] = Array.from(
-    //   Array.from(this.nets.values()).flatMap((net) => {
-    //     const ports = Array.from(net).filter((port) =>
-    //       portIdsToInstanceRef.has(port)
-    //     );
-
-    //     // Create pairwise connections: (0,1), (1,2), etc. instead of all-to-last
-    //     const connections = [];
-    //     for (let i = 0; i < ports.length - 1; i++) {
-    //       connections.push({
-    //         id: `${ports[i]}-${ports[i + 1]}`,
-    //         sources: [ports[i]],
-    //         targets: [ports[i + 1]],
-    //         sourceComponentRef: portIdsToInstanceRef.get(ports[i]) || "",
-    //         targetComponentRef: portIdsToInstanceRef.get(ports[i + 1]) || "",
-    //       });
-    //     }
-    //     return connections;
-    //   })
-    // );
-
-    // return {
-    //   id: instance_ref,
-    //   children: nodes,
-    //   edges: edges,
-    // };
   }
 
   roots(): string[] {
@@ -569,7 +535,6 @@ export class SchematicRenderer {
       // Right-to-left layout for electrical schematics
       "elk.direction": "RIGHT",
       // Spacing between nodes
-      // "elk.spacing.nodeNode": "70", // Increased spacing
       // Spacing between layers
       // "elk.layered.spacing.nodeNodeBetweenLayers": "100", // Increased for more space between layers
       // Route edges orthogonally (right angles) - CRITICAL for electrical schematics
@@ -585,7 +550,7 @@ export class SchematicRenderer {
       "elk.layered.nodePlacement.strategy": "LONGEST_PATH",
       "elk.layered.crossingMinimization.forceNodeModelOrder": "false",
       // "elk.spacing.componentComponent": "50",
-      // "elk.layered.spacing.edgeNodeBetweenLayers": "30",
+      "elk.layered.spacing.edgeNodeBetweenLayers": "30",
       // Default node padding - important for port placement
       // "elk.padding": "[top=30, left=30, bottom=30, right=30]",
       // Port constraints for better electrical layout
@@ -600,9 +565,9 @@ export class SchematicRenderer {
       // "elk.edges.sourcePoint": "FREE",
       // "elk.edges.targetPoint": "FREE",
       // Separate edges more clearly
-      // "elk.spacing.edgeEdge": "25",
+      "elk.spacing.edgeEdge": "25",
       // Separate edges and nodes more clearly
-      // "elk.spacing.edgeNode": "30",
+      "elk.spacing.edgeNode": "30",
       // Aspect ratio settings - wider to accommodate ports better
       // "elk.aspectRatio": "1.6",
       "elk.nodeSize.constraints": "NODE_LABELS PORTS PORT_LABELS MINIMUM_SIZE",

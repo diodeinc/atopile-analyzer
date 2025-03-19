@@ -1,6 +1,5 @@
 use std::{
     collections::HashMap,
-    fs::File,
     ops::Deref,
     path::{Path, PathBuf},
     time::Instant,
@@ -10,7 +9,7 @@ use atopile_parser::{
     parser::{BlockKind, BlockStmt, Connectable, Expr, Stmt, Symbol},
     AtopileSource, Spanned,
 };
-use log::info;
+use log::debug;
 use serde::{Deserialize, Serialize};
 use thiserror::Error;
 
@@ -20,7 +19,7 @@ use crate::{
 };
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
-pub(crate) struct EvaluatorState {
+pub struct EvaluatorState {
     instances: HashMap<InstanceRef, Instance>,
 }
 
@@ -72,7 +71,7 @@ impl std::fmt::Display for ModuleRef {
 #[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
 #[serde(into = "String")]
 pub(crate) struct InstanceRef {
-    /// The root module that this instance belongs to.
+    /// The root module that this instance belongs to.
     module: ModuleRef,
     /// A path to this instance from the root module; if empty, this is the root module itself.
     instance_path: Vec<Symbol>,
@@ -88,6 +87,10 @@ impl InstanceRef {
 
     fn pop(&mut self) -> Option<Symbol> {
         self.instance_path.pop()
+    }
+
+    fn len(&self) -> usize {
+        self.instance_path.len()
     }
 }
 
@@ -194,6 +197,7 @@ pub struct EvaluatorError {
 
 impl EvaluatorError {
     fn new(kind: EvaluatorErrorKind, location: &Location) -> Self {
+        debug!("Creating EvaluatorError: {:?} @ {:?}", kind, location);
         Self {
             kind,
             location: location.clone(),
@@ -202,14 +206,14 @@ impl EvaluatorError {
     }
 
     fn internal<T: AsLocation>(location: &T, message: String) -> Self {
-        Self {
-            kind: EvaluatorErrorKind::Internal,
-            location: location.as_location().clone(),
-            message: Some(message),
-        }
+        Self::new(EvaluatorErrorKind::Internal, &location.as_location()).with_message(message)
     }
 
     fn with_message(mut self, message: String) -> Self {
+        debug!(
+            "Adding message to EvaluatorError: {:?} @ {:?} = {}",
+            self.kind, self.location, message
+        );
         self.message = Some(message);
         self
     }
@@ -373,6 +377,7 @@ pub(crate) fn resolve_import_path(ctx_path: &Path, import_path: &Path) -> Option
 
 impl Evaluator {
     pub(crate) fn new() -> Self {
+        debug!("Creating new Evaluator instance");
         Self {
             state: EvaluatorState::new(),
             reporter: AnalyzerReporter::new(),
@@ -389,6 +394,7 @@ impl Evaluator {
     }
 
     fn resolve_instance(&self, instance_ref: &InstanceRef) -> Option<&Instance> {
+        debug!("Resolving instance: {}", instance_ref);
         self.state.instances.get(instance_ref)
     }
 
@@ -397,6 +403,10 @@ impl Evaluator {
     }
 
     fn add_instance(&mut self, instance_ref: &InstanceRef, instance: Instance) {
+        debug!(
+            "Adding instance: {} of kind {:?}",
+            instance_ref, instance.kind
+        );
         self.state.instances.insert(instance_ref.clone(), instance);
     }
 
@@ -409,11 +419,14 @@ impl Evaluator {
         from_ref: &InstanceRef,
         to_ref: &InstanceRef,
     ) -> anyhow::Result<()> {
+        debug!("Cloning instance from {} to {}", from_ref, to_ref);
         let (mut to_instance, children, connections) = {
-            let from_instance = self.resolve_instance(from_ref).ok_or(anyhow::anyhow!(
-                "Tried to clone instance `{}` but it doesn't exist",
-                from_ref
-            ))?;
+            let from_instance = self.resolve_instance(from_ref).ok_or_else(|| {
+                anyhow::anyhow!(
+                    "Tried to clone instance `{}` but it doesn't exist",
+                    from_ref
+                )
+            })?;
 
             let mut to_instance = Instance::new(&from_instance.module, from_instance.kind);
 
@@ -491,19 +504,24 @@ impl Evaluator {
         target: &Located<InstanceRef>,
         assignment: &Located<Stmt>,
     ) -> EvaluatorResult<()> {
-        let left_instance = self
-            .resolve_instance(source)
-            .ok_or(EvaluatorError::internal(
+        debug!(
+            "Connecting instances: {} -> {}",
+            source.deref(),
+            target.deref()
+        );
+        let left_instance = self.resolve_instance(source).ok_or_else(|| {
+            EvaluatorError::internal(
                 source,
                 "Cannot connect to non-existent instance".to_string(),
-            ))?;
+            )
+        })?;
 
-        let right_instance = self
-            .resolve_instance(target)
-            .ok_or(EvaluatorError::internal(
+        let right_instance = self.resolve_instance(target).ok_or_else(|| {
+            EvaluatorError::internal(
                 target,
                 "Cannot connect to non-existent instance".to_string(),
-            ))?;
+            )
+        })?;
 
         let connections = match (left_instance.kind, right_instance.kind) {
             (InstanceKind::Port, InstanceKind::Port) => {
@@ -550,7 +568,6 @@ impl Evaluator {
         };
 
         for connection in connections {
-            info!("handling connection: {:?}", connection);
             let left_path = &connection.left.instance_path;
             let right_path = &connection.right.instance_path;
 
@@ -572,13 +589,7 @@ impl Evaluator {
                 .take_while(|(a, b)| a == b)
                 .count();
 
-            info!(
-                "common prefix len({:?}, {:?}): {}",
-                left_path, right_path, common_prefix_len
-            );
-
             if common_prefix_len == 0 {
-                info!("no common ancestor, adding to default instance");
                 instance.connections.push(connection);
             } else {
                 // Create a reference to the common ancestor
@@ -586,13 +597,13 @@ impl Evaluator {
                 let common_ancestor_ref =
                     InstanceRef::new(&source.module, common_ancestor_path.clone());
 
-                info!("adding to common ancestor: {}", common_ancestor_ref);
-
                 self.resolve_instance_mut(&common_ancestor_ref)
-                    .ok_or(EvaluatorError::internal(
-                        assignment,
-                        "Cannot connect to non-existent instance".to_string(),
-                    ))?
+                    .ok_or_else(|| {
+                        EvaluatorError::internal(
+                            assignment,
+                            "Cannot connect to non-existent instance".to_string(),
+                        )
+                    })?
                     .connections
                     .push(connection);
             }
@@ -609,6 +620,12 @@ impl Evaluator {
         import_path: &Spanned<String>,
         import_symbols: &Vec<Spanned<Symbol>>,
     ) -> EvaluatorResult<()> {
+        debug!(
+            "Evaluating import: {} with {} symbols",
+            import_path.deref(),
+            import_symbols.len()
+        );
+        debug!("Import stack depth: {}", import_stack.len());
         // Fast path: check if we already evaluated this module.
         let mut load_file = false;
         for symbol in import_symbols {
@@ -686,9 +703,14 @@ impl Evaluator {
         module_ref: &ModuleRef,
         stmt: &Spanned<Stmt>,
     ) -> EvaluatorResult<()> {
+        debug!("Evaluating block statement in module: {}", module_ref);
         match stmt.deref() {
             // x.y.z = ...
             Stmt::Assign(assign) => {
+                debug!(
+                    "Processing assignment statement to target: {:?}",
+                    assign.target.deref()
+                );
                 let mut target_ref = InstanceRef::new(
                     module_ref,
                     assign
@@ -714,11 +736,12 @@ impl Evaluator {
 
                         // Get a reference to the module that we're creating.
                         let child_name = assign.target.deref().parts.last().unwrap();
-                        let type_module_ref =
-                            file_scope.resolve(type_name).ok_or(EvaluatorError::new(
+                        let type_module_ref = file_scope.resolve(type_name).ok_or_else(|| {
+                            EvaluatorError::new(
                                 EvaluatorErrorKind::TypeNotFound,
                                 &type_name.span().into_location(source),
-                            ))?;
+                            )
+                        })?;
 
                         // Cannot create a child that already exists.
                         if let Some(_) = self.resolve_instance(&target_ref) {
@@ -754,37 +777,34 @@ impl Evaluator {
                         )));
                     }
                     Expr::String(string) => {
-                        let attr_name = target_ref.pop().ok_or(
+                        let attr_name = target_ref.pop().ok_or_else(|| {
                             EvaluatorError::new(
                                 EvaluatorErrorKind::InvalidAssignment,
                                 &string.span().into_location(source),
                             )
-                            .with_message(
-                                "Cannot assign attribute to top-level module".to_string(),
-                            ),
-                        )?;
+                            .with_message("Cannot assign attribute to top-level module".to_string())
+                        })?;
 
-                        let target_instance =
-                            self.resolve_instance_mut(&target_ref)
-                                .ok_or(EvaluatorError::new(
-                                    EvaluatorErrorKind::InvalidAssignment,
-                                    &string.span().into_location(source),
-                                ))?;
+                        if target_ref.len() == 0 {
+                            instance.add_attribute(&attr_name, string.deref().to_string());
+                        } else {
+                            let target_instance =
+                                self.resolve_instance_mut(&target_ref).ok_or_else(|| {
+                                    EvaluatorError::new(
+                                        EvaluatorErrorKind::InvalidAssignment,
+                                        &string.span().into_location(source),
+                                    )
+                                })?;
 
-                        target_instance.add_attribute(&attr_name, string.deref().to_string());
+                            target_instance.add_attribute(&attr_name, string.deref().to_string());
+                        }
                     }
                     _ => {}
                 }
                 Ok(())
             }
-            // Stmt::Pin(pin) => {
-            //     let pin_name = pin.name.deref();
-            //     let pin_ref = InstanceRef::new(module_ref, vec![pin_name.clone()]);
-            //     self.add_instance(&pin_ref, Instance::port());
-            //     instance.add_child(pin_name, &pin_ref);
-            //     Ok(())
-            // }
             Stmt::Signal(signal) => {
+                debug!("Processing signal statement: {}", signal.name.deref());
                 let signal_name = signal.name.deref();
                 let signal_ref = InstanceRef::new(module_ref, vec![signal_name.clone()]);
                 self.add_instance(&signal_ref, Instance::port());
@@ -792,6 +812,7 @@ impl Evaluator {
                 Ok(())
             }
             Stmt::Connect(connect) => {
+                debug!("Processing connect statement");
                 let left = connect.left.deref();
                 let right = connect.right.deref();
 
@@ -850,7 +871,10 @@ impl Evaluator {
 
                 Ok(())
             }
-            _ => Ok(()),
+            _ => {
+                debug!("Skipping unhandled statement type");
+                Ok(())
+            }
         }
     }
 
@@ -860,6 +884,11 @@ impl Evaluator {
         file_scope: &mut FileScope,
         block: &BlockStmt,
     ) -> EvaluatorResult<()> {
+        debug!(
+            "Evaluating block: {} of kind {:?}",
+            block.name.deref(),
+            block.kind.deref()
+        );
         let module_ref = ModuleRef::new(source.path(), block.name.deref());
         let instance_kind = match block.kind.deref() {
             BlockKind::Module => InstanceKind::Module,
@@ -868,10 +897,12 @@ impl Evaluator {
         };
 
         if let Some(parent) = &block.parent {
-            let parent_module_ref = file_scope.resolve(parent).ok_or(EvaluatorError::new(
-                EvaluatorErrorKind::TypeNotFound,
-                &parent.span().into_location(source),
-            ))?;
+            let parent_module_ref = file_scope.resolve(parent).ok_or_else(|| {
+                EvaluatorError::new(
+                    EvaluatorErrorKind::TypeNotFound,
+                    &parent.span().into_location(source),
+                )
+            })?;
 
             self.clone_instance(&parent_module_ref.into(), &module_ref.clone().into())
                 .map_err(|_| {
@@ -887,12 +918,14 @@ impl Evaluator {
 
         // Remove the instance so we can tinker with it before putting it back.
         let instance_ref: InstanceRef = module_ref.clone().into();
-        let mut instance = self
-            .remove_instance(&instance_ref)
-            .ok_or(EvaluatorError::new(
+        let mut instance = self.remove_instance(&instance_ref).ok_or_else(|| {
+            EvaluatorError::new(
                 EvaluatorErrorKind::Internal,
                 &block.name.span().into_location(source),
-            ))?;
+            )
+        })?;
+
+        instance.module = module_ref.clone();
 
         for stmt in &block.body {
             if let Err(e) =
@@ -915,22 +948,38 @@ impl Evaluator {
         file_scope: &mut FileScope,
         stmt: &Spanned<Stmt>,
     ) -> EvaluatorResult<()> {
+        debug!("Evaluating top-level statement");
         match stmt.deref() {
-            Stmt::Import(import) => self.evaluate_import(
-                source,
-                import_stack,
-                file_scope,
-                &import.from_path,
-                &import.imports,
-            ),
-            Stmt::DepImport(dep_import) => self.evaluate_import(
-                source,
-                import_stack,
-                file_scope,
-                &dep_import.from_path,
-                &vec![dep_import.name.clone()],
-            ),
-            Stmt::Block(block) => self.evaluate_block(source, file_scope, block),
+            Stmt::Import(import) => {
+                debug!(
+                    "Processing import statement from: {}",
+                    import.from_path.deref()
+                );
+                self.evaluate_import(
+                    source,
+                    import_stack,
+                    file_scope,
+                    &import.from_path,
+                    &import.imports,
+                )
+            }
+            Stmt::DepImport(dep_import) => {
+                debug!(
+                    "Processing dependency import from: {}",
+                    dep_import.from_path.deref()
+                );
+                self.evaluate_import(
+                    source,
+                    import_stack,
+                    file_scope,
+                    &dep_import.from_path,
+                    &vec![dep_import.name.clone()],
+                )
+            }
+            Stmt::Block(block) => {
+                debug!("Processing block statement: {}", block.name.deref());
+                self.evaluate_block(source, file_scope, block)
+            }
             Stmt::Comment(_) => Ok(()),
             Stmt::Unparsable(_) => Err(EvaluatorError::new(
                 EvaluatorErrorKind::UnparsableStmt,
@@ -944,6 +993,8 @@ impl Evaluator {
     }
 
     fn evaluate_inner(&mut self, source: &AtopileSource, import_stack: Vec<PathBuf>) {
+        debug!("Starting inner evaluation of source: {:?}", source.path());
+        debug!("Import stack depth: {}", import_stack.len());
         self.reporter.clear(source.path());
 
         let mut file_scope = FileScope::new();
@@ -954,18 +1005,17 @@ impl Evaluator {
         }
     }
 
-    pub(crate) fn evaluate(&mut self, source: &AtopileSource) {
-        log::info!("[evaluate] start: {:?}", source.path());
+    pub(crate) fn evaluate(&mut self, source: &AtopileSource) -> EvaluatorState {
+        debug!("Starting evaluation of source: {:?}", source.path());
         let start = Instant::now();
         self.evaluate_inner(source, vec![]);
         let duration = start.elapsed();
-        log::info!(
-            "[evaluate] done: {:?} ({}ms)",
-            source.path(),
-            duration.as_millis()
+        debug!("Evaluation completed in {}ms", duration.as_millis());
+        debug!(
+            "Final state contains {} instances",
+            self.state.instances.len()
         );
 
-        let mut file = File::create(source.path().with_extension("json")).unwrap();
-        serde_json::to_writer(&mut file, &self.state).unwrap();
+        self.state.clone()
     }
 }

@@ -1,33 +1,73 @@
 import React, { useState, useEffect } from "react";
 import "./App.css";
 import SchematicContainer from "./components/SchematicContainer";
+import demoData from "./data/demo.json";
 
-// Import the demo.json data
-import demoNetlistData from "./data/demo.json";
+// Get VSCode API
+declare const acquireVsCodeApi: () => {
+  postMessage: (message: any) => void;
+  getState: () => any;
+  setState: (state: any) => void;
+};
+
+// Helper to detect if we're in VSCode
+const isVSCodeEnvironment = () => {
+  try {
+    return !!acquireVsCodeApi;
+  } catch {
+    return false;
+  }
+};
+
+// Initialize VSCode API only in production
+const vscode = isVSCodeEnvironment() ? acquireVsCodeApi() : null;
 
 function App() {
-  const [debugMode, setDebugMode] = useState(false);
-  const [netlistData, setNetlistData] = useState<any>(demoNetlistData);
-  const [isLoading, setIsLoading] = useState(false);
+  const [netlistData, setNetlistData] = useState<any>(null);
+  const [currentFile, setCurrentFile] = useState<string | undefined>();
+  const [isLoading, setIsLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
-  const [viewerType, setViewerType] = useState<"elkjs" | "reactflow">(
-    "reactflow"
-  );
 
-  // Toggle debug mode
-  const toggleDebugMode = () => {
-    setDebugMode(!debugMode);
+  // Helper to validate netlist
+  const isValidNetlist = (netlist: any) => {
+    return netlist && Object.keys(netlist.instances || {}).length > 0;
   };
 
-  // Toggle between demo data and sample schematic
-  const toggleDataSource = () => {
-    setNetlistData(netlistData === demoNetlistData ? null : demoNetlistData);
-  };
+  useEffect(() => {
+    if (vscode) {
+      // VSCode environment
+      vscode.postMessage({ command: "ready" });
 
-  // Toggle between viewer types
-  const toggleViewerType = () => {
-    setViewerType(viewerType === "elkjs" ? "reactflow" : "elkjs");
-  };
+      const messageHandler = (event: MessageEvent) => {
+        const message = event.data;
+
+        switch (message.command) {
+          case "update":
+            setIsLoading(false);
+            setLoadError(null);
+            // Only update netlist if it's valid, otherwise keep the old one
+            if (isValidNetlist(message.netlist)) {
+              setNetlistData(message.netlist);
+            }
+            setCurrentFile(message.currentFile);
+            break;
+          default:
+            console.warn("Unknown command received:", message);
+        }
+      };
+
+      window.addEventListener("message", messageHandler);
+
+      return () => {
+        window.removeEventListener("message", messageHandler);
+      };
+    } else {
+      // Browser environment - use demo data
+      setIsLoading(false);
+      setNetlistData(demoData);
+      setCurrentFile("/Users/lenny/code/sandbox/demo/elec/src/demo.ato");
+    }
+  }, []);
 
   return (
     <div className="App">
@@ -40,11 +80,12 @@ function App() {
             <p>{loadError}</p>
             <button onClick={() => setLoadError(null)}>Dismiss</button>
           </div>
+        ) : !netlistData ? (
+          <div className="loading">Waiting for netlist data...</div>
         ) : (
           <SchematicContainer
             netlistData={netlistData}
-            showDebug={debugMode}
-            viewerType={viewerType}
+            currentFile={currentFile ?? ""}
           />
         )}
       </main>

@@ -739,7 +739,7 @@ pub fn parse(tokens: &Vec<Spanned<Token>>) -> (Vec<Spanned<Stmt>>, Vec<Simple<To
 
 pub fn parse_raw(tokens: Vec<Token>) -> (Vec<Spanned<Stmt>>, Vec<Simple<Token>>) {
     let (ast, errors) = parser().parse_recovery(tokens);
-    (ast.unwrap(), errors)
+    (ast.unwrap_or_default(), errors)
 }
 
 #[test]

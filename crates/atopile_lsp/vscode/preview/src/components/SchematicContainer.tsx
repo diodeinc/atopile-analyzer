@@ -1,14 +1,7 @@
-import React, { useState, useEffect, useRef, useMemo } from "react";
+import React, { useState, useEffect, useRef, useCallback } from "react";
 import ReactFlowSchematicViewer from "./ReactFlowSchematicViewer";
 import "./ReactFlowSchematicViewer.css";
-import { HierarchicalSchematic } from "../types";
-import { AtopileNetlistConverter } from "../converters";
-import {
-  Netlist,
-  Instance,
-  ModuleRef,
-  InstanceKind,
-} from "../types/NetlistTypes";
+import { Netlist } from "../types/NetlistTypes";
 import "@vscode-elements/elements/dist/bundled.js";
 import {
   TreeItem,
@@ -39,6 +32,29 @@ const containerStyles = `
   box-sizing: border-box;
 }
 
+.up-button {
+  padding: 8px 12px;
+  margin: 8px;
+  background-color: var(--vscode-button-background);
+  color: var(--vscode-button-foreground);
+  border: none;
+  border-radius: 2px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+}
+
+.up-button:hover {
+  background-color: var(--vscode-button-hoverBackground);
+}
+
+.up-button svg {
+  width: 16px;
+  height: 16px;
+}
+
 .file-tree-container {
   flex: 1;
   overflow-y: auto;
@@ -46,67 +62,6 @@ const containerStyles = `
   width: 100%;
   text-align: left;
 }
-
-// .vscode-tree {
-//   height: 100%;
-//   overflow-y: auto;
-//   width: 100%;
-// }
-
-// .vscode-tree ul {
-//   list-style-type: none;
-//   padding: 0;
-//   margin: 0;
-// }
-
-// .vscode-tree-item {
-//   height: 22px;
-//   cursor: pointer;
-//   display: flex;
-//   align-items: center;
-//   color: var(--vscode-sideBarTitle-foreground, #bbbbbb);
-// }
-
-// .vscode-tree-item:hover {
-//   background-color: var(--vscode-list-hoverBackground, rgba(90, 93, 94, 0.1));
-// }
-
-// .vscode-tree-item.selected {
-//   background-color: var(--vscode-list-activeSelectionBackground, #094771) !important;
-//   color: var(--vscode-list-activeSelectionForeground, #ffffff) !important;
-// }
-
-// .vscode-tree-item-content {
-//   display: flex;
-//   align-items: center;
-//   height: 100%;
-//   width: 100%;
-// }
-
-// .tree-item-icon {
-//   display: inline-flex;
-//   margin-right: 4px;
-//   flex-shrink: 0;
-//   min-width: 14px;
-// }
-
-// .tree-item-toggle {
-//   display: inline-flex;
-//   align-items: center;
-//   justify-content: center;
-//   width: 16px;
-//   height: 16px;
-//   flex-shrink: 0;
-//   min-width: 16px;
-//   margin-right: 3px;
-// }
-
-// .tree-item-label {
-//   flex: 1;
-//   white-space: nowrap;
-//   overflow: hidden;
-//   text-overflow: ellipsis;
-// }
 
 .schematic-viewer-container {
   flex: 1;
@@ -131,6 +86,43 @@ const containerStyles = `
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
   max-width: 80%;
 }
+
+.breadcrumbs {
+  position: absolute;
+  top: 8px;
+  left: 8px;
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 8px;
+  background-color: var(--vscode-breadcrumb-background, rgba(37, 37, 38, 0.8));
+  border-radius: 4px;
+  backdrop-filter: blur(8px);
+}
+
+.breadcrumb-item {
+  color: var(--vscode-breadcrumb-foreground, #cccccc);
+  font-size: 12px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  text-decoration: none;
+  padding: 2px 4px;
+  border-radius: 2px;
+}
+
+.breadcrumb-item:hover {
+  background-color: var(--vscode-breadcrumb-focusForeground, rgba(255, 255, 255, 0.1));
+}
+
+.breadcrumb-separator {
+  color: var(--vscode-breadcrumb-foreground, #cccccc);
+  opacity: 0.6;
+  font-size: 12px;
+  user-select: none;
+}
 `;
 
 // Create a style element to inject the styles
@@ -150,153 +142,217 @@ const StyleInjector = () => {
 
 interface SchematicContainerProps {
   netlistData: Netlist;
-  showDebug?: boolean;
-  viewerType?: "elkjs" | "reactflow";
+  currentFile: string;
 }
+
+const Breadcrumbs = ({
+  moduleId,
+  onNavigate,
+}: {
+  moduleId: string;
+  onNavigate: (id: string) => void;
+}) => {
+  if (!moduleId) return null;
+
+  const [file_path, path] = moduleId.split(":");
+  const filename = file_path.split("/").pop() || file_path;
+
+  // Create breadcrumbs array starting with the filename but preserve full path for navigation
+  const breadcrumbs = [{ label: filename, id: file_path }];
+
+  // Add the rest of the path components if they exist
+  if (path) {
+    const parts = path.split(".");
+    parts.forEach((part, index) => {
+      const id = `${file_path}:${parts.slice(0, index + 1).join(".")}`;
+      breadcrumbs.push({ label: part, id });
+    });
+  }
+
+  return (
+    <div className="breadcrumbs">
+      {breadcrumbs.map((crumb, index) => (
+        <React.Fragment key={crumb.id}>
+          {index > 0 && <span className="breadcrumb-separator">/</span>}
+          <span
+            className="breadcrumb-item"
+            onClick={() => onNavigate(crumb.id)}
+            title={crumb.id}
+          >
+            {crumb.label}
+          </span>
+        </React.Fragment>
+      ))}
+    </div>
+  );
+};
 
 const Sidebar = ({
   netlist,
   selectModule,
   selectedModule,
+  currentFile,
 }: {
   netlist: Netlist;
   selectModule: (moduleId: string) => void;
   selectedModule: string;
+  currentFile: string;
 }) => {
   const [treeItems, setTreeItems] = useState<TreeItem[]>([]);
   const treeRef = useRef<VscodeTree>(null);
 
-  // Function to find and update the path to a module in the tree
-  const findAndUpdatePath = (
-    items: TreeItem[],
-    target: string,
-    currentPath: string = ""
-  ): boolean => {
-    for (let i = 0; i < items.length; i++) {
-      const item = items[i];
-      const itemPath = currentPath ? `${currentPath}/${i}` : `${i}`;
+  // Function to get parent module ID
+  const getParentModuleId = useCallback((moduleId: string): string | null => {
+    const [filename, path] = moduleId.split(":");
+    if (!path) return null;
 
-      if (item.value === target) {
-        return true;
-      }
-      if (item.subItems?.length) {
-        const found = findAndUpdatePath(item.subItems, target, itemPath);
-        if (found) {
-          item.open = true;
+    const parts = path.split(".");
+    if (parts.length <= 1) return null;
+
+    // Return the parent path
+    return `${filename}:${parts.slice(0, -1).join(".")}`;
+  }, []);
+
+  // Function to find and update the path to a module in the tree
+  const findAndUpdatePath = useCallback(
+    (items: TreeItem[], target: string, currentPath: string = ""): boolean => {
+      for (let i = 0; i < items.length; i++) {
+        const item = items[i];
+        const itemPath = currentPath ? `${currentPath}/${i}` : `${i}`;
+
+        if (item.value === target) {
           return true;
         }
+        if (item.subItems?.length) {
+          const found = findAndUpdatePath(item.subItems, target, itemPath);
+          if (found) {
+            item.open = true;
+            return true;
+          }
+        }
       }
-    }
-    return false;
-  };
+      return false;
+    },
+    []
+  );
 
   // Effect to process netlist into tree items
   useEffect(() => {
     const rootItems: TreeItem[] = [];
+    const moduleHierarchy: { [key: string]: TreeItem[] } = {};
 
-    const addItem = (
-      pathParts: string[],
-      instance: Instance,
-      instanceRef: string
-    ) => {
-      let currentLevel = rootItems;
-      let currentPath: string[] = [];
+    // Only process instances from the current file
+    const addItem = (pathParts: string[]) => {
+      // Skip if this instance is not from the current file
+      if (!pathParts[0] || !pathParts[0].endsWith(currentFile)) {
+        return;
+      }
 
-      // Process each part of the path
-      for (let i = 0; i < pathParts.length; i++) {
-        const part = pathParts[i];
-        if (!part) continue;
+      if (pathParts.length < 2) {
+        return;
+      }
 
-        currentPath.push(part);
-        const isLastPart = i === pathParts.length - 1;
+      const topLevelModule = pathParts[1];
+      const fullPath = pathParts.slice(1).join(".");
+      const value = `${pathParts[0]}:${fullPath}`;
 
-        // Try to find existing node at this level
-        let node = currentLevel.find(
-          (item) =>
-            item.value ===
-            (i === 0
-              ? part
-              : `${currentPath[0]}:${currentPath.slice(1).join(".")}`)
-        );
-
-        if (!node) {
-          // Create new node
-          node = {
-            label: part.split("/").pop() || part, // Always show just the filename part
-            value:
-              i === 0
-                ? part
-                : `${currentPath[0]}:${currentPath.slice(1).join(".")}`, // Keep full path in value
-            subItems: [],
-          };
-          currentLevel.push(node);
+      // If this is a top-level module
+      if (pathParts.length === 2) {
+        rootItems.push({
+          label: topLevelModule,
+          value: value,
+          subItems: moduleHierarchy[topLevelModule] || [],
+        });
+        moduleHierarchy[topLevelModule] =
+          rootItems[rootItems.length - 1].subItems!;
+      } else {
+        // This is a sub-module
+        const parentModule = pathParts[1];
+        if (!moduleHierarchy[parentModule]) {
+          moduleHierarchy[parentModule] = [];
         }
 
-        // Prepare for next level
-        if (!isLastPart) {
-          if (!node.subItems) {
-            node.subItems = [];
+        let currentLevel = moduleHierarchy[parentModule];
+        for (let i = 2; i < pathParts.length; i++) {
+          const part = pathParts[i];
+          const partialPath = pathParts.slice(1, i + 1).join(".");
+          const partialValue = `${pathParts[0]}:${partialPath}`;
+
+          let node = currentLevel.find((item) => item.value === partialValue);
+          if (!node) {
+            node = {
+              label: part,
+              value: partialValue,
+              subItems: [],
+            };
+            currentLevel.push(node);
           }
-          currentLevel = node.subItems;
+          currentLevel = node.subItems!;
         }
       }
     };
 
     // Process all instances
-    for (const [instanceRef, instance] of Object.entries(netlist.instances)) {
+    for (const instanceRef of Object.keys(netlist.instances)) {
       const [filename, path] = instanceRef.split(":");
       const pathParts = path ? [filename, ...path.split(".")] : [instanceRef];
-      addItem(pathParts, instance, instanceRef);
+      addItem(pathParts);
     }
 
     // Sort items at each level
-    const sortItems = (items: TreeItem[]) => {
+    const sortTreeItems = (items: TreeItem[]) => {
       items.sort((a, b) => a.label.localeCompare(b.label));
       items.forEach((item) => {
         if (item.subItems?.length) {
-          sortItems(item.subItems);
+          sortTreeItems(item.subItems);
         }
       });
     };
 
-    sortItems(rootItems);
+    sortTreeItems(rootItems);
     setTreeItems(rootItems);
-  }, [netlist]);
+  }, [netlist, currentFile]);
 
-  // Effect to expand tree when selectedModule changes
-  useEffect(() => {
-    if (selectedModule && treeItems.length > 0) {
-      const newTreeItems = [...treeItems];
-      findAndUpdatePath(newTreeItems, selectedModule);
-      setTreeItems(newTreeItems);
-    }
-  }, [selectedModule]);
+  // Helper function to check if the path to a module is already open
+  const isPathAlreadyOpen = useCallback(
+    (items: TreeItem[], target: string): boolean => {
+      for (let i = 0; i < items.length; i++) {
+        const item = items[i];
+        if (item.value === target) {
+          return true;
+        }
+        if (item.subItems?.length && item.open) {
+          const found = isPathAlreadyOpen(item.subItems, target);
+          if (found) return true;
+        }
+      }
+      return false;
+    },
+    []
+  );
 
-  const handleTreeAction = (e: CustomEvent) => {
-    console.log(e);
-  };
-
-  const handleTreeSelect = (e: CustomEvent) => {
-    let ref = e.detail.path.split("/").map((part: string) => Number(part));
-    let item = treeRef.current?.getItemByPath(ref);
-    if (item && item.value) {
-      selectModule(item.value);
-    }
-  };
+  const handleTreeSelect = useCallback(
+    (e: CustomEvent) => {
+      let ref = e.detail.path.split("/").map((part: string) => Number(part));
+      let item = treeRef.current?.getItemByPath(ref);
+      if (item && item.value) {
+        selectModule(item.value);
+      }
+    },
+    [selectModule]
+  );
 
   useEffect(() => {
     if (treeRef.current) {
       let tree = treeRef.current;
 
-      tree.addEventListener("vsc-tree-action", handleTreeAction);
       tree.addEventListener("vsc-tree-select", handleTreeSelect);
 
       return () => {
-        tree.removeEventListener("vsc-tree-action", handleTreeAction);
         tree.removeEventListener("vsc-tree-select", handleTreeSelect);
       };
     }
-  }, [treeRef]);
+  }, [treeRef, handleTreeSelect]);
 
   return (
     <div className="schematic-sidebar">
@@ -318,49 +374,22 @@ const Sidebar = ({
  */
 const SchematicContainer: React.FC<SchematicContainerProps> = ({
   netlistData,
-  showDebug = false,
-  viewerType = "reactflow",
+  currentFile,
 }) => {
-  const [schematic, setSchematic] = useState<HierarchicalSchematic | undefined>(
-    undefined
-  );
-  const [selectedComponent, setSelectedComponent] = useState<string | null>(
-    null
-  );
   const [error, setError] = useState<string | null>(null);
-  const [selectedModule, setSelectedModule] = useState<string>("");
-  const [currentViewNode, setCurrentViewNode] = useState<string>("");
+  const [selectedModule, setSelectedModule] = useState<string>(currentFile);
 
-  // Create converter instance
-  const converter = new AtopileNetlistConverter();
-
-  // Process netlist data when selected module changes
+  // Set initial view to the top-level file view
   useEffect(() => {
-    if (netlistData && selectedModule) {
-      try {
-        // Convert the netlist to our hierarchical format
-        const convertedSchematic = converter.convert(netlistData);
-        setSchematic(convertedSchematic);
-        setError(null);
-      } catch (err) {
-        console.error("Error converting netlist:", err);
-        setError(
-          `Failed to process netlist data: ${
-            err instanceof Error ? err.message : String(err)
-          }`
-        );
-        setSchematic(undefined);
-      }
-    } else {
-      setSchematic(undefined);
+    if (!selectedModule && currentFile) {
+      setSelectedModule(currentFile);
     }
-  }, [netlistData, selectedModule]);
+  }, [currentFile, selectedModule]);
 
   // Handle component selection
   const handleComponentSelect = (componentId: string | null) => {
     if (componentId) {
       setSelectedModule(componentId);
-      setCurrentViewNode(componentId);
     }
   };
 
@@ -373,14 +402,21 @@ const SchematicContainer: React.FC<SchematicContainerProps> = ({
     <div className="schematic-layout">
       <StyleInjector />
 
-      <Sidebar
+      {/* <Sidebar
         netlist={netlistData}
         selectModule={handleComponentSelect}
         selectedModule={selectedModule}
-      />
+        currentFile={currentFile}
+      /> */}
 
       {/* Main Schematic Viewer */}
       <div className="schematic-viewer-container">
+        {selectedModule && (
+          <Breadcrumbs
+            moduleId={selectedModule}
+            onNavigate={handleComponentSelect}
+          />
+        )}
         {error && (
           <div className="error-message">
             <p>{error}</p>
@@ -390,9 +426,7 @@ const SchematicContainer: React.FC<SchematicContainerProps> = ({
 
         {/* Schematic Viewer */}
         <ReactFlowSchematicViewer
-          schematic={schematic}
           netlist={netlistData}
-          showDebug={showDebug}
           onError={handleError}
           onComponentSelect={handleComponentSelect}
           selectedComponent={selectedModule}

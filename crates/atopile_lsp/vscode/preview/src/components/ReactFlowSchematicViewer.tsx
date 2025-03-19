@@ -1,4 +1,10 @@
-import React, { useCallback, useEffect, useRef, useState } from "react";
+import React, {
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+  useMemo,
+} from "react";
 import ELK from "elkjs/lib/elk.bundled.js";
 import type { ELK as ELKType } from "elkjs/lib/elk-api";
 import {
@@ -13,9 +19,10 @@ import {
   EdgeProps,
   EdgeTypes,
   type Node,
+  useOnSelectionChange,
+  ReactFlowProvider,
 } from "@xyflow/react";
 import "@xyflow/react/dist/style.css";
-import { SchematicLevel, HierarchicalSchematic } from "../types";
 import {
   ElkEdge,
   ElkGraph,
@@ -24,24 +31,37 @@ import {
   SchematicRenderer,
 } from "../renderer";
 import { Netlist } from "../types/NetlistTypes";
+import { debounce } from "lodash";
+
+type SelectionState = {
+  selectedNetId: string | null;
+  hoveredNetId: string | null;
+};
 
 type SchematicNodeData = ElkNode & {
   componentType: NodeType;
+  selectionState: SelectionState;
 } & Record<string, unknown>;
 
-type SchematicEdgeData = ElkEdge & Record<string, unknown>;
+type SchematicEdgeData = ElkEdge & {
+  selectionState: SelectionState;
+} & Record<string, unknown>;
 
 type SchematicNode = Node<SchematicNodeData, NodeType>;
 type SchematicEdge = Edge<SchematicEdgeData>;
 
-function createSchematicNode(elkNode: ElkNode): SchematicNode {
+function createSchematicNode(
+  elkNode: ElkNode,
+  selectionState: SelectionState
+): SchematicNode {
   return {
     id: elkNode.id,
     data: {
       componentType: elkNode.type,
+      selectionState,
       ...elkNode,
     },
-    position: { x: elkNode.x, y: elkNode.y },
+    position: { x: elkNode.x || 0, y: elkNode.y || 0 },
     type: elkNode.type,
     draggable: false,
     // Only make modules selectable
@@ -68,10 +88,13 @@ function createSchematicNode(elkNode: ElkNode): SchematicNode {
   };
 }
 
-function createSchematicEdge(elkEdge: ElkEdge): SchematicEdge {
+function createSchematicEdge(
+  elkEdge: ElkEdge,
+  selectionState: SelectionState
+): SchematicEdge {
   return {
     id: elkEdge.id,
-    data: { ...elkEdge },
+    data: { ...elkEdge, selectionState },
     source: elkEdge.sourceComponentRef,
     target: elkEdge.targetComponentRef,
     sourceHandle: `${elkEdge.sources[0]}-source`,
@@ -291,6 +314,12 @@ const CapacitorNode = ({ data }: { data: any }) => {
   // Line length (distance from port to capacitor plate)
   const lineLength = (data.height - plateGap - 4) / 2;
 
+  // Determine if this node should be dimmed based on selection state
+  const selectionState = data.selectionState;
+  const shouldDim =
+    selectionState?.selectedNetId || selectionState?.hoveredNetId;
+  const opacity = shouldDim ? 0.2 : 1;
+
   return (
     <div
       className="react-flow-capacitor-node"
@@ -303,6 +332,7 @@ const CapacitorNode = ({ data }: { data: any }) => {
         pointerEvents: "none",
         position: "relative",
         transform: "translate(-0.75px, 1px)",
+        opacity: opacity,
       }}
     >
       {/* Capacitor Symbol */}
@@ -438,8 +468,14 @@ const ResistorNode = ({ data }: { data: any }) => {
 
   // Resistor dimensions
   const resistorHeight = 40;
-  const resistorWidth = 20; // Slightly wider to make zigzags more pronounced
+  const resistorWidth = 20;
   const lineLength = (data.height - resistorHeight) / 2;
+
+  // Determine if this node should be dimmed based on selection state
+  const selectionState = data.selectionState;
+  const shouldDim =
+    selectionState?.selectedNetId || selectionState?.hoveredNetId;
+  const opacity = shouldDim ? 0.2 : 1;
 
   // Zigzag parameters for a more professional look
   const numZigzags = 4;
@@ -477,6 +513,7 @@ const ResistorNode = ({ data }: { data: any }) => {
         cursor: "default",
         pointerEvents: "none",
         position: "relative",
+        opacity: opacity,
       }}
     >
       {/* Resistor Symbol */}
@@ -608,6 +645,16 @@ const NetReferenceNode = ({ data }: { data: any }) => {
   // Size of the net reference circle
   const circleRadius = data.width / 2 - 2;
 
+  // Determine if this node should be dimmed based on selection state
+  const selectionState = data.selectionState;
+  const isSelected = data.netId === selectionState?.selectedNetId;
+  const isHovered = data.netId === selectionState?.hoveredNetId;
+  const shouldDim =
+    (selectionState?.selectedNetId || selectionState?.hoveredNetId) &&
+    !isSelected &&
+    !isHovered;
+  const opacity = shouldDim ? 0.2 : 1;
+
   return (
     <div
       className="react-flow-net-reference-node"
@@ -621,6 +668,7 @@ const NetReferenceNode = ({ data }: { data: any }) => {
         pointerEvents: "none",
         position: "relative",
         transform: "translate(-50%, -50%)",
+        opacity: opacity,
       }}
     >
       {/* Net Reference Symbol - Open Circle */}
@@ -707,7 +755,12 @@ const NetReferenceNode = ({ data }: { data: any }) => {
 };
 
 // Define custom edge for electrical connections
-const ElectricalEdge = ({ id, data, style = {} }: EdgeProps<SchematicEdge>) => {
+const ElectricalEdge = ({
+  id,
+  data,
+  interactionWidth,
+  style = {},
+}: EdgeProps<SchematicEdge>) => {
   // Get section data from the ElkEdge
   const section = data?.sections?.[0];
 
@@ -728,6 +781,16 @@ const ElectricalEdge = ({ id, data, style = {} }: EdgeProps<SchematicEdge>) => {
     pathData += ` L${points[i].x},${points[i].y}`;
   }
 
+  // Determine if this edge should be dimmed based on selection state
+  const selectionState = data?.selectionState;
+  const isSelected = data?.netId === selectionState?.selectedNetId;
+  const isHovered = data?.netId === selectionState?.hoveredNetId;
+  const shouldDim =
+    (selectionState?.selectedNetId || selectionState?.hoveredNetId) &&
+    !isSelected &&
+    !isHovered;
+  const opacity = shouldDim ? 0.2 : 1;
+
   return (
     <>
       <path
@@ -735,11 +798,20 @@ const ElectricalEdge = ({ id, data, style = {} }: EdgeProps<SchematicEdge>) => {
         style={{
           strokeWidth: 1.5,
           stroke: "#000",
+          pointerEvents: "none", // Disable pointer events on the visible path
           ...style,
+          opacity: opacity,
         }}
         className="react-flow__edge-path electrical-edge straight-line"
         d={pathData}
-        // No marker for electrical connections
+      />
+
+      <path
+        d={pathData}
+        fill="none"
+        strokeOpacity={0}
+        strokeWidth={interactionWidth}
+        className="react-flow__edge-interaction"
       />
 
       {/* Render junction points if they exist */}
@@ -751,7 +823,11 @@ const ElectricalEdge = ({ id, data, style = {} }: EdgeProps<SchematicEdge>) => {
               cx={point.x}
               cy={point.y}
               r={3.5}
-              fill="#000"
+              fill={style.stroke || "#000"}
+              style={{
+                ...style,
+                opacity: opacity,
+              }}
               className="electrical-junction-point"
             />
           )
@@ -775,85 +851,101 @@ const nodeTypes = {
 };
 
 interface ReactFlowSchematicViewerProps {
-  schematic: HierarchicalSchematic | undefined;
   netlist: Netlist;
-  showDebug?: boolean;
   onError?: (message: string) => void;
   onComponentSelect?: (componentId: string | null) => void;
   selectedComponent?: string | null;
 }
 
-const ReactFlowSchematicViewer: React.FC<ReactFlowSchematicViewerProps> = ({
-  schematic,
+const Visualizer = ({
   netlist,
-  showDebug = false,
-  onError = () => {},
   onComponentSelect = () => {},
   selectedComponent = null,
+}: {
+  netlist: Netlist;
+  onComponentSelect?: (componentId: string | null) => void;
+  selectedComponent?: string | null;
 }) => {
   const [nodes, setNodes, onNodesChange] = useNodesState<SchematicNode>([]);
   const [edges, setEdges, onEdgesChange] = useEdgesState<SchematicEdge>([]);
   const [elkLayout, setElkLayout] = useState<ElkGraph | null>(null);
-  const [currentLevel, setCurrentLevel] = useState<SchematicLevel | null>(null);
   const [layoutError, setLayoutError] = useState<string | null>(null);
+  const [selectionState, setSelectionState] = useState<SelectionState>({
+    selectedNetId: null,
+    hoveredNetId: null,
+  });
   const elkInstance = useRef<ELKType | null>(null);
+
+  // Create separate debounced functions for each state field
+  const debouncedSetSelectedNet = useMemo(
+    () =>
+      debounce((selectedNetId: string | null) => {
+        setSelectionState((prev) => ({
+          ...prev,
+          selectedNetId,
+        }));
+      }, 200), // Slightly longer debounce for selection
+    []
+  );
+
+  const debouncedSetHoveredNet = useMemo(
+    () =>
+      debounce((hoveredNetId: string | null) => {
+        setSelectionState((prev) => ({
+          ...prev,
+          hoveredNetId,
+        }));
+      }, 100), // Shorter debounce for hover to feel more responsive
+    []
+  );
+
+  // Cleanup debounced functions on unmount
+  useEffect(() => {
+    return () => {
+      debouncedSetSelectedNet.cancel();
+      debouncedSetHoveredNet.cancel();
+    };
+  }, [debouncedSetSelectedNet, debouncedSetHoveredNet]);
 
   // Initialize ELK engine
   useEffect(() => {
     elkInstance.current = new ELK();
   }, []);
 
-  // Update the current level when the schematic changes
   useEffect(() => {
-    if (schematic) {
-      const level = schematic.levels[schematic.currentLevelId];
-      setCurrentLevel(level);
-    }
-  }, [schematic]);
-
-  const calculateLayout = useCallback(async () => {
-    const renderer = new SchematicRenderer(netlist);
-    if (selectedComponent) {
-      console.log("Rendering selected component: ", selectedComponent);
-      try {
-        let layout = await renderer.render(selectedComponent);
-        setElkLayout(layout as ElkGraph);
-      } catch (error) {
-        console.error("Error rendering component: ", error);
-        setLayoutError(
-          error instanceof Error ? error.message : "Unknown error"
-        );
+    async function render() {
+      const renderer = new SchematicRenderer(netlist);
+      if (selectedComponent) {
+        console.log("Rendering selected component: ", selectedComponent);
+        try {
+          let layout = await renderer.render(selectedComponent);
+          setElkLayout(layout as ElkGraph);
+        } catch (error) {
+          console.error("Error rendering component: ", error);
+          setLayoutError(
+            error instanceof Error ? error.message : "Unknown error"
+          );
+        }
       }
     }
+
+    render();
   }, [netlist, selectedComponent]);
-
-  // Calculate layout when the current level changes
-  useEffect(() => {
-    if (currentLevel) {
-      calculateLayout();
-    }
-  }, [currentLevel, calculateLayout]);
-
-  // Convert ELK layout to React Flow nodes and edges
-  const convertElkToReactFlow = useCallback(() => {
-    return {
-      nodes: elkLayout?.children ?? [],
-      edges: elkLayout?.edges ?? [],
-    };
-  }, [elkLayout]);
 
   // Update nodes and edges when layout changes
   useEffect(() => {
     if (elkLayout) {
-      const { nodes: newNodes, edges: newEdges } = convertElkToReactFlow();
-
-      const nodes = newNodes.map((elkNode) => createSchematicNode(elkNode));
+      const nodes = elkLayout.children.map((elkNode) =>
+        createSchematicNode(elkNode, selectionState)
+      );
       setNodes(nodes);
 
-      const edges = newEdges.map((elkEdge) => createSchematicEdge(elkEdge));
+      const edges = elkLayout.edges.map((elkEdge) =>
+        createSchematicEdge(elkEdge, selectionState)
+      );
       setEdges(edges);
     }
-  }, [elkLayout, convertElkToReactFlow, setNodes, setEdges]);
+  }, [elkLayout, setNodes, setEdges, selectionState]);
 
   // Handle node click to select a component - only if the component is clickable (modules)
   const handleNodeClick = useCallback(
@@ -869,22 +961,24 @@ const ReactFlowSchematicViewer: React.FC<ReactFlowSchematicViewerProps> = ({
     [onComponentSelect]
   );
 
-  // Add navigation breadcrumbs/path info
-  const getCurrentPath = useCallback(() => {
-    if (!schematic) return [];
+  useOnSelectionChange({
+    onChange: useCallback(
+      ({ nodes, edges }) => {
+        console.log("Selection changed: ", nodes, edges);
 
-    const currentHierarchy = schematic.hierarchyRefs.find(
-      (ref) => ref.childId === schematic.currentLevelId
-    );
+        let selectedNetId =
+          edges.length > 0 ? (edges[0].data?.netId as string) : null;
 
-    return currentHierarchy?.path || [];
-  }, [schematic]);
-
-  const path = getCurrentPath();
+        if (selectedNetId !== selectionState.selectedNetId) {
+          debouncedSetSelectedNet(selectedNetId);
+        }
+      },
+      [selectionState.selectedNetId, debouncedSetSelectedNet]
+    ),
+  });
 
   return (
     <div className="schematic-viewer">
-      {/* Add custom styles to override ReactFlow defaults */}
       <style>{customStyles}</style>
 
       {layoutError && (
@@ -896,6 +990,7 @@ const ReactFlowSchematicViewer: React.FC<ReactFlowSchematicViewerProps> = ({
 
       <div className="react-flow-schematic-viewer">
         <ReactFlow
+          proOptions={{ hideAttribution: true }}
           nodes={nodes}
           edges={edges}
           onNodesChange={onNodesChange}
@@ -904,9 +999,24 @@ const ReactFlowSchematicViewer: React.FC<ReactFlowSchematicViewerProps> = ({
           edgeTypes={edgeTypes}
           fitView
           onNodeClick={handleNodeClick}
+          onEdgeMouseEnter={(_event, edge) => {
+            console.log("Edge mouse entered: ", edge);
+            if (
+              edge.data?.netId &&
+              edge.data?.netId !== selectionState.selectedNetId &&
+              edge.data?.netId !== selectionState.hoveredNetId
+            ) {
+              debouncedSetHoveredNet(edge.data?.netId);
+            }
+          }}
+          onEdgeMouseLeave={() => {
+            console.log("Edge mouse left");
+            debouncedSetHoveredNet(null);
+          }}
           defaultEdgeOptions={{
             type: "electrical",
             style: { stroke: "#000", strokeWidth: 1.5 },
+            interactionWidth: 10,
           }}
           nodesDraggable={false}
           nodesConnectable={false}
@@ -917,21 +1027,27 @@ const ReactFlowSchematicViewer: React.FC<ReactFlowSchematicViewerProps> = ({
           panOnDrag={true}
           preventScrolling={false}
         >
-          <Controls />
+          <Controls showInteractive={false} />
           <MiniMap />
         </ReactFlow>
       </div>
-
-      {showDebug && (
-        <div className="debug-info">
-          <h3>Debug Information</h3>
-          <h4>Current Level: {currentLevel?.name}</h4>
-          <pre>{JSON.stringify(currentLevel, null, 2)}</pre>
-          <h4>Layout:</h4>
-          <pre>{JSON.stringify(elkLayout, null, 2)}</pre>
-        </div>
-      )}
     </div>
+  );
+};
+
+const ReactFlowSchematicViewer = ({
+  netlist,
+  onComponentSelect = () => {},
+  selectedComponent = null,
+}: ReactFlowSchematicViewerProps) => {
+  return (
+    <ReactFlowProvider>
+      <Visualizer
+        netlist={netlist}
+        onComponentSelect={onComponentSelect}
+        selectedComponent={selectedComponent}
+      />
+    </ReactFlowProvider>
   );
 };
 
