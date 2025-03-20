@@ -1,12 +1,50 @@
+use std::fmt;
+use std::ops::Deref;
+
 use chumsky::prelude::*;
 use chumsky::{error::Simple, Parser};
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
 
 use crate::lexer::Token;
 use crate::Spanned;
 
 #[cfg(test)]
 use insta::assert_debug_snapshot;
+
+#[derive(Clone, Debug, PartialEq, Hash, Eq, Serialize, Deserialize)]
+pub struct Symbol(String);
+
+impl Deref for Symbol {
+    type Target = String;
+
+    fn deref(&self) -> &Self::Target {
+        &self.0
+    }
+}
+
+impl fmt::Display for Symbol {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "{}", self.0)
+    }
+}
+
+impl From<Symbol> for String {
+    fn from(symbol: Symbol) -> Self {
+        symbol.0
+    }
+}
+
+impl From<String> for Symbol {
+    fn from(s: String) -> Self {
+        Symbol(s)
+    }
+}
+
+impl From<&str> for Symbol {
+    fn from(s: &str) -> Self {
+        Symbol(s.to_string())
+    }
+}
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum Stmt {
@@ -48,24 +86,27 @@ pub enum Stmt {
 
     // pass
     Pass,
+
+    // Unparsable. Used for error recovery.
+    Unparsable(Vec<Spanned<Token>>),
 }
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct ImportStmt {
     pub from_path: Spanned<String>,
-    pub imports: Vec<Spanned<String>>,
+    pub imports: Vec<Spanned<Symbol>>,
 }
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct DepImportStmt {
-    pub name: Spanned<String>,
+    pub name: Spanned<Symbol>,
     pub from_path: Spanned<String>,
 }
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct AttributeStmt {
-    pub name: Spanned<String>,
-    pub type_info: Spanned<String>,
+    pub name: Spanned<Symbol>,
+    pub type_info: Spanned<Symbol>,
 }
 
 #[derive(Debug, Clone, PartialEq)]
@@ -96,8 +137,8 @@ pub enum Connectable {
 #[derive(Debug, Clone, PartialEq)]
 pub struct BlockStmt {
     pub kind: Spanned<BlockKind>,
-    pub name: Spanned<String>,
-    pub parent: Option<Spanned<String>>,
+    pub name: Spanned<Symbol>,
+    pub parent: Option<Spanned<Symbol>>,
     pub body: Vec<Spanned<Stmt>>,
 }
 
@@ -119,12 +160,12 @@ pub struct InterfaceStmt(pub Spanned<BlockStmt>);
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct SignalStmt {
-    pub name: Spanned<String>,
+    pub name: Spanned<Symbol>,
 }
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct PinStmt {
-    pub name: Spanned<String>,
+    pub name: Spanned<Symbol>,
 }
 
 #[derive(Debug, Clone, PartialEq)]
@@ -140,7 +181,7 @@ pub struct CommentStmt {
 #[derive(Debug, Clone, PartialEq)]
 pub struct SpecializeStmt {
     pub port: Spanned<PortRef>,
-    pub value: Spanned<String>,
+    pub value: Spanned<Symbol>,
 }
 
 #[derive(Debug, Clone, PartialEq)]
@@ -148,7 +189,7 @@ pub enum Expr {
     String(Spanned<String>),
     Number(Spanned<String>),
     Port(Spanned<PortRef>),
-    New(Spanned<String>),
+    New(Spanned<Symbol>),
     Bool(Spanned<bool>),
     BinaryOp(Box<Spanned<BinaryOp>>),
     Physical(Spanned<PhysicalValue>),
@@ -177,14 +218,31 @@ pub enum BinaryOperator {
     Within,
 }
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Serialize)]
 pub struct PhysicalValue {
     pub value: Spanned<String>,
     pub unit: Option<Spanned<String>>,
     pub tolerance: Option<Spanned<Tolerance>>,
 }
 
-#[derive(Debug, Clone, PartialEq)]
+impl ToString for PhysicalValue {
+    fn to_string(&self) -> String {
+        format!(
+            "{}{} {}",
+            self.value.0,
+            self.unit
+                .as_ref()
+                .map(|u| u.0.to_string())
+                .unwrap_or("".to_string()),
+            self.tolerance
+                .as_ref()
+                .map(|t| t.to_string())
+                .unwrap_or("".to_string())
+        )
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Serialize)]
 pub enum Tolerance {
     Bilateral {
         value: Spanned<String>,
@@ -194,6 +252,25 @@ pub enum Tolerance {
         min: Spanned<String>,
         max: Spanned<String>,
     },
+}
+
+impl ToString for Tolerance {
+    fn to_string(&self) -> String {
+        match self {
+            Tolerance::Bilateral { value, unit } => {
+                format!(
+                    "± {}{}",
+                    value.0,
+                    unit.as_ref()
+                        .map(|u| u.0.to_string())
+                        .unwrap_or("%".to_string())
+                )
+            }
+            Tolerance::Bound { min, max } => {
+                format!("({} to {})", min.0, max.0)
+            }
+        }
+    }
 }
 
 impl ToString for PortRef {
@@ -220,7 +297,7 @@ fn atom() -> impl Parser<Token, Spanned<Expr>, Error = Simple<Token>> {
 fn new() -> impl Parser<Token, Spanned<Expr>, Error = Simple<Token>> {
     just(Token::New)
         .ignore_then(name())
-        .map_with_span(|name, span| (Expr::New(name), span).into())
+        .map_with_span(|name, span| (Expr::New(name.map(Symbol::from)), span).into())
 }
 
 fn physical() -> impl Parser<Token, Spanned<Expr>, Error = Simple<Token>> {
@@ -255,7 +332,7 @@ fn physical() -> impl Parser<Token, Spanned<Expr>, Error = Simple<Token>> {
 fn test_physical() {
     let result = physical().parse_recovery(vec![
         Token::Number("10".to_string()),
-        Token::Name("kohm".to_string()),
+        Token::Name("kohm".to_string().into()),
         Token::PlusOrMinus,
         Token::Number("5".to_string()),
         Token::Percent,
@@ -304,7 +381,7 @@ fn test_physical() {
     let result_negative = physical().parse_recovery(vec![
         Token::Minus,
         Token::Number("0.3".to_string()),
-        Token::Name("V".to_string()),
+        Token::Name("V".to_string().into()),
     ]);
     assert_debug_snapshot!(result_negative, @r###"
     (
@@ -339,7 +416,11 @@ fn test_physical() {
 fn signal() -> impl Parser<Token, Spanned<Stmt>, Error = Simple<Token>> {
     just(Token::Signal)
         .ignore_then(name())
-        .map(|name| Stmt::Signal(SignalStmt { name }))
+        .map(|name| {
+            Stmt::Signal(SignalStmt {
+                name: name.map(Symbol::from),
+            })
+        })
         .map_with_span(|stmt, span| (stmt, span).into())
         .labelled("signal")
 }
@@ -355,7 +436,7 @@ fn port_ref() -> impl Parser<Token, Spanned<PortRef>, Error = Simple<Token>> {
 
 #[test]
 fn test_port_ref_simple() {
-    let tokens = vec![Token::Name("a".to_string())];
+    let tokens = vec![Token::Name("a".to_string().into())];
     let result = port_ref().parse_recovery(tokens);
     assert_debug_snapshot!(result, @r###"
     (
@@ -380,11 +461,11 @@ fn test_port_ref_simple() {
 #[test]
 fn test_port_ref_nested() {
     let tokens = vec![
-        Token::Name("a".to_string()),
+        Token::Name("a".to_string().into()),
         Token::Dot,
-        Token::Name("b".to_string()),
+        Token::Name("b".to_string().into()),
         Token::Dot,
-        Token::Name("c".to_string()),
+        Token::Name("c".to_string().into()),
     ];
     let result = port_ref().parse_recovery(tokens);
     assert_debug_snapshot!(result, @r###"
@@ -477,7 +558,12 @@ fn specialize() -> impl Parser<Token, Spanned<Stmt>, Error = Simple<Token>> {
     port_ref()
         .then_ignore(just(Token::Arrow))
         .then(name())
-        .map(|(port, value)| Stmt::Specialize(SpecializeStmt { port, value }))
+        .map(|(port, value)| {
+            Stmt::Specialize(SpecializeStmt {
+                port,
+                value: value.map(Symbol::from),
+            })
+        })
         .map_with_span(|stmt, span| (stmt, span).into())
         .labelled("specialize")
 }
@@ -529,7 +615,7 @@ fn stmt() -> impl Parser<Token, Spanned<Stmt>, Error = Simple<Token>> {
             .map(|(path, imports)| {
                 Stmt::Import(ImportStmt {
                     from_path: path,
-                    imports,
+                    imports: imports.into_iter().map(|s| s.map(Symbol::from)).collect(),
                 })
             })
             .map_with_span(|stmt, span| (stmt, span).into());
@@ -541,7 +627,7 @@ fn stmt() -> impl Parser<Token, Spanned<Stmt>, Error = Simple<Token>> {
             .then(string())
             .map(|(name, path)| {
                 Stmt::DepImport(DepImportStmt {
-                    name,
+                    name: name.map(Symbol::from),
                     from_path: path,
                 })
             })
@@ -550,14 +636,23 @@ fn stmt() -> impl Parser<Token, Spanned<Stmt>, Error = Simple<Token>> {
         // Signal and Pin declarations
         let pin = just(Token::Pin)
             .ignore_then(choice((name(), number(), string())))
-            .map(|name| Stmt::Pin(PinStmt { name }))
+            .map(|name| {
+                Stmt::Pin(PinStmt {
+                    name: name.map(Symbol::from),
+                })
+            })
             .map_with_span(|stmt, span| (stmt, span).into());
 
         // Attribute statements
         let type_info = || just(Token::Colon).ignore_then(name());
         let attribute = name()
             .then(type_info())
-            .map(|(name, type_info)| Stmt::Attribute(AttributeStmt { name, type_info }))
+            .map(|(name, type_info)| {
+                Stmt::Attribute(AttributeStmt {
+                    name: name.map(Symbol::from),
+                    type_info: type_info.map(Symbol::from),
+                })
+            })
             .map_with_span(|stmt, span| (stmt, span).into());
 
         // Assignment statements
@@ -617,8 +712,8 @@ fn stmt() -> impl Parser<Token, Spanned<Stmt>, Error = Simple<Token>> {
                     (
                         Stmt::Block(BlockStmt {
                             kind,
-                            name,
-                            parent,
+                            name: name.map(Symbol::from),
+                            parent: parent.map(|p| p.map(Symbol::from)),
                             body,
                         }),
                         span,
@@ -659,6 +754,13 @@ fn stmt() -> impl Parser<Token, Spanned<Stmt>, Error = Simple<Token>> {
             )))
             .then_ignore(separator.repeated())
     })
+    .recover_with(skip_parser(
+        none_of([Token::Newline, Token::Semicolon])
+            .map_with_span(|token, span| (token, span).into())
+            .repeated()
+            .then_ignore(just(Token::Newline))
+            .map_with_span(|tokens, span| (Stmt::Unparsable(tokens), span).into()),
+    ))
     .labelled("stmt")
 }
 
