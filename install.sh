@@ -15,7 +15,7 @@ cargo build --release -p atopile_lsp
 echo "Copying LSP binary to vscode extension..."
 # Ensure the destination directory exists
 mkdir -p "$SCRIPT_DIR/vscode/client/lsp"
-cp "$SCRIPT_DIR/../../target/release/atopile_lsp" "$SCRIPT_DIR/vscode/lsp/atopile_lsp"
+cp "$SCRIPT_DIR/target/release/atopile_lsp" "$SCRIPT_DIR/vscode/lsp/atopile_lsp"
 
 echo "Installing vscode extension dependencies..."
 cd "$SCRIPT_DIR/vscode"
