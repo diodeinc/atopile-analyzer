@@ -543,6 +543,7 @@ export class SchematicRenderer {
         "elk.padding": "[top=0, left=0, bottom=0, right=0]",
         "elk.direction": "DOWN",
         "elk.layered.spacing.nodeNodeBetweenLayers": "0",
+        "elk.nodeSize.minimum": "(0, 0)",
       },
     };
   }
@@ -1297,7 +1298,6 @@ export class SchematicRenderer {
     const layoutOptions = {
       "elk.algorithm": "layered",
       "elk.direction": "LEFT",
-      "elk.layered.thoroughness": "100",
       "elk.nodeSize.constraints": "NODE_LABELS PORTS PORT_LABELS MINIMUM_SIZE",
       "elk.nodeSize.minimum": "(256, 256)",
       "elk.partitioning.activate": "true",
