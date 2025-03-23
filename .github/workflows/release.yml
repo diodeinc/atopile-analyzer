@@ -1,30 +1,55 @@
 name: Build and Release VSCode Extension
 
+# on:
+#   release:
+#     types: [created]
+
+# For debugging
 on:
-  release:
-    types: [created]
+  push:
+    branches:
+      - '**'
 
 jobs:
-  build-lsp:
-    name: Build LSP Binary
+  build-extension:
+    name: Build Platform Extension
     strategy:
       matrix:
         include:
-          - os: ubuntu-latest
-            target: x86_64-unknown-linux-gnu
-            artifact_name: atopile_lsp
-          - os: ubuntu-latest
-            target: aarch64-unknown-linux-gnu
-            artifact_name: atopile_lsp
+          # Windows platforms
           - os: windows-latest
             target: x86_64-pc-windows-msvc
-            artifact_name: atopile_lsp.exe
+            platform: win32-x64
+          - os: windows-latest
+            target: aarch64-pc-windows-msvc
+            platform: win32-arm64
+          
+          # Linux platforms
+          - os: ubuntu-latest
+            target: x86_64-unknown-linux-gnu
+            platform: linux-x64
+          - os: ubuntu-latest
+            target: aarch64-unknown-linux-gnu
+            platform: linux-arm64
+          - os: ubuntu-latest
+            target: armv7-unknown-linux-gnueabihf
+            platform: linux-armhf
+          
+          # Alpine Linux platforms
+          - os: ubuntu-latest
+            target: x86_64-unknown-linux-musl
+            platform: alpine-x64
+          - os: ubuntu-latest
+            target: aarch64-unknown-linux-musl
+            platform: alpine-arm64
+          
+          # macOS platforms
           - os: macos-latest
             target: x86_64-apple-darwin
-            artifact_name: atopile_lsp
+            platform: darwin-x64
           - os: macos-latest
             target: aarch64-apple-darwin
-            artifact_name: atopile_lsp
+            platform: darwin-arm64
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v4
@@ -35,52 +60,33 @@ jobs:
           targets: ${{ matrix.target }}
       
       - name: Install cross-compilation tools
-        if: matrix.target == 'aarch64-unknown-linux-gnu'
+        if: contains(matrix.target, 'aarch64-unknown-linux') || contains(matrix.target, 'armv7-unknown-linux') || contains(matrix.target, 'unknown-linux-musl')
         run: |
           sudo apt-get update
-          sudo apt-get install -y gcc-aarch64-linux-gnu
+          sudo apt-get install -y gcc-aarch64-linux-gnu gcc-arm-linux-gnueabihf musl-tools
 
       - name: Build LSP
         run: cargo build --release --target ${{ matrix.target }} -p atopile_lsp
-        
-      - name: Upload LSP Binary
-        uses: actions/upload-artifact@v4
-        with:
-          name: lsp-${{ matrix.target }}
-          path: target/${{ matrix.target }}/release/${{ matrix.artifact_name }}
 
-  build-vsix:
-    name: Build VSCode Extension
-    needs: build-lsp
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: '20'
 
-      - name: Download all LSP binaries
-        uses: actions/download-artifact@v4
-        with:
-          path: temp-lsp
-
-      - name: Prepare LSP binaries
+      - name: Prepare LSP binary
         run: |
           mkdir -p vscode/lsp
-          cp temp-lsp/lsp-x86_64-unknown-linux-gnu/atopile_lsp vscode/lsp/atopile_lsp-linux-x64
-          cp temp-lsp/lsp-aarch64-unknown-linux-gnu/atopile_lsp vscode/lsp/atopile_lsp-linux-arm64
-          cp temp-lsp/lsp-x86_64-pc-windows-msvc/atopile_lsp.exe vscode/lsp/atopile_lsp-win32-x64.exe
-          cp temp-lsp/lsp-x86_64-apple-darwin/atopile_lsp vscode/lsp/atopile_lsp-darwin-x64
-          cp temp-lsp/lsp-aarch64-apple-darwin/atopile_lsp vscode/lsp/atopile_lsp-darwin-arm64
-          chmod +x vscode/lsp/*
+          cp target/${{ matrix.target }}/release/atopile_lsp${{ matrix.os == 'windows-latest' && '.exe' || '' }} vscode/lsp/atopile_lsp${{ matrix.os == 'windows-latest' && '.exe' || '' }}
+          ${{ matrix.os != 'windows-latest' && 'chmod +x vscode/lsp/atopile_lsp' || '' }}
 
       - name: Install dependencies and build VSIX
         run: |
           cd vscode
           npm install
-          npx --yes vsce package
+          # Update package.json to include platform in version
+          VERSION=$(node -p "require('./package.json').version")
+          node -e "const p=require('./package.json'); p.version=p.version+'-${{ matrix.platform }}'; require('fs').writeFileSync('./package.json', JSON.stringify(p, null, 2))"
+          npx --yes vsce package --target ${{ matrix.platform }}
 
       - name: Upload VSIX to Release
         uses: softprops/action-gh-release@v1

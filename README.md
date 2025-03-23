@@ -10,7 +10,7 @@ atopile analyzer is only tested on macOS, but other platforms should Just Workâ„
 if you install from source:
 
 ```sh
-./crates/atopile_lsp/install.sh
+./install.sh
 ```
 
 ## Supported Features
