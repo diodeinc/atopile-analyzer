@@ -80,7 +80,7 @@
 }
 
 /* Resistor Node Styling */
-.react-flow-resistor-node {
+.react-flow-resistor-node, .react-flow-inductor-node, .react-flow-capacitor-node {
   padding: 0;
   border-radius: 0;
   border: none; /* No border for electrical component */
