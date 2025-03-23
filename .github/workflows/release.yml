@@ -1,0 +1,90 @@
+name: Build and Release VSCode Extension
+
+on:
+  release:
+    types: [created]
+
+jobs:
+  build-lsp:
+    name: Build LSP Binary
+    strategy:
+      matrix:
+        include:
+          - os: ubuntu-latest
+            target: x86_64-unknown-linux-gnu
+            artifact_name: atopile_lsp
+          - os: ubuntu-latest
+            target: aarch64-unknown-linux-gnu
+            artifact_name: atopile_lsp
+          - os: windows-latest
+            target: x86_64-pc-windows-msvc
+            artifact_name: atopile_lsp.exe
+          - os: macos-latest
+            target: x86_64-apple-darwin
+            artifact_name: atopile_lsp
+          - os: macos-latest
+            target: aarch64-apple-darwin
+            artifact_name: atopile_lsp
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: ${{ matrix.target }}
+      
+      - name: Install cross-compilation tools
+        if: matrix.target == 'aarch64-unknown-linux-gnu'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y gcc-aarch64-linux-gnu
+
+      - name: Build LSP
+        run: cargo build --release --target ${{ matrix.target }} -p atopile_lsp
+        
+      - name: Upload LSP Binary
+        uses: actions/upload-artifact@v4
+        with:
+          name: lsp-${{ matrix.target }}
+          path: target/${{ matrix.target }}/release/${{ matrix.artifact_name }}
+
+  build-vsix:
+    name: Build VSCode Extension
+    needs: build-lsp
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Download all LSP binaries
+        uses: actions/download-artifact@v4
+        with:
+          path: temp-lsp
+
+      - name: Prepare LSP binaries
+        run: |
+          mkdir -p vscode/lsp
+          cp temp-lsp/lsp-x86_64-unknown-linux-gnu/atopile_lsp vscode/lsp/atopile_lsp-linux-x64
+          cp temp-lsp/lsp-aarch64-unknown-linux-gnu/atopile_lsp vscode/lsp/atopile_lsp-linux-arm64
+          cp temp-lsp/lsp-x86_64-pc-windows-msvc/atopile_lsp.exe vscode/lsp/atopile_lsp-win32-x64.exe
+          cp temp-lsp/lsp-x86_64-apple-darwin/atopile_lsp vscode/lsp/atopile_lsp-darwin-x64
+          cp temp-lsp/lsp-aarch64-apple-darwin/atopile_lsp vscode/lsp/atopile_lsp-darwin-arm64
+          chmod +x vscode/lsp/*
+
+      - name: Install dependencies and build VSIX
+        run: |
+          cd vscode
+          npm install
+          npx --yes vsce package
+
+      - name: Upload VSIX to Release
+        uses: softprops/action-gh-release@v1
+        with:
+          files: vscode/atopile-analyzer-*.vsix
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} 
