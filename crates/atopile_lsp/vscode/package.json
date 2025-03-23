@@ -16,9 +16,19 @@
   "engines": {
     "vscode": "^1.52.0"
   },
-  "activationEvents": [],
+  "activationEvents": [
+    "onLanguage:ato",
+    "onCommand:atopile.openPreview"
+  ],
   "main": "./client/out/extension",
   "contributes": {
+    "commands": [
+      {
+        "command": "atopile.openSchematic",
+        "title": "Open Schematic",
+        "category": "atopile"
+      }
+    ],
     "languages": [
       {
         "id": "ato",
@@ -38,14 +48,26 @@
         "scopeName": "source.ato",
         "path": "./ato.tmLanguage.json"
       }
+    ],
+    "customEditors": [
+      {
+        "viewType": "atopile.preview",
+        "displayName": "Atopile Preview",
+        "selector": [
+          {
+            "filenamePattern": "*.ato"
+          }
+        ],
+        "priority": "option"
+      }
     ]
   },
   "scripts": {
-    "vscode:prepublish": "npm run compile",
+    "vscode:prepublish": "npm run compile && cd preview && npm run build",
     "compile": "tsc -b",
     "watch": "tsc -b -w",
     "lint": "eslint",
-    "postinstall": "cd client && npm install && cd .."
+    "postinstall": "cd client && npm install && cd .. && cd preview && npm install && cd .."
   },
   "dependencies": {
     "vscode-languageclient": "^7.0.0"

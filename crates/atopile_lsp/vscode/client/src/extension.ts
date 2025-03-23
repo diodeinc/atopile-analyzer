@@ -11,6 +11,12 @@ import {
   OutputChannel,
   WorkspaceFolder,
   Uri,
+  commands,
+  WebviewPanel,
+  ViewColumn,
+  CustomTextEditorProvider,
+  CancellationToken,
+  CustomDocument,
 } from "vscode";
 
 import {
@@ -19,6 +25,8 @@ import {
   ServerOptions,
   TransportKind,
 } from "vscode-languageclient/node";
+
+import * as cp from "child_process";
 
 let defaultClient: LanguageClient;
 const clients = new Map<string, LanguageClient>();
@@ -32,6 +40,9 @@ function buildClient(
     command: context.asAbsolutePath(path.join("lsp", "atopile_lsp")),
     args: [],
     transport: TransportKind.stdio,
+    options: {
+      env: { RUST_LOG: "debug", RUST_BACKTRACE: "1" },
+    },
   };
 
   let client = new LanguageClient(
@@ -83,9 +94,218 @@ function getOuterMostWorkspaceFolder(folder: WorkspaceFolder): WorkspaceFolder {
   return folder;
 }
 
+class AtoPreviewDocument implements CustomDocument {
+  public readonly uri: Uri;
+
+  constructor(uri: Uri) {
+    this.uri = uri;
+  }
+
+  dispose(): void {}
+}
+
+class AtoPreviewProvider implements CustomTextEditorProvider {
+  private static readonly viewType = "atopile.preview";
+  private readonly context: ExtensionContext;
+
+  constructor(context: ExtensionContext) {
+    this.context = context;
+  }
+
+  private async getNetlist(document: TextDocument): Promise<any> {
+    // Get the LSP client for this document
+    const folder = Workspace.getWorkspaceFolder(document.uri);
+    if (!folder) {
+      throw new Error("Document not in workspace");
+    }
+
+    const client = clients.get(folder.uri.toString()) || defaultClient;
+    if (!client) {
+      throw new Error("No LSP client available");
+    }
+
+    // Execute the command
+    const result = await client.sendRequest("atopile/getNetlist", {
+      uri: document.uri.toString(),
+    });
+
+    if (!result) {
+      throw new Error("Failed to get netlist from LSP server");
+    }
+
+    return result;
+  }
+
+  private async updatePreview(
+    document: TextDocument,
+    webviewPanel: WebviewPanel
+  ) {
+    try {
+      const netlist = await this.getNetlist(document);
+      console.log("netlist", netlist);
+      await webviewPanel.webview.postMessage({
+        command: "update",
+        netlist: netlist,
+        currentFile: document.uri.fsPath,
+      });
+    } catch (error) {
+      Window.showErrorMessage(`Failed to update preview: ${error}`);
+    }
+  }
+
+  async resolveCustomTextEditor(
+    document: TextDocument,
+    webviewPanel: WebviewPanel,
+    _token: CancellationToken
+  ): Promise<void> {
+    webviewPanel.webview.options = {
+      enableScripts: true,
+      localResourceRoots: [
+        Uri.file(path.join(this.context.extensionPath, "preview", "build")),
+      ],
+    };
+
+    const previewHtmlPath = Uri.file(
+      path.join(this.context.extensionPath, "preview", "build", "index.html")
+    );
+
+    const previewHtml = await Workspace.fs.readFile(previewHtmlPath);
+    let htmlContent = new TextDecoder().decode(previewHtml);
+
+    // Get the build directory URI that VS Code can use in the webview
+    const buildDirUri = webviewPanel.webview.asWebviewUri(
+      Uri.file(path.join(this.context.extensionPath, "preview", "build"))
+    );
+
+    // Replace all resource paths to use the webview URI scheme
+    htmlContent = htmlContent
+      // Replace base href
+      .replace('<base href="/" />', `<base href="${buildDirUri}/" />`)
+      // Replace absolute paths in script tags
+      .replace(
+        /(src|href)="\/([^"]*)"/g,
+        (match, attr, path) => `${attr}="${buildDirUri}/${path}"`
+      )
+      // Replace relative paths in script tags
+      .replace(
+        /(src|href)="\.\/([^"]*)"/g,
+        (match, attr, path) => `${attr}="${buildDirUri}/${path}"`
+      )
+      // Replace paths in manifest links
+      .replace(
+        /(manifest|icon|apple-touch-icon|shortcut icon)" href="([^"]*)"/g,
+        (match, rel, path) => `${rel}" href="${buildDirUri}/${path}"`
+      );
+
+    webviewPanel.webview.html = htmlContent;
+
+    // Set up message handlers
+    webviewPanel.webview.onDidReceiveMessage(
+      (message) => {
+        switch (message.command) {
+          case "error":
+            Window.showErrorMessage(message.text);
+            return;
+          case "ready":
+            // When the webview signals it's ready, send the initial netlist
+            this.updatePreview(document, webviewPanel);
+            return;
+        }
+      },
+      undefined,
+      this.context.subscriptions
+    );
+
+    // Set up document change subscription
+    const changeDocumentSubscription = Workspace.onDidChangeTextDocument(
+      (e) => {
+        if (e.document.uri.toString() === document.uri.toString()) {
+          this.updatePreview(document, webviewPanel);
+        }
+      }
+    );
+
+    // Clean up the subscription when the webview is disposed
+    webviewPanel.onDidDispose(() => {
+      changeDocumentSubscription.dispose();
+    });
+  }
+
+  async openCustomDocument(
+    uri: Uri,
+    _openContext: { backupId?: string },
+    _token: CancellationToken
+  ): Promise<AtoPreviewDocument> {
+    return new AtoPreviewDocument(uri);
+  }
+}
+
 export function activate(context: ExtensionContext) {
   const outputChannel: OutputChannel =
     Window.createOutputChannel("atopile analyzer");
+
+  // Register the preview provider
+  context.subscriptions.push(
+    Window.registerCustomEditorProvider(
+      "atopile.preview",
+      new AtoPreviewProvider(context)
+    )
+  );
+
+  // Register the command to open preview
+  context.subscriptions.push(
+    commands.registerCommand("atopile.openSchematic", async () => {
+      const activeEditor = Window.activeTextEditor;
+      if (activeEditor && activeEditor.document.languageId === "ato") {
+        const uri = activeEditor.document.uri;
+        await commands.executeCommand(
+          "vscode.openWith",
+          uri,
+          "atopile.preview"
+        );
+      } else {
+        Window.showErrorMessage("Please open an .ato file first");
+      }
+    })
+  );
+
+  // TODO: Re-enable
+  // // Add file system watcher for pcb.toml files
+  // const pcbTomlWatcher =
+  //   Workspace.createFileSystemWatcher("**/[!.]**/pcb.toml");
+
+  // // Function to run pcb build
+  // async function runPcbBuild(uri: Uri) {
+  //   try {
+  //     const folderPath = path.dirname(uri.fsPath);
+  //     outputChannel.appendLine(
+  //       `Running pcb build for changes in ${uri.fsPath}`
+  //     );
+
+  //     // Execute pcb build command
+  //     const result = cp.execSync("/Users/lenny/.diode/bin/pcb build", {
+  //       cwd: folderPath,
+  //       encoding: "utf-8",
+  //     });
+
+  //     outputChannel.appendLine(`pcb build output: ${result}`);
+  //     Window.showInformationMessage(
+  //       `PCB build completed for ${path.basename(folderPath)}`
+  //     );
+  //   } catch (error) {
+  //     outputChannel.appendLine(`Error running pcb build: ${error}`);
+  //     Window.showErrorMessage(`Failed to run pcb build: ${error}`);
+  //   }
+  // }
+
+  // // Register event listeners for file changes
+  // pcbTomlWatcher.onDidChange((uri) => {
+  //   outputChannel.appendLine(`pcb.toml changed: ${uri.fsPath}`);
+  //   runPcbBuild(uri);
+  // });
+
+  // // Add disposables to context
+  // context.subscriptions.push(pcbTomlWatcher);
 
   function didOpenTextDocument(document: TextDocument): void {
     // We are only interested in language mode text

@@ -1,16 +1,32 @@
-use std::collections::HashMap;
-use std::path::PathBuf;
+use std::time::Instant;
 
+use anyhow::Context;
 use atopile_analyzer::diagnostics::{
     AnalyzerDiagnostic, AnalyzerDiagnosticKind, AnalyzerDiagnosticSeverity,
 };
 use atopile_analyzer::AtopileAnalyzer;
 use atopile_parser::AtopileSource;
 use log::{info, Level, LevelFilter, Log, Metadata, Record};
+use serde::{Deserialize, Serialize};
+use serde_json::Value;
 use tokio::sync::Mutex;
 use tower_lsp::jsonrpc::Result;
+use tower_lsp::lsp_types::notification::Notification;
 use tower_lsp::lsp_types::*;
 use tower_lsp::{Client, LanguageServer, LspService, Server};
+
+const NETLIST_UPDATED_METHOD: &str = "atopile/netlistUpdated";
+
+#[derive(Serialize, Deserialize)]
+struct NetlistUpdatedNotification {
+    uri: String,
+    netlist: Value,
+}
+
+impl Notification for NetlistUpdatedNotification {
+    const METHOD: &'static str = NETLIST_UPDATED_METHOD;
+    type Params = NetlistUpdatedNotification;
+}
 
 struct Backend {
     client: Client,
@@ -22,8 +38,8 @@ struct LspLogger {
 }
 
 impl Log for LspLogger {
-    fn enabled(&self, metadata: &Metadata) -> bool {
-        metadata.level() <= Level::Warn
+    fn enabled(&self, _metadata: &Metadata) -> bool {
+        true
     }
 
     fn log(&self, record: &Record) {
@@ -85,6 +101,12 @@ fn diagnostic_to_lsp(diag: &AnalyzerDiagnostic) -> Diagnostic {
             ),
             ..Default::default()
         },
+        AnalyzerDiagnosticKind::Evaluator(evaluator_diag) => Diagnostic {
+            range: range_to_lsp(evaluator_diag.location.range),
+            severity: Some(diagnostic_severity_to_lsp(diag.severity)),
+            message: format!("{}", evaluator_diag.to_string()),
+            ..Default::default()
+        },
     }
 }
 
@@ -95,8 +117,23 @@ impl Backend {
             client: client.clone(),
         };
         log::set_boxed_logger(Box::new(logger))
-            .map(|()| log::set_max_level(LevelFilter::Info))
+            .map(|()| {
+                log::set_max_level(
+                    match std::env::var("RUST_LOG")
+                        .unwrap_or_else(|_| "info".to_string())
+                        .as_str()
+                    {
+                        "debug" => LevelFilter::Debug,
+                        "info" => LevelFilter::Info,
+                        "warn" => LevelFilter::Warn,
+                        "error" => LevelFilter::Error,
+                        _ => LevelFilter::Info,
+                    },
+                )
+            })
             .expect("Failed to initialize logger");
+
+        log::warn!("logger initialized");
 
         Self {
             client,
@@ -105,48 +142,131 @@ impl Backend {
     }
 
     async fn update_source(&self, text: &str, uri: &Url) -> anyhow::Result<()> {
+        let update_start = Instant::now();
+        info!("[update_source] starting for {}", uri);
+
         let path = uri
             .to_file_path()
             .expect("Failed to convert URI to file path");
-        let source = AtopileSource::new(text.to_string(), path.clone())
-            .map_err(|e| anyhow::anyhow!("Failed to parse source: {:?}", e))?;
+
+        let parsing_start = Instant::now();
+        let source = AtopileSource::new(text.to_string(), path.clone()).0;
+
+        info!(
+            "[profile] parsing source took {}ms",
+            parsing_start.elapsed().as_millis()
+        );
+
+        let analyzer_start = Instant::now();
+        let mut analyzer = self.analyzer.lock().await;
+        match analyzer.set_source(&path, source.clone()) {
+            Ok(_) => (),
+            Err(e) => {
+                self.client
+                    .log_message(MessageType::ERROR, format!("{:?}", e))
+                    .await;
+            }
+        }
+        info!(
+            "[profile] set_source took {}ms",
+            analyzer_start.elapsed().as_millis()
+        );
+
+        // Generate and push the netlist
+        let netlist = analyzer
+            .get_netlist(&source)
+            .context("Failed to evaluate netlist")?;
+
+        let netlist_json = serde_json::to_value(netlist).context("Failed to serialize netlist")?;
+
+        self.client
+            .send_notification::<NetlistUpdatedNotification>(NetlistUpdatedNotification {
+                uri: path.to_string_lossy().to_string(),
+                netlist: netlist_json,
+            })
+            .await;
+
+        let diagnostics_start = Instant::now();
+        let diagnostics_result = analyzer.diagnostics_for_all_open_files();
+        info!(
+            "[profile] diagnostics_for_all_open_files took {}ms",
+            diagnostics_start.elapsed().as_millis()
+        );
+
+        match diagnostics_result {
+            Ok(diagnostics_per_file) => {
+                let publish_start = Instant::now();
+                for (file, diagnostics) in diagnostics_per_file {
+                    let lsp_diagnostics =
+                        diagnostics.iter().map(|d| diagnostic_to_lsp(d)).collect();
+
+                    info!(
+                        "publishing diagnostics for file {:?}: {:?}",
+                        file, lsp_diagnostics
+                    );
+
+                    self.client
+                        .publish_diagnostics(
+                            Url::from_file_path(&file).expect("Failed to convert file path to URI"),
+                            lsp_diagnostics,
+                            None,
+                        )
+                        .await;
+                }
+                info!(
+                    "[profile] publishing diagnostics took {}ms",
+                    publish_start.elapsed().as_millis()
+                );
+            }
+            Err(e) => {
+                self.client
+                    .log_message(
+                        MessageType::ERROR,
+                        format!("Failed to get diagnostics: {:?}", e),
+                    )
+                    .await;
+            }
+        }
+
+        info!(
+            "[profile] update_source total time: {}ms",
+            update_start.elapsed().as_millis()
+        );
+        Ok(())
+    }
+
+    async fn get_netlist(&self, params: Value) -> Result<Value> {
+        let uri_str = params.get("uri").and_then(|v| v.as_str()).ok_or_else(|| {
+            tower_lsp::jsonrpc::Error::invalid_params("Expected URI string parameter")
+        })?;
+
+        let uri = Url::parse(uri_str).map_err(|e| {
+            tower_lsp::jsonrpc::Error::invalid_params(format!("Invalid URI: {}", e))
+        })?;
+
+        let path = uri
+            .to_file_path()
+            .map_err(|_| tower_lsp::jsonrpc::Error::invalid_params("Invalid file path"))?;
 
         let mut analyzer = self.analyzer.lock().await;
-        analyzer
-            .set_source(
-                &uri.to_file_path()
-                    .expect("Failed to convert URI to file path"),
-                source,
+
+        // Get the source from the analyzer's state
+        let source = analyzer.get_source_from_cache(&path).ok_or_else(|| {
+            tower_lsp::jsonrpc::Error::invalid_params(
+                "File not found in analyzer state. Make sure the file is open in the editor.",
             )
-            .map_err(|e| anyhow::anyhow!("Failed to set source: {:?}", e))?;
+        })?;
 
-        let diagnostics = analyzer
-            .diagnostics(&path)
-            .map_err(|e| anyhow::anyhow!("Failed to get diagnostics: {:?}", e))?;
+        let netlist = analyzer
+            .get_netlist(&source)
+            .map_err(|_| tower_lsp::jsonrpc::Error::internal_error())?;
 
-        let mut diagnostics_per_file = HashMap::<PathBuf, Vec<AnalyzerDiagnostic>>::new();
-        for diag in diagnostics {
-            diagnostics_per_file
-                .entry(diag.file.clone())
-                .or_default()
-                .push(diag);
-        }
+        let netlist_json = serde_json::to_value(netlist)
+            .map_err(|_| tower_lsp::jsonrpc::Error::internal_error())?;
 
-        for (file, diagnostics) in diagnostics_per_file {
-            let lsp_diagnostics = diagnostics.iter().map(|d| diagnostic_to_lsp(d)).collect();
+        info!("netlist: {}", netlist_json.to_string());
 
-            info!("publishing diagnostics: {:?}", lsp_diagnostics);
-
-            self.client
-                .publish_diagnostics(
-                    Url::from_file_path(&file).expect("Failed to convert file path to URI"),
-                    lsp_diagnostics,
-                    None,
-                )
-                .await;
-        }
-
-        Ok(())
+        Ok(netlist_json)
     }
 }
 
@@ -176,6 +296,24 @@ impl LanguageServer for Backend {
     async fn did_open(&self, params: DidOpenTextDocumentParams) {
         info!("did_open");
 
+        let path = params
+            .text_document
+            .uri
+            .to_file_path()
+            .expect("Failed to convert URI to file path");
+
+        {
+            let mut analyzer = self.analyzer.lock().await;
+            if let Err(e) = analyzer.mark_file_open(&path) {
+                self.client
+                    .log_message(
+                        MessageType::ERROR,
+                        format!("Failed to mark file as open: {:?}", e),
+                    )
+                    .await;
+            }
+        }
+
         let res = self
             .update_source(&params.text_document.text, &params.text_document.uri)
             .await;
@@ -191,7 +329,8 @@ impl LanguageServer for Backend {
     }
 
     async fn did_change(&self, params: DidChangeTextDocumentParams) {
-        info!("did_change");
+        info!("[did_change] start {}", params.text_document.uri);
+        let start = Instant::now();
 
         let res = self
             .update_source(
@@ -208,21 +347,46 @@ impl LanguageServer for Backend {
                     .await;
             }
         }
+
+        info!(
+            "[did_change] done: {} ({}ms)",
+            params.text_document.uri,
+            start.elapsed().as_millis()
+        );
     }
 
     async fn did_close(&self, params: DidCloseTextDocumentParams) {
         info!("did_close");
 
+        let path = params
+            .text_document
+            .uri
+            .to_file_path()
+            .expect("Failed to convert URI to file path");
+
         let mut analyzer = self.analyzer.lock().await;
-        analyzer
-            .remove_source(
-                &params
-                    .text_document
-                    .uri
-                    .to_file_path()
-                    .expect("Failed to convert URI to file path"),
-            )
-            .expect("Failed to remove source");
+
+        if let Err(e) = analyzer.mark_file_closed(&path) {
+            self.client
+                .log_message(
+                    MessageType::ERROR,
+                    format!("Failed to mark file as closed: {:?}", e),
+                )
+                .await;
+        }
+
+        if let Err(e) = analyzer.remove_source(&path) {
+            self.client
+                .log_message(
+                    MessageType::ERROR,
+                    format!("Failed to remove source: {:?}", e),
+                )
+                .await;
+        }
+
+        self.client
+            .publish_diagnostics(params.text_document.uri, vec![], None)
+            .await;
     }
 
     async fn goto_definition(
@@ -242,7 +406,7 @@ impl LanguageServer for Backend {
                     .expect("Failed to convert URI to file path"),
                 position_from_lsp(params.text_document_position_params.position),
             )
-            .expect("Failed to find definition");
+            .map_err(|e| tower_lsp::jsonrpc::Error::invalid_params(e.to_string()))?;
 
         Ok(result.map(|r| {
             GotoDefinitionResponse::Link(vec![LocationLink {
@@ -265,6 +429,9 @@ async fn main() {
     let stdin = tokio::io::stdin();
     let stdout = tokio::io::stdout();
 
-    let (service, socket) = LspService::new(Backend::new);
+    let (service, socket) = LspService::build(Backend::new)
+        .custom_method("atopile/getNetlist", Backend::get_netlist)
+        .finish();
+
     Server::new(stdin, stdout, socket).serve(service).await;
 }
