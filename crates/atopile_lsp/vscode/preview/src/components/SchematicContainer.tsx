@@ -376,6 +376,7 @@ const SchematicContainer: React.FC<SchematicContainerProps> = ({
   netlistData,
   currentFile,
 }) => {
+  console.log("schematic container with currentFile", currentFile);
   const [error, setError] = useState<string | null>(null);
   const [selectedModule, setSelectedModule] = useState<string>(currentFile);
 

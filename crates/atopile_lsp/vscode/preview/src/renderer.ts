@@ -3,6 +3,7 @@ import type { ELK as ELKType } from "elkjs/lib/elk-api";
 import { InstanceKind, Netlist, AttributeValue } from "./types/NetlistTypes";
 
 export enum NodeType {
+  META = "meta",
   MODULE = "module",
   COMPONENT = "component",
   RESISTOR = "resistor",
@@ -23,6 +24,9 @@ export interface ElkNode {
   properties?: Record<string, string>;
   type: NodeType;
   netId?: string; // Only used for net reference nodes
+  isGround?: boolean; // Only used for net reference nodes
+  children?: ElkNode[];
+  edges?: ElkEdge[];
 }
 
 export interface ElkPort {
@@ -214,17 +218,17 @@ export class SchematicRenderer {
     return {
       id: instance_ref,
       type: NodeType.RESISTOR,
-      width: 40,
-      height: 100,
+      width: 12,
+      height: 30,
       labels: [
         {
           text: `${this._renderValue(instance.attributes.value) || ""}${
             footprint ? `\n${footprint}` : ""
           }`,
-          x: 45, // Position label to the right of the resistor
-          y: 50, // Vertically center the label
+          x: 45,
+          y: 15,
           width: 128,
-          height: 100,
+          height: 30,
         },
       ],
       ports: [
@@ -250,7 +254,7 @@ export class SchematicRenderer {
       properties: {
         "elk.padding": "[top=10, left=10, bottom=10, right=10]",
         "elk.portConstraints": "FIXED_SIDE",
-        "elk.nodeSize.minimum": "(40, 100)",
+        "elk.nodeSize.minimum": "(40, 30)",
       },
     };
   }
@@ -266,14 +270,63 @@ export class SchematicRenderer {
       id: instance_ref,
       type: NodeType.CAPACITOR,
       width: 40,
+      height: 20,
+      labels: [
+        {
+          text: `${value || ""}${footprint ? `\n${footprint}` : ""}`,
+          x: 45,
+          y: 10,
+          width: 128,
+          height: 20,
+        },
+      ],
+      ports: [
+        {
+          id: `${instance_ref}.p1`,
+          properties: {
+            "port.side": "NORTH",
+            "port.index": "0",
+            "port.anchor": "CENTER",
+            "port.alignment": "CENTER",
+          },
+        },
+        {
+          id: `${instance_ref}.p2`,
+          properties: {
+            "port.side": "SOUTH",
+            "port.index": "0",
+            "port.anchor": "CENTER",
+            "port.alignment": "CENTER",
+          },
+        },
+      ],
+      properties: {
+        "elk.padding": "[top=10, left=10, bottom=10, right=10]",
+        "elk.portConstraints": "FIXED_SIDE",
+        "elk.nodeSize.minimum": "(40, 20)",
+      },
+    };
+  }
+
+  _inductorNode(instance_ref: string): ElkNode {
+    const instance = this.netlist.instances[instance_ref];
+    const value = this._renderValue(instance.attributes.value);
+    const footprint =
+      this._getAttributeValue(instance.attributes.package) ||
+      this._getAttributeValue(instance.attributes.footprint);
+
+    return {
+      id: instance_ref,
+      type: NodeType.INDUCTOR,
+      width: 40,
       height: 40,
       labels: [
         {
           text: `${value || ""}${footprint ? `\n${footprint}` : ""}`,
-          x: 45, // Position label to the right of the capacitor
-          y: 20, // Vertically center the label
+          x: 45,
+          y: 20,
           width: 128,
-          height: 100,
+          height: 40,
         },
       ],
       ports: [
@@ -304,64 +357,40 @@ export class SchematicRenderer {
     };
   }
 
-  _inductorNode(instance_ref: string): ElkNode {
-    return {
-      id: instance_ref,
-      type: NodeType.INDUCTOR,
-      width: 40,
-      height: 60,
-      ports: [
-        {
-          id: `${instance_ref}.p1`,
-          properties: {
-            "port.side": "NORTH",
-            "port.index": "0",
-            "port.anchor": "CENTER",
-            "port.alignment": "CENTER",
-          },
-        },
-        {
-          id: `${instance_ref}.p2`,
-          properties: {
-            "port.side": "SOUTH",
-            "port.index": "0",
-            "port.anchor": "CENTER",
-            "port.alignment": "CENTER",
-          },
-        },
-      ],
-      properties: {
-        "elk.padding": "[top=10, left=10, bottom=10, right=10]",
-        "elk.portConstraints": "FIXED_SIDE",
-        "elk.nodeSize.minimum": "(40, 60)",
-      },
-    };
-  }
+  _netReferenceNode(
+    ref_id: string,
+    name: string,
+    side: "NORTH" | "WEST" = "WEST",
+    isGround: boolean = false
+  ): ElkNode {
+    // Use larger dimensions for ground symbols
+    const width = isGround ? 30 : 15;
+    const height = isGround ? 40 : 15;
 
-  _netReferenceNode(ref_id: string, name: string): ElkNode {
     return {
       id: ref_id,
       type: NodeType.NET_REFERENCE,
-      width: 15,
-      height: 15,
+      width: width,
+      height: height,
       netId: name,
-      labels: [{ text: name }],
+      isGround: isGround,
+      labels: isGround ? [] : [{ text: name }],
       ports: [
         {
-          id: ref_id,
+          id: `${ref_id}.port`,
           width: -1,
           height: -1,
           properties: {
-            "port.anchor": "(15, 15)",
             "port.alignment": "CENTER",
+            "port.side": side,
           },
         },
       ],
       properties: {
-        "elk.padding": "[top=30, left=30, bottom=30, right=30]",
+        "elk.padding": "[top=0, left=0, bottom=0, right=0]",
         "elk.portConstraints": "FIXED_POS",
         "elk.nodeSize.constraints": "MINIMUM_SIZE",
-        "elk.nodeSize.minimum": "(15, 15)",
+        "elk.nodeSize.minimum": `(${width}, ${height})`,
       },
     };
   }
@@ -378,9 +407,6 @@ export class SchematicRenderer {
       width: 256,
       height: 128,
       ports: [],
-      properties: {
-        "elk.padding": "[top=20, left=20, bottom=20, right=20]",
-      },
       labels: [{ text: instance_ref.split(".").pop() || "" }],
     };
 
@@ -468,6 +494,171 @@ export class SchematicRenderer {
     return null;
   }
 
+  _metaNode(
+    nodes: ElkNode[],
+    edges: ElkEdge[],
+    exposedPortIds: Set<string>
+  ): ElkNode {
+    // Rewrite ports on `nodes` and `edges` that are in `exposedPortIds`
+    let newNodes = nodes.map((node) => {
+      return {
+        ...node,
+        ports: node.ports?.map((port) => {
+          return {
+            ...port,
+            id: exposedPortIds.has(port.id) ? port.id + "_internal" : port.id,
+          };
+        }),
+      };
+    });
+
+    let newEdges = edges.map((edge) => {
+      return {
+        ...edge,
+        sources: edge.sources.map((source) =>
+          exposedPortIds.has(source) ? source + "_internal" : source
+        ),
+        targets: edge.targets.map((target) =>
+          exposedPortIds.has(target) ? target + "_internal" : target
+        ),
+      };
+    });
+
+    // Return node with updated ports
+    return {
+      id: `${nodes.map((node) => node.id).join("_")}_meta`,
+      type: NodeType.META,
+      children: newNodes,
+      edges: newEdges,
+      ports: Array.from(exposedPortIds).map((port) => ({
+        id: port,
+        properties: {
+          fromPortId: `${port}_internal`,
+          fromNodeId:
+            nodes.find((node) => node.ports?.some((p) => p.id === port))?.id ??
+            "",
+        },
+      })),
+      properties: {
+        "elk.padding": "[top=0, left=0, bottom=0, right=0]",
+        "elk.direction": "DOWN",
+        "elk.layered.spacing.nodeNodeBetweenLayers": "0",
+      },
+    };
+  }
+
+  _moveMetaNodePorts(node: ElkNode): ElkNode {
+    if (node.type !== NodeType.META) {
+      return node;
+    }
+
+    const children = node.children || [];
+    node.ports = node.ports || [];
+
+    // For each port in the meta node
+    for (const metaPort of node.ports) {
+      // Find the internal port this meta port should connect to
+      const internalPortId = metaPort.properties?.fromPortId;
+      if (!internalPortId) continue;
+
+      // Find the child node that has this internal port
+      for (const child of children) {
+        const childPorts = child.ports || [];
+        const internalPort = childPorts.find(
+          (port) => port.id === internalPortId
+        );
+
+        if (internalPort) {
+          // Copy the position from the internal port, adjusting for the child's position
+          const childX = child.x || 0;
+          const childY = child.y || 0;
+          const portX = (internalPort.x || 0) + childX;
+          const portY = (internalPort.y || 0) + childY;
+
+          // Determine which edge of the meta node this port should be on
+          const metaWidth = node.width || 0;
+          const metaHeight = node.height || 0;
+
+          const distToLeft = portX;
+          const distToRight = metaWidth - portX;
+          const distToTop = portY;
+          const distToBottom = metaHeight - portY;
+
+          const minDist = Math.min(
+            distToLeft,
+            distToRight,
+            distToTop,
+            distToBottom
+          );
+
+          let side: "WEST" | "EAST" | "NORTH" | "SOUTH";
+          let x: number;
+          let y: number;
+
+          if (minDist === distToLeft) {
+            side = "WEST";
+            x = 0;
+            y = portY;
+          } else if (minDist === distToRight) {
+            side = "EAST";
+            x = metaWidth;
+            y = portY;
+          } else if (minDist === distToTop) {
+            side = "NORTH";
+            x = portX;
+            y = 0;
+          } else {
+            side = "SOUTH";
+            x = portX;
+            y = metaHeight;
+          }
+
+          // Update the meta port properties
+          metaPort.x = x;
+          metaPort.y = y;
+          metaPort.properties = {
+            ...metaPort.properties,
+            "port.side": side,
+            "port.index": `${
+              side === "WEST" || side === "EAST"
+                ? y / metaHeight
+                : x / metaWidth
+            }`,
+            "port.alignment": "CENTER",
+          };
+
+          break; // Found the matching port, no need to check other children
+        }
+      }
+    }
+
+    node.properties = {
+      ...node.properties,
+      "elk.portConstraints": "FIXED_POS",
+    };
+
+    return node;
+  }
+
+  _getAllNodes(
+    node: ElkNode | ElkGraph | { id: string; children?: ElkNode[] }
+  ): ElkNode[] {
+    const nodes: ElkNode[] = [];
+
+    const children = node.children || [];
+
+    for (const child of children) {
+      nodes.push(child);
+
+      // Recursively get nodes from children
+      if (child.children) {
+        nodes.push(...this._getAllNodes(child));
+      }
+    }
+
+    return nodes;
+  }
+
   _addConnectivity(graph: ElkGraph): ElkGraph {
     // For each net in the netlist:
     //  - We will build a set `S` of ports in this graph that are in this net.
@@ -495,8 +686,12 @@ export class SchematicRenderer {
         }
       }
 
+      const isGndNet = Array.from(net).some((port) =>
+        port.split(".").pop()?.toLowerCase().includes("gnd")
+      );
+
       // For each node in the graph
-      for (const node of graph.children) {
+      for (const node of this._getAllNodes(graph)) {
         let foundConnectionInNode = false;
 
         // Check if any of the node's ports are in this net
@@ -540,7 +735,11 @@ export class SchematicRenderer {
       }
 
       // Add a net reference if we need it.
-      if (portsInNetToInstanceRef.size >= 1 && outsideConnections.size >= 1) {
+      if (
+        portsInNetToInstanceRef.size >= 1 &&
+        outsideConnections.size >= 1 &&
+        !isGndNet
+      ) {
         const netRefId = `${netName}_ref`;
         const netRefNode = this._netReferenceNode(netRefId, netName);
         graph.children.push(netRefNode);
@@ -553,7 +752,9 @@ export class SchematicRenderer {
 
       const portToComponentType = (port: string) => {
         const instanceRef = portsInNetToInstanceRef.get(port);
-        const node = graph.children.find((node) => node.id === instanceRef);
+        const node = this._getAllNodes(graph).find(
+          (node) => node.id === instanceRef
+        );
         return node?.type;
       };
 
@@ -578,170 +779,300 @@ export class SchematicRenderer {
 
       const modulePorts = portsOfType([NodeType.COMPONENT, NodeType.MODULE]);
 
-      // First, daisy chain all of the passive ports together.
-      for (let i = 0; i < passivePorts.length - 1; i++) {
-        const sourcePort = passivePorts[i][0];
-        const targetPort = passivePorts[i + 1][0];
+      if (isGndNet) {
+        // Group ports by their instance reference
+        const instanceToPorts = new Map<string, string[]>();
+        for (const [port, instanceRef] of portsList) {
+          if (!instanceToPorts.has(instanceRef)) {
+            instanceToPorts.set(instanceRef, []);
+          }
+          instanceToPorts.get(instanceRef)!.push(port);
+        }
 
-        const sourcePortInstanceRef = passivePorts[i][1];
-        const targetPortInstanceRef = passivePorts[i + 1][1];
+        // Create one GND reference per instance
+        for (const [instanceRef, ports] of Array.from(
+          instanceToPorts.entries()
+        )) {
+          const node = graph.children.find((n) => n.id === instanceRef);
+          if (!node) continue;
 
-        graph.edges.push({
-          id: `${sourcePort}-${targetPort}`,
-          sources: [sourcePort],
-          targets: [targetPort],
-          sourceComponentRef: sourcePortInstanceRef,
-          targetComponentRef: targetPortInstanceRef,
-          netId: netName,
-        });
+          const netRefId = `${netName}_gnd_${instanceRef.replace(/\./g, "_")}`;
+          const netRefNode = this._netReferenceNode(
+            netRefId,
+            "GND",
+            "NORTH",
+            true
+          );
+          netRefNode.netId = netName;
+
+          // For modules, connect all the ports to the net reference node.
+          graph.children.push(netRefNode);
+          for (const port of ports) {
+            graph.edges.push({
+              id: `${port}-${netRefId}`,
+              sources: [port],
+              targets: [netRefNode.ports![0].id],
+              sourceComponentRef: instanceRef,
+              targetComponentRef: netRefId,
+              netId: netName,
+            });
+          }
+        }
+      } else {
+        // First, daisy chain all of the passive ports together.
+        for (let i = 0; i < passivePorts.length - 1; i++) {
+          const sourcePort = passivePorts[i][0];
+          const targetPort = passivePorts[i + 1][0];
+
+          const sourcePortInstanceRef = passivePorts[i][1];
+          const targetPortInstanceRef = passivePorts[i + 1][1];
+
+          graph.edges.push({
+            id: `${sourcePort}-${targetPort}`,
+            sources: [sourcePort],
+            targets: [targetPort],
+            sourceComponentRef: sourcePortInstanceRef,
+            targetComponentRef: targetPortInstanceRef,
+            netId: netName,
+            properties: {
+              "elk.layered.priority.direction": "10",
+              "elk.layered.priority.shortness": "10",
+            },
+          });
+        }
+
+        // Next, connect the first passive port (or if we don't have, to a module
+        // port) to all of the net reference ports.
+        const netReferenceConnectorPort =
+          passivePorts.length > 0
+            ? passivePorts[0]
+            : modulePorts[modulePorts.length - 1];
+
+        for (const netReferencePort of netReferencePorts) {
+          const sourcePort = netReferenceConnectorPort[0];
+          const targetPort = netReferencePort[0];
+
+          const sourcePortInstanceRef = netReferenceConnectorPort[1];
+          const targetPortInstanceRef = netReferencePort[1];
+
+          graph.edges.push({
+            id: `${sourcePort}-${targetPort}`,
+            sources: [sourcePort],
+            targets: [targetPort],
+            sourceComponentRef: sourcePortInstanceRef,
+            targetComponentRef: targetPortInstanceRef,
+            netId: netName,
+          });
+        }
+
+        // And finally, connect all of the module ports to the first passive port
+        // (or else to the last module port).
+        const moduleConnectorPort =
+          passivePorts.length > 0
+            ? passivePorts[0]
+            : modulePorts[modulePorts.length - 1];
+
+        for (const modulePort of modulePorts) {
+          const sourcePort = moduleConnectorPort[0];
+          const targetPort = modulePort[0];
+
+          const sourcePortInstanceRef = moduleConnectorPort[1];
+          const targetPortInstanceRef = modulePort[1];
+
+          graph.edges.push({
+            id: `${sourcePort}-${targetPort}`,
+            sources: [sourcePort],
+            targets: [targetPort],
+            sourceComponentRef: sourcePortInstanceRef,
+            targetComponentRef: targetPortInstanceRef,
+            netId: netName,
+            properties: {
+              "elk.layered.priority.direction": "10",
+              "elk.layered.priority.shortness": "10",
+            },
+          });
+        }
       }
-
-      // Next, connect the last passive port (or if we don't have, to a module
-      // port) to all of the net reference ports.
-      const netReferenceConnectorPort =
-        passivePorts.length > 0
-          ? passivePorts[passivePorts.length - 1]
-          : modulePorts[modulePorts.length - 1];
-
-      for (const netReferencePort of netReferencePorts) {
-        const sourcePort = netReferenceConnectorPort[0];
-        const targetPort = netReferencePort[0];
-
-        const sourcePortInstanceRef = netReferenceConnectorPort[1];
-        const targetPortInstanceRef = netReferencePort[1];
-
-        graph.edges.push({
-          id: `${sourcePort}-${targetPort}`,
-          sources: [sourcePort],
-          targets: [targetPort],
-          sourceComponentRef: sourcePortInstanceRef,
-          targetComponentRef: targetPortInstanceRef,
-          netId: netName,
-        });
-      }
-
-      // And finally, connect all of the module ports to the first passive port
-      // (or else to the last module port).
-      const moduleConnectorPort =
-        passivePorts.length > 0
-          ? passivePorts[0]
-          : modulePorts[modulePorts.length - 1];
-
-      for (const modulePort of modulePorts) {
-        const sourcePort = moduleConnectorPort[0];
-        const targetPort = modulePort[0];
-
-        const sourcePortInstanceRef = moduleConnectorPort[1];
-        const targetPortInstanceRef = modulePort[1];
-
-        graph.edges.push({
-          id: `${sourcePort}-${targetPort}`,
-          sources: [sourcePort],
-          targets: [targetPort],
-          sourceComponentRef: sourcePortInstanceRef,
-          targetComponentRef: targetPortInstanceRef,
-          netId: netName,
-        });
-      }
-
-      //   if (portsList.length > 3) {
-      //     // Create a junction node for this net
-      //     const junctionNodeId = `${netName}_junction`;
-      //     const junctionNodePortId = `${junctionNodeId}_port`;
-      //     graph.children.push({
-      //       id: junctionNodeId,
-      //       width: 0,
-      //       height: 0,
-      //       type: NodeType.NET_JUNCTION,
-      //       ports: [
-      //         {
-      //           id: junctionNodePortId,
-      //           width: -1,
-      //           height: -1,
-      //           properties: {
-      //             "port.anchor": "(0, 0)",
-      //             "port.alignment": "CENTER",
-      //           },
-      //         },
-      //       ],
-      //       properties: {
-      //         "elk.padding": "[top=0, left=0, bottom=0, right=0]",
-      //         "elk.nodeSize.constraints": "MINIMUM_SIZE",
-      //         "elk.nodeSize.minimum": "(0, 0)",
-      //       },
-      //     });
-
-      //     // Connect every port to the junction node
-      //     for (const [port, instanceRef] of portsList) {
-      //       graph.edges.push({
-      //         id: `${junctionNodeId}-${port}`,
-      //         sources: [junctionNodePortId],
-      //         targets: [port],
-      //         sourceComponentRef: junctionNodeId,
-      //         targetComponentRef: instanceRef,
-      //         netId: netName,
-      //         properties: {
-      //           "elk.edge.thickness": "0.1", // Make edges very thin
-      //         },
-      //       });
-      //     }
-
-      //     // If we have a net reference, connect it to the junction node
-      //     if (
-      //       portsInGraphToInstanceRef.size >= 1 &&
-      //       outsideConnections.size >= 1
-      //     ) {
-      //       const netRefId = `${netName}_ref`;
-      //       const netRefNode = this._netReferenceNode(netRefId, netName);
-      //       graph.children.push(netRefNode);
-
-      //       graph.edges.push({
-      //         id: `${netName}_ref_edge`,
-      //         sources: [junctionNodePortId],
-      //         targets: [netRefId],
-      //         sourceComponentRef: junctionNodeId,
-      //         targetComponentRef: netRefId,
-      //         netId: netName,
-      //       });
-      //     }
-      //   } else {
-      //     for (let i = 0; i < portsList.length; i++) {
-      //       for (let j = i + 1; j < portsList.length; j++) {
-      //         graph.edges.push({
-      //           id: `${portsList[i][0]}-${portsList[j][0]}`,
-      //           sources: [portsList[i][0]],
-      //           targets: [portsList[j][0]],
-      //           sourceComponentRef: portsList[i][1],
-      //           targetComponentRef: portsList[j][1],
-      //           netId: netName,
-      //         });
-      //       }
-      //     }
-
-      //     // If we have a net reference, connect it to all nodes
-      //     if (
-      //       portsInGraphToInstanceRef.size >= 1 &&
-      //       outsideConnections.size >= 1
-      //     ) {
-      //       const netRefId = `${netName}_ref`;
-      //       const netRefNode = this._netReferenceNode(netRefId, netName);
-      //       graph.children.push(netRefNode);
-
-      //       for (const [port, instanceRef] of portsList) {
-      //         graph.edges.push({
-      //           id: `${netName}_ref_edge`,
-      //           sources: [port],
-      //           targets: [netRefId],
-      //           sourceComponentRef: instanceRef,
-      //           targetComponentRef: netRefId,
-      //           netId: netName,
-      //         });
-      //       }
-      //     }
-      //   }
     }
 
     return graph;
+  }
+
+  /// Analyze the graph and rewrite common sub-graphs as meta nodes with their own layout rules.
+  _createLayoutMetaNodes(graph: ElkGraph): ElkGraph {
+    let edgeIdsInMetaNodes: Set<string> = new Set();
+
+    // Create a map of net IDs to their edges
+    const netToEdges = new Map<string, ElkEdge[]>();
+    for (const edge of graph.edges) {
+      if (!edge.netId) continue;
+      if (!netToEdges.has(edge.netId)) {
+        netToEdges.set(edge.netId, []);
+      }
+      netToEdges.get(edge.netId)!.push(edge);
+    }
+
+    // For each net, find passive components that are exclusively connected to net references
+    const processedNodes = new Set<string>();
+    const newChildren: ElkNode[] = [];
+    const newEdges: ElkEdge[] = [];
+
+    // Keep track of which meta nodes contain which passive components
+    const passiveToMetaNode = new Map<string, string>();
+
+    // Convert Map entries to array for iteration
+    const netEntries = Array.from(netToEdges.entries());
+    for (const [netId, edges] of netEntries) {
+      // Get all nodes connected to this net
+      const connectedNodes = new Set<string>();
+      for (const edge of edges) {
+        connectedNodes.add(edge.sourceComponentRef);
+        connectedNodes.add(edge.targetComponentRef);
+      }
+
+      // Find passive nodes in this net
+      const passiveNodes = Array.from(connectedNodes).filter((nodeId) => {
+        const node = graph.children.find((n) => n.id === nodeId);
+        return (
+          node &&
+          [NodeType.RESISTOR, NodeType.CAPACITOR, NodeType.INDUCTOR].includes(
+            node.type
+          )
+        );
+      });
+
+      // For each passive node
+      for (const passiveNodeId of passiveNodes) {
+        if (processedNodes.has(passiveNodeId)) continue;
+
+        // Find all net references exclusively connected to this passive node
+        const connectedRefs = Array.from(connectedNodes).filter((nodeId) => {
+          const node = graph.children.find((n) => n.id === nodeId);
+          if (!node || node.type !== NodeType.NET_REFERENCE || !node.isGround)
+            return false;
+
+          // Check if this net reference is only connected to this passive node
+          const refEdges = edges.filter(
+            (e: ElkEdge) =>
+              e.sourceComponentRef === nodeId || e.targetComponentRef === nodeId
+          );
+          return refEdges.every(
+            (e: ElkEdge) =>
+              e.sourceComponentRef === passiveNodeId ||
+              e.targetComponentRef === passiveNodeId
+          );
+        });
+
+        // If we found exclusive net references, create a meta node
+        if (connectedRefs.length > 0) {
+          const passiveNode = graph.children.find(
+            (n) => n.id === passiveNodeId
+          )!;
+          const refNodes = connectedRefs.map(
+            (refId) => graph.children.find((n) => n.id === refId)!
+          );
+
+          // Find all ports that need to be exposed (those with external connections)
+          const exposedPorts = new Set<string>();
+          for (const edge of graph.edges) {
+            // If edge connects to our passive node but other end is not in our meta node
+            if (
+              edge.sourceComponentRef === passiveNodeId &&
+              !connectedRefs.includes(edge.targetComponentRef)
+            ) {
+              // Add all ports from this edge that belong to our passive node
+              edge.sources.forEach((port) => {
+                if (port.startsWith(passiveNodeId)) {
+                  exposedPorts.add(port);
+                }
+              });
+            }
+            if (
+              edge.targetComponentRef === passiveNodeId &&
+              !connectedRefs.includes(edge.sourceComponentRef)
+            ) {
+              edge.targets.forEach((port) => {
+                if (port.startsWith(passiveNodeId)) {
+                  exposedPorts.add(port);
+                }
+              });
+            }
+          }
+
+          // Create meta node containing the passive and its net references
+          const metaNodeId = `${passiveNodeId}_with_refs`;
+          const metaNodeEdges = edges.filter(
+            (e: ElkEdge) =>
+              (e.sourceComponentRef === passiveNodeId ||
+                connectedRefs.includes(e.sourceComponentRef)) &&
+              (e.targetComponentRef === passiveNodeId ||
+                connectedRefs.includes(e.targetComponentRef))
+          );
+
+          for (const edge of metaNodeEdges) {
+            edgeIdsInMetaNodes.add(edge.id);
+          }
+
+          const metaNode = this._metaNode(
+            [passiveNode, ...refNodes],
+            metaNodeEdges,
+            exposedPorts
+          );
+
+          // Keep track of which meta node contains this passive component
+          passiveToMetaNode.set(passiveNodeId, metaNodeId);
+
+          // Mark these nodes as processed
+          processedNodes.add(passiveNodeId);
+          connectedRefs.forEach((refId) => processedNodes.add(refId));
+
+          // Add the meta node to our new children
+          newChildren.push(metaNode);
+        }
+      }
+    }
+
+    // Add all unprocessed nodes
+    for (const node of graph.children) {
+      if (!processedNodes.has(node.id)) {
+        newChildren.push(node);
+      }
+    }
+
+    // Process all edges
+    for (const edge of graph.edges) {
+      if (edgeIdsInMetaNodes.has(edge.id)) {
+        continue;
+      }
+
+      // If neither endpoint is in a meta node, keep the edge as is
+      if (
+        !processedNodes.has(edge.sourceComponentRef) &&
+        !processedNodes.has(edge.targetComponentRef)
+      ) {
+        newEdges.push(edge);
+        continue;
+      }
+
+      // If one endpoint is in a meta node, we need to update the edge
+      const sourceMetaId = passiveToMetaNode.get(edge.sourceComponentRef);
+      const targetMetaId = passiveToMetaNode.get(edge.targetComponentRef);
+
+      // Create a new edge with updated endpoints if needed
+      const newEdge: ElkEdge = {
+        ...edge,
+        sourceComponentRef: sourceMetaId || edge.sourceComponentRef,
+        targetComponentRef: targetMetaId || edge.targetComponentRef,
+      };
+
+      newEdges.push(newEdge);
+    }
+
+    return {
+      ...graph,
+      children: newChildren,
+      edges: newEdges,
+    };
   }
 
   _graphForInstance(instance_ref: string): ElkGraph {
@@ -770,13 +1101,16 @@ export class SchematicRenderer {
       .filter((node) => node !== null) as ElkNode[];
 
     // Create edges.
-    let graph = {
+    let graph: ElkGraph = {
       id: instance_ref,
       children: nodes,
       edges: [],
     };
 
-    return this._addConnectivity(graph);
+    graph = this._addConnectivity(graph);
+    graph = this._createLayoutMetaNodes(graph);
+
+    return graph;
   }
 
   roots(): string[] {
@@ -786,64 +1120,318 @@ export class SchematicRenderer {
     );
   }
 
+  _flattenGraph(graph: ElkGraph): ElkGraph {
+    const flattenedNodes: ElkNode[] = [];
+    const flattenedEdges: ElkEdge[] = [];
+
+    const portIdToNodeMap = new Map<string, string>();
+
+    function flattenNode(node: ElkNode, parentX = 0, parentY = 0) {
+      // If this is a meta node, we need to restore the original port IDs
+      if (node.type === NodeType.META) {
+        // Build a map of internal port IDs to their original IDs
+        const portIdMap = new Map<string, string>();
+        for (const metaPort of node.ports || []) {
+          const internalPortId = metaPort.properties?.fromPortId;
+          if (internalPortId) {
+            portIdMap.set(internalPortId, metaPort.id);
+          }
+
+          const nodeId = metaPort.properties?.fromNodeId;
+          if (nodeId) {
+            portIdToNodeMap.set(metaPort.id, nodeId);
+          }
+        }
+
+        // Process children with restored port IDs
+        if (node.children) {
+          for (const child of node.children) {
+            // Create a copy of the child with adjusted coordinates
+            const flatChild: ElkNode = {
+              ...child,
+              children: undefined,
+              edges: undefined,
+              x: (child.x || 0) + (node.x || 0) + parentX,
+              y: (child.y || 0) + (node.y || 0) + parentY,
+              // Restore original port IDs
+              ports: child.ports?.map((port) => ({
+                ...port,
+                id: portIdMap.get(port.id) || port.id,
+              })),
+            };
+            flattenedNodes.push(flatChild);
+          }
+        }
+
+        // Process edges with restored port IDs
+        if (node.edges) {
+          for (const edge of node.edges) {
+            const flatEdge: ElkEdge = {
+              ...edge,
+              // Restore original port IDs in sources and targets
+              sources: edge.sources.map(
+                (source) => portIdMap.get(source) || source
+              ),
+              targets: edge.targets.map(
+                (target) => portIdMap.get(target) || target
+              ),
+              // Adjust coordinates
+              sections: edge.sections?.map((section) => ({
+                ...section,
+                startPoint: {
+                  x: section.startPoint.x + (node.x || 0) + parentX,
+                  y: section.startPoint.y + (node.y || 0) + parentY,
+                },
+                endPoint: {
+                  x: section.endPoint.x + (node.x || 0) + parentX,
+                  y: section.endPoint.y + (node.y || 0) + parentY,
+                },
+                bendPoints: section.bendPoints?.map((point) => ({
+                  x: point.x + (node.x || 0) + parentX,
+                  y: point.y + (node.y || 0) + parentY,
+                })),
+              })),
+              junctionPoints: edge.junctionPoints?.map((point) => ({
+                x: point.x + (node.x || 0) + parentX,
+                y: point.y + (node.y || 0) + parentY,
+              })),
+            };
+            flattenedEdges.push(flatEdge);
+          }
+        }
+      } else {
+        // For non-meta nodes, just flatten normally
+        if (!node.children || node.children.length === 0) {
+          const flatNode: ElkNode = {
+            ...node,
+            children: undefined,
+            edges: undefined,
+            x: (node.x || 0) + parentX,
+            y: (node.y || 0) + parentY,
+          };
+          flattenedNodes.push(flatNode);
+        }
+
+        // Process nested nodes
+        if (node.children) {
+          for (const child of node.children) {
+            flattenNode(
+              child,
+              (node.x || 0) + parentX,
+              (node.y || 0) + parentY
+            );
+          }
+        }
+
+        // Process nested edges
+        if (node.edges) {
+          for (const edge of node.edges) {
+            const flatEdge: ElkEdge = {
+              ...edge,
+              sections: edge.sections?.map((section) => ({
+                ...section,
+                startPoint: {
+                  x: section.startPoint.x + (node.x || 0) + parentX,
+                  y: section.startPoint.y + (node.y || 0) + parentY,
+                },
+                endPoint: {
+                  x: section.endPoint.x + (node.x || 0) + parentX,
+                  y: section.endPoint.y + (node.y || 0) + parentY,
+                },
+                bendPoints: section.bendPoints?.map((point) => ({
+                  x: point.x + (node.x || 0) + parentX,
+                  y: point.y + (node.y || 0) + parentY,
+                })),
+              })),
+              junctionPoints: edge.junctionPoints?.map((point) => ({
+                x: point.x + (node.x || 0) + parentX,
+                y: point.y + (node.y || 0) + parentY,
+              })),
+            };
+            flattenedEdges.push(flatEdge);
+          }
+        }
+      }
+    }
+
+    // Process top-level nodes
+    for (const node of graph.children) {
+      flattenNode(node);
+    }
+
+    // Process top-level edges
+    for (const edge of graph.edges) {
+      const flatEdge: ElkEdge = {
+        ...edge,
+        sourceComponentRef:
+          portIdToNodeMap.get(edge.sources[0]) || edge.sourceComponentRef,
+        targetComponentRef:
+          portIdToNodeMap.get(edge.targets[0]) || edge.targetComponentRef,
+        sections: edge.sections?.map((section) => ({
+          ...section,
+          startPoint: { ...section.startPoint },
+          endPoint: { ...section.endPoint },
+          bendPoints: section.bendPoints?.map((point) => ({ ...point })),
+        })),
+        junctionPoints: edge.junctionPoints?.map((point) => ({ ...point })),
+      };
+      flattenedEdges.push(flatEdge);
+    }
+
+    return {
+      id: graph.id,
+      children: flattenedNodes,
+      edges: flattenedEdges,
+    };
+  }
+
   async render(instance_ref: string): Promise<ElkGraph> {
     const graph = this._graphForInstance(instance_ref);
 
     const layoutOptions = {
-      // Use a layered algorithm which is good for circuit diagrams
       "elk.algorithm": "layered",
-      // Right-to-left layout for electrical schematics
-      "elk.direction": "RIGHT",
-      // Spacing between nodes
-      // Spacing between layers
-      // "elk.layered.spacing.nodeNodeBetweenLayers": "100", // Increased for more space between layers
-      // Route edges orthogonally (right angles) - CRITICAL for electrical schematics
-      "elk.edges.routing": "ORTHOGONAL",
-      // Enable bend points so we can use them for routing
-      "elk.edges.bendPoints": "TRUE",
-      // Force orthogonal routing even for special cases
-      "elk.layered.feedbackEdges.enableSplines": "false",
-      "elk.layered.unnecessaryBendpoints": "false",
-      // High-quality orthogonal edge routing
-      "elk.layered.considerModelOrder.strategy": "PREFER_EDGES",
-      "elk.layered.crossingMinimization.strategy": "LAYER_SWEEP",
-      "elk.layered.nodePlacement.strategy": "LONGEST_PATH",
-      "elk.layered.crossingMinimization.forceNodeModelOrder": "false",
-      // "elk.spacing.componentComponent": "50",
-      "elk.layered.spacing.edgeNodeBetweenLayers": "30",
-      // Default node padding - important for port placement
-      // "elk.padding": "[top=30, left=30, bottom=30, right=30]",
-      // Port constraints for better electrical layout
-      "elk.portConstraints": "FREE",
-      // Node label placement
-      "elk.nodeLabels.placement": "INSIDE H_LEFT V_TOP",
-      "elk.portLabels.placement": "INSIDE",
-      "elk.spacing.labelPortHorizontal": "5",
-      "elk.spacing.labelPortVertical": "5",
-      // "elk.portLabels.nextToPortIfPossible": "true",
-      // Edge routing with proper straight lines
-      // "elk.edges.sourcePoint": "FREE",
-      // "elk.edges.targetPoint": "FREE",
-      // Separate edges more clearly
-      "elk.spacing.edgeEdge": "25",
-      // Separate edges and nodes more clearly
-      "elk.spacing.edgeNode": "30",
-      // Aspect ratio settings - wider to accommodate ports better
-      // "elk.aspectRatio": "1.6",
+      "elk.direction": "LEFT",
+      "elk.layered.thoroughness": "100",
       "elk.nodeSize.constraints": "NODE_LABELS PORTS PORT_LABELS MINIMUM_SIZE",
       "elk.nodeSize.minimum": "(256, 256)",
-      "elk.font.size": "24",
+      "elk.partitioning.activate": "true",
+      "elk.layered.nodePlacement.strategy": "NETWORK_SIMPLEX",
     };
 
-    // Apply layout algorithm
-    const layout = await this.elk.layout(graph, {
-      layoutOptions,
+    // First pass - run layout with free port constraints
+    console.log("First pass layout - running with free port constraints");
+    const firstLayoutOptions = {
+      ...layoutOptions,
+      "elk.portConstraints": "FREE",
+    };
+    console.log(
+      JSON.stringify({ ...graph, layoutOptions: firstLayoutOptions }, null, 2)
+    );
+    const firstPassLayout = await this.elk.layout(graph, {
+      layoutOptions: firstLayoutOptions,
+    });
+    console.log("Output of first pass layout:");
+    console.log(JSON.stringify(firstPassLayout, null, 2));
+
+    // Analyze port positions and fix their sides
+    const allNodes = this._getAllNodes(firstPassLayout);
+    for (const node of allNodes) {
+      if (node.type === NodeType.MODULE || node.type === NodeType.COMPONENT) {
+        if (!node.ports) continue;
+
+        const nodeWidth = node.width || 0;
+        const nodeHeight = node.height || 0;
+
+        // First pass: determine initial closest sides
+        const westPorts: ElkPort[] = [];
+        const eastPorts: ElkPort[] = [];
+        const northSouthPorts: ElkPort[] = [];
+
+        for (const port of node.ports) {
+          if (port.x === undefined || port.y === undefined) continue;
+
+          // Calculate distances to each edge
+          const distToLeft = port.x;
+          const distToRight = nodeWidth - port.x;
+          const distToTop = port.y;
+          const distToBottom = nodeHeight - port.y;
+
+          // Find the minimum distance and its corresponding side
+          const distances = [
+            { side: "WEST", dist: distToLeft },
+            { side: "EAST", dist: distToRight },
+            { side: "NORTH", dist: distToTop },
+            { side: "SOUTH", dist: distToBottom },
+          ];
+
+          const closestEdge = distances.reduce((min, curr) =>
+            curr.dist < min.dist ? curr : min
+          );
+
+          // Group ports based on their closest edge
+          if (closestEdge.side === "WEST") {
+            westPorts.push(port);
+          } else if (closestEdge.side === "EAST") {
+            eastPorts.push(port);
+          } else {
+            // For NORTH or SOUTH ports, we'll redistribute them
+            northSouthPorts.push(port);
+          }
+        }
+
+        // Redistribute NORTH/SOUTH ports to balance WEST/EAST sides
+        for (const port of northSouthPorts) {
+          if (port.x === undefined) continue;
+
+          // Determine which side to assign based on current balance
+          const assignToWest = westPorts.length <= eastPorts.length;
+
+          if (assignToWest) {
+            westPorts.push(port);
+          } else {
+            eastPorts.push(port);
+          }
+        }
+
+        // Assign final sides to all ports
+        for (const port of westPorts) {
+          port.properties = {
+            ...port.properties,
+            "port.side": "WEST",
+          };
+        }
+
+        for (const port of eastPorts) {
+          port.properties = {
+            ...port.properties,
+            "port.side": "EAST",
+          };
+        }
+      }
+    }
+
+    for (const node of firstPassLayout.children || []) {
+      this._moveMetaNodePorts(node);
+    }
+
+    // Clear junction points; they will be re-computed in the second pass
+    for (const edge of firstPassLayout.edges || []) {
+      edge.junctionPoints = [];
+    }
+
+    // Second pass - run layout with fixed port sides
+    console.log("Second pass layout - running with fixed port sides");
+    const secondLayoutOptions = {
+      ...layoutOptions,
+      "elk.portConstraints": "FIXED_SIDE",
+      "elk.interactive": "true",
+    };
+    console.log(
+      JSON.stringify({ ...graph, layoutOptions: secondLayoutOptions }, null, 2)
+    );
+    const secondPassLayout = await this.elk.layout(
+      {
+        ...graph,
+        children: firstPassLayout.children || [],
+      },
+      {
+        layoutOptions: secondLayoutOptions,
+      }
+    );
+
+    console.log("Output of second pass layout:");
+    console.log(JSON.stringify(secondPassLayout, null, 2));
+
+    let flattenedGraph = this._flattenGraph({
+      ...secondPassLayout,
+      children: secondPassLayout.children || [],
+      edges: secondPassLayout.edges || [],
     });
 
-    return {
-      ...layout,
-      children: layout.children || [],
-      edges: layout.edges || [],
-    };
+    console.log("Output of flattened graph:");
+    console.log(JSON.stringify(flattenedGraph, null, 2));
+
+    // Flatten the graph before returning
+    return flattenedGraph;
   }
 }

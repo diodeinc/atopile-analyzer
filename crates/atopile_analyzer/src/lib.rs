@@ -5,7 +5,7 @@ mod unused_interface;
 
 use std::{
     cell::RefCell,
-    collections::{HashMap, HashSet},
+    collections::HashMap,
     fmt::Debug,
     ops::Deref,
     path::{Path, PathBuf},
@@ -20,7 +20,7 @@ use atopile_parser::{
 use evaluator::{resolve_import_path, Evaluator};
 use log::{debug, info, warn};
 use module::{Connection, Instantiation, Interface, Module, ModuleKind};
-use serde::{Deserialize, Serialize};
+use serde::Serialize;
 
 use diagnostics::*;
 

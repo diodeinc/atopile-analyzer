@@ -10,8 +10,9 @@
   justify-content: center;
   align-items: center;
   overflow: hidden;
-  border: 1px solid #e0e0e0;
-  box-shadow: 0 3px 10px rgba(0, 0, 0, 0.03);
+  border: none;
+  box-shadow: none;
+  outline: none;
 }
 
 /* Module Node Styling */

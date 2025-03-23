@@ -6,7 +6,7 @@ use std::{
 };
 
 use atopile_parser::{
-    parser::{BlockKind, BlockStmt, Connectable, Expr, PhysicalValue, Stmt, Symbol},
+    parser::{BlockKind, BlockStmt, Connectable, Expr, Stmt, Symbol},
     AtopileSource, Spanned,
 };
 use log::debug;

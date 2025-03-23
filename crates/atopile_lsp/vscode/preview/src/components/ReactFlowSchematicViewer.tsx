@@ -103,12 +103,25 @@ function createSchematicEdge(
   };
 }
 
-// Custom CSS to override ReactFlow default hover effects
+// Common color for electrical components
+const electricalComponentColor =
+  "var(--vscode-textLink-foreground, var(--vscode-editor-foreground, #666))";
+
+// Common CSS to override ReactFlow default hover effects
 const customStyles = `
   /* Use VSCode theme colors for nodes and edges with fallbacks */
   .react-flow__node {
     color: var(--vscode-foreground, #000);
     border-color: var(--vscode-descriptionForeground, #666);
+  }
+
+  /* Add transition for smooth layout changes */
+  .react-flow__node.animate-layout {
+    transition: transform 300ms ease-in-out;
+  }
+
+  .react-flow__edge.animate-layout .react-flow__edge-path {
+    transition: d 300ms ease-in-out;
   }
 
   .react-flow__edge {
@@ -180,7 +193,15 @@ const customStyles = `
 
   /* Style port labels */
   .port-label {
-    color: var(--vscode-descriptionForeground, #666);
+    color: ${electricalComponentColor};
+    font-weight: 1000;
+    font-size: 12px;
+  }
+
+  /* Style component/module names */
+  .module-header, .component-header {
+    color: ${electricalComponentColor} !important;
+    font-weight: 600;
   }
 `;
 
@@ -200,6 +221,30 @@ const ModuleNode = ({ data }: { data: SchematicNodeData }) => {
   // Find the original component to determine its type
   const isModule = data.componentType === NodeType.MODULE;
 
+  // Determine if this node should be dimmed based on selection state
+  const selectionState = data.selectionState;
+  const shouldDim =
+    selectionState?.selectedNetId || selectionState?.hoveredNetId;
+  const isConnectedToHighlightedNet =
+    shouldDim &&
+    data.ports?.some((port) => {
+      const netId = port.netId;
+      return (
+        netId === selectionState.selectedNetId ||
+        netId === selectionState.hoveredNetId
+      );
+    });
+  const moduleOpacity = shouldDim && !isConnectedToHighlightedNet ? 0.2 : 1;
+
+  // Function to determine port label opacity
+  const getPortLabelOpacity = (port: any) => {
+    if (!shouldDim) return 1;
+    const isPortHighlighted =
+      port.netId === selectionState.selectedNetId ||
+      port.netId === selectionState.hoveredNetId;
+    return isPortHighlighted ? 1 : 0.2;
+  };
+
   return (
     <div
       className={`react-flow-${isModule ? "module" : "component"}-node`}
@@ -207,8 +252,8 @@ const ModuleNode = ({ data }: { data: SchematicNodeData }) => {
         width: data.width,
         height: data.height,
         backgroundColor: "var(--vscode-editor-background, #fff)",
-        border: "1px solid var(--vscode-descriptionForeground, #666)",
-        opacity: 0.9,
+        border: `1px solid ${electricalComponentColor}`,
+        opacity: moduleOpacity,
         cursor: isModule ? "pointer" : "default",
         pointerEvents: isModule ? "auto" : "none", // Only enable pointer events for modules
       }}
@@ -270,6 +315,7 @@ const ModuleNode = ({ data }: { data: SchematicNodeData }) => {
                 maxWidth: position === "right" ? "150px" : "70px", // Add maxWidth to prevent extreme stretching
                 right: position === "right" ? "0px" : "auto", // Position from right edge for right-side labels
                 left: position === "right" ? "auto" : undefined, // Don't set left for right-side labels
+                opacity: getPortLabelOpacity(port), // Add opacity based on net connection
               };
 
               // Position label based on port side
@@ -364,7 +410,7 @@ const CapacitorNode = ({ data }: { data: any }) => {
   const plateGap = 6;
 
   // Line length (distance from port to capacitor plate)
-  const lineLength = (data.height - plateGap - 4) / 2;
+  const lineLength = 8; // Shorter lines than before
 
   // Determine if this node should be dimmed based on selection state
   const selectionState = data.selectionState;
@@ -392,7 +438,7 @@ const CapacitorNode = ({ data }: { data: any }) => {
         cursor: "default",
         pointerEvents: "none",
         position: "relative",
-        transform: "translate(-0.75px, 1px)",
+        transform: "translate(-0.7px, 0.7px)",
         opacity: opacity,
       }}
     >
@@ -413,7 +459,7 @@ const CapacitorNode = ({ data }: { data: any }) => {
             left: centerX,
             width: "1.5px",
             height: lineLength,
-            backgroundColor: "var(--vscode-descriptionForeground, #666)",
+            backgroundColor: electricalComponentColor,
           }}
         />
 
@@ -425,7 +471,7 @@ const CapacitorNode = ({ data }: { data: any }) => {
             left: centerX - symbolSize / 2,
             width: symbolSize,
             height: "2px",
-            backgroundColor: "var(--vscode-descriptionForeground, #666)",
+            backgroundColor: electricalComponentColor,
           }}
         />
 
@@ -437,7 +483,7 @@ const CapacitorNode = ({ data }: { data: any }) => {
             left: centerX - symbolSize / 2,
             width: symbolSize,
             height: "2px",
-            backgroundColor: "var(--vscode-descriptionForeground, #666)",
+            backgroundColor: electricalComponentColor,
           }}
         />
 
@@ -449,7 +495,7 @@ const CapacitorNode = ({ data }: { data: any }) => {
             left: centerX,
             width: "1.5px",
             height: lineLength,
-            backgroundColor: "var(--vscode-descriptionForeground, #666)",
+            backgroundColor: electricalComponentColor,
           }}
         />
 
@@ -458,17 +504,18 @@ const CapacitorNode = ({ data }: { data: any }) => {
           <div
             style={{
               position: "absolute",
-              left: centerX + symbolSize + 10, // Position to the right of the symbol
+              left: centerX + symbolSize + 10,
               top: "50%",
               transform: "translateY(-50%)",
               fontSize: "12px",
-              color: "var(--vscode-foreground, #000)",
-              whiteSpace: "pre-line", // Preserve line breaks from renderer
+              color: electricalComponentColor,
+              whiteSpace: "pre-line",
               width: data.labels?.[0]?.width,
               height: data.labels?.[0]?.height,
-              textAlign: "left", // Ensure left alignment
-              display: "flex", // Use flexbox for better alignment
-              alignItems: "center", // Center content vertically
+              textAlign: "left",
+              display: "flex",
+              alignItems: "center",
+              fontWeight: "600",
             }}
           >
             {data.labels[0].text}
@@ -490,11 +537,10 @@ const CapacitorNode = ({ data }: { data: any }) => {
             height: 1,
             opacity: 0,
             zIndex: 10,
-            pointerEvents: "auto", // Enable pointer events for ports only
+            pointerEvents: "auto",
           }}
           data-port-id={data.ports[0].id}
         >
-          {/* Top port handle */}
           <Handle
             type="source"
             position={Position.Top}
@@ -521,11 +567,10 @@ const CapacitorNode = ({ data }: { data: any }) => {
             height: 1,
             opacity: 0,
             zIndex: 10,
-            pointerEvents: "auto", // Enable pointer events for ports only
+            pointerEvents: "auto",
           }}
           data-port-id={data.ports[1].id}
         >
-          {/* Bottom port handle */}
           <Handle
             type="source"
             position={Position.Bottom}
@@ -550,9 +595,8 @@ const ResistorNode = ({ data }: { data: any }) => {
   const centerX = data.width / 2;
 
   // Resistor dimensions
-  const resistorHeight = 40;
-  const resistorWidth = 20;
-  const lineLength = (data.height - resistorHeight) / 2;
+  const resistorHeight = 28;
+  const resistorWidth = 12;
 
   // Determine if this node should be dimmed based on selection state
   const selectionState = data.selectionState;
@@ -569,31 +613,6 @@ const ResistorNode = ({ data }: { data: any }) => {
     });
   const opacity = shouldDim && !isConnectedToHighlightedNet ? 0.2 : 1;
 
-  // Zigzag parameters for a more professional look
-  const numZigzags = 4;
-  const zigzagWidth = resistorWidth;
-
-  // Generate zigzag points for a smoother, more professional look
-  let zigzagPoints = "";
-
-  // Start from the top center
-  zigzagPoints += `${centerX},${lineLength}`;
-
-  // Create zigzag pattern
-  for (let i = 0; i < numZigzags; i++) {
-    const segmentHeight = resistorHeight / numZigzags;
-    const y1 = lineLength + i * segmentHeight;
-    const y2 = lineLength + (i + 1) * segmentHeight;
-
-    // Right point
-    zigzagPoints += ` ${centerX + zigzagWidth / 2},${y1 + segmentHeight / 4}`;
-    // Left point
-    zigzagPoints += ` ${centerX - zigzagWidth / 2},${y2 - segmentHeight / 4}`;
-  }
-
-  // End at bottom center
-  zigzagPoints += ` ${centerX},${lineLength + resistorHeight}`;
-
   return (
     <div
       className="react-flow-resistor-node"
@@ -606,7 +625,7 @@ const ResistorNode = ({ data }: { data: any }) => {
         pointerEvents: "none",
         position: "relative",
         opacity: opacity,
-        transform: "translate(-0.3px, 0px)",
+        transform: "translate(-1.5px, -1.3px)",
       }}
     >
       {/* Resistor Symbol */}
@@ -618,47 +637,16 @@ const ResistorNode = ({ data }: { data: any }) => {
           height: data.height,
         }}
       >
-        {/* Top line connecting to resistor */}
+        {/* Resistor body (rectangle) */}
         <div
           style={{
             position: "absolute",
-            top: 0,
-            left: centerX - 0.75,
-            width: "1.5px",
-            height: lineLength,
-            backgroundColor: "var(--vscode-descriptionForeground, #666)",
-          }}
-        />
-
-        {/* Resistor body (zigzag) */}
-        <svg
-          style={{
-            position: "absolute",
-            top: 0,
-            left: 0,
-            width: data.width,
-            height: data.height,
-          }}
-        >
-          <polyline
-            points={zigzagPoints}
-            fill="none"
-            stroke="var(--vscode-descriptionForeground, #666)"
-            strokeWidth="1.5"
-            strokeLinejoin="round"
-            strokeLinecap="round"
-          />
-        </svg>
-
-        {/* Bottom line connecting to resistor */}
-        <div
-          style={{
-            position: "absolute",
-            top: lineLength + resistorHeight,
-            left: centerX - 0.75,
-            width: "1.5px",
-            height: lineLength,
-            backgroundColor: "var(--vscode-descriptionForeground, #666)",
+            top: data.height / 2 - resistorHeight / 2,
+            left: centerX - resistorWidth / 2,
+            width: resistorWidth,
+            height: resistorHeight,
+            backgroundColor: "transparent",
+            border: `1.5px solid ${electricalComponentColor}`,
           }}
         />
 
@@ -667,17 +655,18 @@ const ResistorNode = ({ data }: { data: any }) => {
           <div
             style={{
               position: "absolute",
-              left: centerX + resistorWidth + 10, // Position to the right of the symbol
+              left: centerX + resistorWidth + 10,
               top: "50%",
-              transform: "translateY(-50%)", // Center vertically
+              transform: "translateY(-50%)",
               fontSize: "12px",
-              color: "var(--vscode-foreground, #000)",
-              whiteSpace: "pre-line", // Preserve line breaks from renderer
+              color: electricalComponentColor,
+              whiteSpace: "pre-line",
               width: data.labels?.[0]?.width,
               height: data.labels?.[0]?.height,
-              textAlign: "left", // Ensure left alignment
-              display: "flex", // Use flexbox for better alignment
-              alignItems: "center", // Center content vertically
+              textAlign: "left",
+              display: "flex",
+              alignItems: "center",
+              fontWeight: "600",
             }}
           >
             {data.labels[0].text}
@@ -755,14 +744,12 @@ const ResistorNode = ({ data }: { data: any }) => {
 const InductorNode = ({ data }: { data: SchematicNodeData }) => {
   // Calculate center point for drawing the symbol
   const centerX = (data.width || 0) / 2;
+  const height = data.height || 100; // Default height if undefined
 
   // Size of the inductor symbol
   const inductorHeight = 40;
   const numArcs = 4;
   const arcRadius = inductorHeight / (2 * numArcs);
-  const lineLength = ((data.height || 0) - inductorHeight) / 2;
-
-  // Number of arcs
 
   // Determine if this node should be dimmed based on selection state
   const selectionState = data.selectionState;
@@ -784,7 +771,7 @@ const InductorNode = ({ data }: { data: SchematicNodeData }) => {
       className="react-flow-inductor-node"
       style={{
         width: data.width,
-        height: data.height,
+        height: height,
         backgroundColor: "transparent",
         border: "none",
         cursor: "default",
@@ -800,26 +787,14 @@ const InductorNode = ({ data }: { data: SchematicNodeData }) => {
         style={{
           position: "absolute",
           width: data.width,
-          height: data.height,
+          height: height,
         }}
       >
-        {/* Top vertical line connecting to inductor */}
-        <div
-          style={{
-            position: "absolute",
-            top: 0,
-            left: centerX - 0.75,
-            width: "1.5px",
-            height: lineLength,
-            backgroundColor: "var(--vscode-descriptionForeground, #666)",
-          }}
-        />
-
         {/* Inductor arcs */}
         <svg
           style={{
             position: "absolute",
-            top: lineLength,
+            top: height / 2 - inductorHeight / 2,
             left: 0,
             width: data.width,
             height: inductorHeight,
@@ -834,22 +809,33 @@ const InductorNode = ({ data }: { data: SchematicNodeData }) => {
                 }`
             ).join(" ")}`}
             fill="none"
-            stroke="var(--vscode-descriptionForeground, #666)"
+            stroke={electricalComponentColor}
             strokeWidth="1.5"
           />
         </svg>
 
-        {/* Bottom vertical line connecting to inductor */}
-        <div
-          style={{
-            position: "absolute",
-            top: lineLength + inductorHeight,
-            left: centerX - 0.75,
-            width: "1.5px",
-            height: lineLength,
-            backgroundColor: "var(--vscode-descriptionForeground, #666)",
-          }}
-        />
+        {/* Component Label */}
+        {data.labels?.[0] && (
+          <div
+            style={{
+              position: "absolute",
+              left: centerX + inductorHeight / 2 + 10,
+              top: "50%",
+              transform: "translateY(-50%)",
+              fontSize: "12px",
+              color: electricalComponentColor,
+              whiteSpace: "pre-line",
+              width: data.labels?.[0]?.width,
+              height: data.labels?.[0]?.height,
+              textAlign: "left",
+              display: "flex",
+              alignItems: "center",
+              fontWeight: "600",
+            }}
+          >
+            {data.labels[0].text}
+          </div>
+        )}
       </div>
 
       {/* Hidden port connections with no visible dots */}
@@ -891,7 +877,7 @@ const InductorNode = ({ data }: { data: SchematicNodeData }) => {
           style={{
             position: "absolute",
             left: centerX,
-            top: data.height,
+            top: height,
             width: 1,
             height: 1,
             opacity: 0,
@@ -918,14 +904,16 @@ const InductorNode = ({ data }: { data: SchematicNodeData }) => {
   );
 };
 
-// Define a node specifically for net references with an open circle symbol
-const NetReferenceNode = ({ data }: { data: any }) => {
+// Define a node specifically for net references with an open circle symbol or ground symbol
+const NetReferenceNode = ({ data }: { data: SchematicNodeData }) => {
   // Calculate center point for drawing the symbol
-  const centerX = data.width / 2;
-  const centerY = data.height / 2;
+  const centerX = (data.width || 0) / 2;
+  const centerY = (data.height || 0) / 2;
 
-  // Size of the net reference circle
-  const circleRadius = data.width / 2 - 2;
+  // Size of the net reference circle or ground symbol
+  const symbolSize = data.isGround
+    ? (data.width || 0) * 0.8
+    : (data.width || 0) / 2 - 2;
 
   // Determine if this node should be dimmed based on selection state
   const selectionState = data.selectionState;
@@ -937,14 +925,25 @@ const NetReferenceNode = ({ data }: { data: any }) => {
     !isHovered;
   const opacity = shouldDim ? 0.2 : 1;
 
+  // Ground symbol dimensions
+  const groundSymbolWidth = symbolSize;
+  const groundLineSpacing = 6; // Increased spacing between ground lines
+  const numGroundLines = 3; // Number of horizontal lines in ground symbol
+  const groundLineWidth = [
+    groundSymbolWidth,
+    groundSymbolWidth * 0.6,
+    groundSymbolWidth * 0.2,
+  ]; // More pronounced width differences
+  const verticalLineLength = 15; // Length of vertical line for ground symbol
+
   return (
     <div
       className="react-flow-net-reference-node"
       style={{
         width: data.width,
         height: data.height,
-        backgroundColor: "white",
-        borderRadius: "50%",
+        backgroundColor: data.isGround ? "transparent" : "white",
+        borderRadius: data.isGround ? "0" : "50%",
         border: "none",
         cursor: "default",
         pointerEvents: "none",
@@ -953,7 +952,7 @@ const NetReferenceNode = ({ data }: { data: any }) => {
         opacity: opacity,
       }}
     >
-      {/* Net Reference Symbol - Open Circle */}
+      {/* Net Reference Symbol - Either Ground Symbol or Open Circle */}
       <div
         className="net-reference-symbol"
         style={{
@@ -971,63 +970,91 @@ const NetReferenceNode = ({ data }: { data: any }) => {
             height: "100%",
           }}
         >
-          <circle
-            cx={centerX}
-            cy={centerY}
-            r={circleRadius}
-            stroke="var(--vscode-descriptionForeground, #666)"
-            strokeWidth="1.5"
-            fill="transparent"
-          />
+          {data.isGround ? (
+            // Ground Symbol
+            <g transform={`translate(${centerX}, ${centerY + 5})`}>
+              {/* Vertical line */}
+              <line
+                x1="0"
+                y1={-verticalLineLength}
+                x2="0"
+                y2="0"
+                stroke={electricalComponentColor}
+                strokeWidth="1.5"
+              />
+              {/* Horizontal ground lines */}
+              {Array.from({ length: numGroundLines }).map((_, index) => (
+                <line
+                  key={`ground-line-${index}`}
+                  x1={-groundLineWidth[index] / 2}
+                  y1={index * groundLineSpacing}
+                  x2={groundLineWidth[index] / 2}
+                  y2={index * groundLineSpacing}
+                  stroke={electricalComponentColor}
+                  strokeWidth="2"
+                />
+              ))}
+            </g>
+          ) : (
+            // Regular Net Reference Circle
+            <circle
+              cx={centerX}
+              cy={centerY}
+              r={symbolSize}
+              stroke={electricalComponentColor}
+              strokeWidth="1.5"
+              fill="transparent"
+            />
+          )}
         </svg>
       </div>
 
       {/* Single port for net reference */}
       <div className="component-ports">
         <div
-          key={data.ports[0].id}
+          key={data.ports?.[0]?.id}
           className="component-port"
           style={{
             position: "absolute",
             left: centerX,
-            top: centerY,
+            top: centerY - (data.isGround ? verticalLineLength + 10 : 0), // Adjust port position for ground symbol
             width: 1,
             height: 1,
             opacity: 0,
             zIndex: 10,
             pointerEvents: "auto", // Enable pointer events for port only
           }}
-          data-port-id={data.ports[0].id}
+          data-port-id={data.ports?.[0]?.id}
         >
           {/* Single handle that will be used for all connections */}
           <Handle
             type="source"
             position={Position.Left}
-            id={`${data.ports[0].id}-source`}
+            id={`${data.ports?.[0]?.id}-source`}
             style={{ ...portHandleStyle, opacity: 0 }}
           />
           <Handle
             type="target"
             position={Position.Left}
-            id={`${data.ports[0].id}-target`}
+            id={`${data.ports?.[0]?.id}-target`}
             style={{ ...portHandleStyle, opacity: 0 }}
           />
         </div>
       </div>
 
-      {/* Net reference name/label */}
-      {data.labels && data.labels[0] && (
+      {/* Net reference name/label - only show for non-ground nets */}
+      {!data.isGround && data.labels && data.labels[0] && (
         <div
           className="net-reference-label"
           style={{
             position: "absolute",
-            top: centerY + circleRadius + 5,
+            top: centerY + symbolSize + 5,
             left: 0,
             width: "100%",
             textAlign: "center",
             fontSize: "10px",
             fontWeight: "bold",
-            color: "var(--vscode-descriptionForeground, #666)",
+            color: electricalComponentColor,
           }}
         >
           {data.labels[0].text}
@@ -1206,6 +1233,8 @@ const Visualizer = ({
     selectedNetId: null,
     hoveredNetId: null,
   });
+  const [prevComponent, setPrevComponent] = useState<string | null>(null);
+  const [shouldAnimate, setShouldAnimate] = useState(false);
   const elkInstance = useRef<ELKType | null>(null);
   const reactFlowInstance = useRef<any>(null);
 
@@ -1252,6 +1281,12 @@ const Visualizer = ({
         console.log("Rendering selected component: ", selectedComponent);
         try {
           let layout = await renderer.render(selectedComponent);
+
+          // Determine if we should animate based on whether the component changed
+          const isNewComponent = prevComponent !== selectedComponent;
+          setShouldAnimate(!isNewComponent);
+          setPrevComponent(selectedComponent);
+
           setElkLayout(layout as ElkGraph);
           // Center the view after new component is rendered
           setTimeout(() => {
@@ -1270,7 +1305,7 @@ const Visualizer = ({
     }
 
     render();
-  }, [netlist, selectedComponent]);
+  }, [netlist, selectedComponent, prevComponent]);
 
   // Update nodes and edges when layout changes
   useEffect(() => {
@@ -1278,15 +1313,37 @@ const Visualizer = ({
       const nodes = elkLayout.children.map((elkNode) =>
         createSchematicNode(elkNode, selectionState)
       );
-      setNodes(nodes);
+
+      // Add animation class if we're updating the same component
+      const nodesWithAnimation = nodes.map((node) => ({
+        ...node,
+        className: `${node.className || ""} ${
+          shouldAnimate ? "animate-layout" : ""
+        }`.trim(),
+      }));
+
+      setNodes(nodesWithAnimation);
 
       const edges = elkLayout.edges.map((elkEdge) =>
         createSchematicEdge(elkEdge, selectionState)
       );
-      console.log("Setting edges: ", edges);
-      setEdges(edges);
+
+      // Add animation class to edges as well
+      const edgesWithAnimation = edges.map((edge) => ({
+        ...edge,
+        className: shouldAnimate ? "animate-layout" : "",
+      }));
+
+      setEdges(edgesWithAnimation);
+
+      // Reset animation flag after applying it
+      if (shouldAnimate) {
+        setTimeout(() => {
+          setShouldAnimate(false);
+        }, 50);
+      }
     }
-  }, [elkLayout, setNodes, setEdges, selectionState]);
+  }, [elkLayout, setNodes, setEdges, selectionState, shouldAnimate]);
 
   // Handle node click to select a component - only if the component is clickable (modules)
   const handleNodeClick = useCallback(
@@ -1348,6 +1405,7 @@ const Visualizer = ({
           color: "var(--vscode-foreground, #000)",
           height: "100%",
           width: "100%",
+          outline: "none",
         }}
       >
         <ReactFlow

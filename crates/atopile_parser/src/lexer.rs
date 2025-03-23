@@ -1,6 +1,6 @@
 use crate::{Span, Spanned};
 use chumsky::prelude::*;
-use std::{fmt, ops::Deref};
+use std::fmt;
 
 #[cfg(test)]
 use insta::assert_debug_snapshot;
