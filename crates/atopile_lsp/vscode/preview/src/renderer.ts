@@ -686,9 +686,15 @@ export class SchematicRenderer {
         }
       }
 
-      const isGndNet = Array.from(net).some((port) =>
-        port.split(".").pop()?.toLowerCase().includes("gnd")
-      );
+      const isGndNet = Array.from(net).some((port) => {
+        // This is a hack to work around capacitors exposing a `power` interface that will make it
+        // look like anything connected to `p2` is a ground net. We should really come up with
+        // something better here.
+        return (
+          port.toLowerCase().endsWith(".gnd") &&
+          !port.toLowerCase().endsWith(".power.gnd")
+        );
+      });
 
       // For each node in the graph
       for (const node of this._getAllNodes(graph)) {

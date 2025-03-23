@@ -104,15 +104,16 @@ function createSchematicEdge(
 }
 
 // Common color for electrical components
-const electricalComponentColor =
-  "var(--vscode-textLink-foreground, var(--vscode-editor-foreground, #666))";
+const electricalComponentColor = "var(--vscode-editor-foreground, #666)";
+const edgeColor = "var(--vscode-editorLineNumber-dimmedForeground, #666)";
+const accentColor = "var(--vscode-activityBarBadge-background, #666)";
 
 // Common CSS to override ReactFlow default hover effects
 const customStyles = `
   /* Use VSCode theme colors for nodes and edges with fallbacks */
   .react-flow__node {
     color: var(--vscode-foreground, #000);
-    border-color: var(--vscode-descriptionForeground, #666);
+    border-color: var(--vscode-editor-selectionBackground, #666);
   }
 
   /* Add transition for smooth layout changes */
@@ -125,11 +126,11 @@ const customStyles = `
   }
 
   .react-flow__edge {
-    stroke: var(--vscode-descriptionForeground, #666);
+    stroke: ${edgeColor};
   }
 
   .react-flow__edge-path {
-    stroke: var(--vscode-descriptionForeground, #666) !important;
+    stroke: ${edgeColor} !important;
   }
 
   /* Style the graph background */
@@ -149,7 +150,7 @@ const customStyles = `
   /* Prevent hover color change for component nodes */
   .react-flow__node-componentNode:hover {
     background-color: var(--vscode-editor-background, #f5f5f5) !important;
-    border-color: var(--vscode-descriptionForeground, #666) !important;
+    border-color: ${edgeColor} !important;
     box-shadow: none !important;
     cursor: default !important;
   }
@@ -178,7 +179,7 @@ const customStyles = `
   /* Style the controls */
   .react-flow__controls {
     background-color: var(--vscode-editor-background, #fff);
-    border-color: var(--vscode-descriptionForeground, #666);
+    border-color: var(--vscode-editor-selectionBackground, #666);
   }
 
   .react-flow__controls button {
@@ -193,7 +194,7 @@ const customStyles = `
 
   /* Style port labels */
   .port-label {
-    color: ${electricalComponentColor};
+    color: ${accentColor};
     font-weight: 1000;
     font-size: 12px;
   }
@@ -207,8 +208,8 @@ const customStyles = `
 
 // Common style for all handles - subtle dots on component borders
 const portHandleStyle = {
-  background: "var(--vscode-descriptionForeground, #666)",
-  border: `1px solid var(--vscode-descriptionForeground, #666)`,
+  background: edgeColor,
+  border: `1px solid ${edgeColor}`,
   borderRadius: "50%",
   width: "4px",
   height: "4px",
@@ -1154,7 +1155,7 @@ const ElectricalEdge = ({
         id={id}
         style={{
           strokeWidth: 1.5,
-          stroke: "var(--vscode-descriptionForeground, #666)",
+          stroke: edgeColor,
           pointerEvents: "none",
           ...style,
           opacity: opacity,
@@ -1180,7 +1181,7 @@ const ElectricalEdge = ({
               cx={point.x}
               cy={point.y}
               r={3.5}
-              fill={style.stroke || "var(--vscode-descriptionForeground, #666)"}
+              fill={style.stroke || edgeColor}
               style={{
                 ...style,
                 opacity: opacity,
@@ -1436,7 +1437,7 @@ const Visualizer = ({
           defaultEdgeOptions={{
             type: "electrical",
             style: {
-              stroke: "var(--vscode-descriptionForeground, #666)",
+              stroke: edgeColor,
               strokeWidth: 1.5,
             },
             interactionWidth: 10,
@@ -1454,7 +1455,6 @@ const Visualizer = ({
           preventScrolling={false}
         >
           <Controls showInteractive={false} />
-          <MiniMap />
         </ReactFlow>
       </div>
     </div>

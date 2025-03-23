@@ -16,7 +16,7 @@
 }
 
 /* Module Node Styling */
-.react-flow-module-node {
+.react-flow-module-node, .react-flow-component-node {
   padding: 0;
   border-radius: 0; /* Squared-off corners */
   border: 2px solid #000000; /* Black border */
@@ -27,7 +27,7 @@
   overflow: visible; /* Allow port labels to overflow */
 }
 
-.module-header {
+.module-header, .component-header {
   position: absolute;
   top: 4px;
   left: 4px;
