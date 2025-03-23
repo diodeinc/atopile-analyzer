@@ -42,6 +42,13 @@ jobs:
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v4
+
+      - name: Install cross-compilation tools
+        if: contains(matrix.target, 'pc-windows-gnu')
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y mingw-w64
+
       
       - name: Install Rust
         uses: actions-rs/toolchain@v1
@@ -51,12 +58,6 @@ jobs:
           target: ${{ matrix.target }}
           override: true
       
-      - name: Install cross-compilation tools
-        if: contains(matrix.target, 'pc-windows-gnu')
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y mingw-w64
-
       - name: Build LSP
         run: cargo build --release --target ${{ matrix.target }} -p atopile_lsp
 
