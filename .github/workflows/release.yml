@@ -20,7 +20,7 @@ jobs:
           - os: ubuntu-latest
             target: x86_64-pc-windows-gnu
             platform: win32-x64
-          - os: ubuntu-latest
+          - os: ubuntu-24.04-arm
             target: aarch64-pc-windows-gnu
             platform: win32-arm64
           
