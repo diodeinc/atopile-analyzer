@@ -1,15 +1,27 @@
 {
-  "name": "atopile-analyzer",
+  "name": "atopile",
+  "displayName": "atopile",
+  "icon": "ato_logo_256x256.png",
   "description": "atopile language server",
+  "version": "0.0.2",
   "author": "Diode Computers, Inc.",
+  "serverInfo": {
+    "name": "atopile",
+    "module": "atopile"
+  },
   "license": "MIT",
-  "version": "0.0.1",
   "repository": {
     "type": "git",
     "url": "https://github.com/diodeinc/atopile-analyzer"
   },
-  "publisher": "diodeinc",
-  "categories": [],
+  "bugs": {
+    "url": "https://github.com/diodeinc/atopile-analyzer"
+  },
+  "publisher": "atopile",
+  "categories": [
+    "Programming Languages",
+    "Linters"
+  ],
   "keywords": [
     "atopile"
   ],

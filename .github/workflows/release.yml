@@ -71,14 +71,26 @@ jobs:
           cp target/${{ matrix.target }}/release/atopile_lsp${{ contains(matrix.target, 'windows') && '.exe' || '' }} vscode/lsp/atopile_lsp${{ contains(matrix.target, 'windows') && '.exe' || '' }}
           ${{ !contains(matrix.target, 'windows') && 'chmod +x vscode/lsp/atopile_lsp' || '' }}
 
+      # Set the version in package.json from a workflow dispatch input
+      - name: Pre-release version
+        if: github.event_name == 'release' && (github.event.release.prerelease || github.event.release.draft)
+        # The pre-release version adds 1000 to the patch version to get around the lack of proper semver support
+        # https://code.visualstudio.com/api/working-with-extensions/publishing-extension#prerelease-extensions
+        run: |
+          TAGGED_SEMVER=$(npx semver $(git describe --tags --exact-match HEAD))
+          PUBLISH_VERSION="$($TAGGED_SEMVER | cut -d- -f1 | awk -F. '{$NF+=1000;OFS=".";$1=$1}1')"
+          npm version --no-git-tag-version $PUBLISH_VERSION
+
+      - name: Release version
+        if: github.event_name == 'release' && !github.event.release.prerelease && !github.event.release.draft
+        run: npm version --no-git-tag-version $(npx semver $(git describe --tags --exact-match HEAD))
+
       - name: Install dependencies and build VSIX
         run: |
-          cd vscode
-          npm install
-          # Update package.json to include platform in version
+          npm ci
           VERSION=$(node -p "require('./package.json').version")
-          node -e "const p=require('./package.json'); p.version=p.version+'-${{ matrix.platform }}'; require('fs').writeFileSync('./package.json', JSON.stringify(p, null, 2))"
-          npx --yes vsce package --target ${{ matrix.platform }}
+          npx --yes vsce package --target ${{ matrix.platform }} --out "atopile-analyzer-$VERSION-${{ matrix.platform }}.vsix"
+        working-directory: vscode
 
       - name: Upload VSIX to Release
         uses: softprops/action-gh-release@v1
@@ -86,3 +98,18 @@ jobs:
           files: vscode/atopile-analyzer-*.vsix
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Publish pre-release to VS Code Marketplace
+        # if: github.event_name == 'release' && (github.event.release.prerelease || github.event.release.draft)
+        # Skip duplicate here to allow manual triggering
+        run: npx vsce publish --skip-duplicate --pre-release -i "atopile-analyzer-*.vsix"
+        env:
+          VSCE_PAT: ${{ secrets.VSCE_PAT }}
+
+      # TODO:Enable this once we're happy with it's behavior on v0.3, even if only not producing spurious errors
+      # - name: Publish release to VS Code Marketplace
+      #   if: github.event_name == 'release' && !github.event.release.prerelease && !github.event.release.draft
+      #   # Skip duplicate here to allow manual triggering
+      #   run: npx vsce publish --skip-duplicate -i "atopile-analyzer-*.vsix"
+      #   env:
+      #     VSCE_PAT: ${{ secrets.VSCE_PAT }}
