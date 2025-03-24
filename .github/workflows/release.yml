@@ -1,14 +1,8 @@
 name: Build and Release VSCode Extension
 
-# on:
-#   release:
-#     types: [created]
-
-# For debugging
 on:
-  push:
-    branches:
-      - '**'
+  release:
+    types: [created]
 
 jobs:
   build-extension:
@@ -23,7 +17,7 @@ jobs:
           - os: ubuntu-24.04-arm
             target: aarch64-pc-windows-gnullvm
             platform: win32-arm64
-          
+
           # Linux platforms
           - os: ubuntu-latest
             target: x86_64-unknown-linux-gnu
@@ -31,7 +25,7 @@ jobs:
           - os: ubuntu-24.04-arm
             target: aarch64-unknown-linux-gnu
             platform: linux-arm64
-          
+
           # macOS platforms
           - os: macos-13
             target: x86_64-apple-darwin
@@ -50,7 +44,6 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y mingw-w64
 
-      
       - uses: actions-rust-lang/setup-rust-toolchain@v1
         with:
           profile: minimal
@@ -59,14 +52,13 @@ jobs:
           override: true
           rustflags: ""
 
-      
       - name: Build LSP
         run: cargo build --release --target ${{ matrix.target }} -p atopile_lsp
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          node-version: "20"
 
       - name: Prepare LSP binary
         run: |
@@ -89,4 +81,4 @@ jobs:
         with:
           files: vscode/atopile-analyzer-*.vsix
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} 
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
