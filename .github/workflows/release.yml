@@ -3,8 +3,6 @@ name: Build and Release VSCode Extension
 on:
   release:
     types: [created]
-  # TODO: Remove
-  pull_request:
 
 permissions:
   contents: write
@@ -101,14 +99,14 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      # - name: Publish pre-release to VS Code Marketplace
-      #   # if: github.event_name == 'release' && (github.event.release.prerelease || github.event.release.draft)
-      #   # Skip duplicate here to allow manual triggering
-      #   run: npx vsce publish --skip-duplicate --pre-release -i "atopile-analyzer-*.vsix"
-      #   env:
-      #     VSCE_PAT: ${{ secrets.VSCE_PAT }}
+      - name: Publish pre-release to VS Code Marketplace
+        # if: github.event_name == 'release' && (github.event.release.prerelease || github.event.release.draft)
+        # Skip duplicate here to allow manual triggering
+        run: npx vsce publish --skip-duplicate --pre-release -i "atopile-analyzer-*.vsix"
+        env:
+          VSCE_PAT: ${{ secrets.VSCE_PAT }}
 
-      # Enable this once we're happy with it's behavior on v0.3, even if only not producing spurious errors
+      # TODO:Enable this once we're happy with it's behavior on v0.3, even if only not producing spurious errors
       # - name: Publish release to VS Code Marketplace
       #   if: github.event_name == 'release' && !github.event.release.prerelease && !github.event.release.draft
       #   # Skip duplicate here to allow manual triggering
