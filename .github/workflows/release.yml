@@ -50,7 +50,6 @@ jobs:
 
       - uses: actions-rust-lang/setup-rust-toolchain@v1
         with:
-          profile: minimal
           toolchain: stable
           target: ${{ matrix.target }}
           override: true
@@ -102,7 +101,7 @@ jobs:
       - name: Publish pre-release to VS Code Marketplace
         # if: github.event_name == 'release' && (github.event.release.prerelease || github.event.release.draft)
         # Skip duplicate here to allow manual triggering
-        run: npx vsce publish --skip-duplicate --pre-release -i "atopile-analyzer-*.vsix"
+        run: npx vsce publish --skip-duplicate --pre-release -i "vscode/atopile-analyzer-*.vsix"
         env:
           VSCE_PAT: ${{ secrets.VSCE_PAT }}
 
@@ -110,6 +109,6 @@ jobs:
       # - name: Publish release to VS Code Marketplace
       #   if: github.event_name == 'release' && !github.event.release.prerelease && !github.event.release.draft
       #   # Skip duplicate here to allow manual triggering
-      #   run: npx vsce publish --skip-duplicate -i "atopile-analyzer-*.vsix"
+      #   run: npx vsce publish --skip-duplicate -i "vscode/atopile-analyzer-*.vsix"
       #   env:
       #     VSCE_PAT: ${{ secrets.VSCE_PAT }}
