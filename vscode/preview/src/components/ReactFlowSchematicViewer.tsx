@@ -10,7 +10,6 @@ import type { ELK as ELKType } from "elkjs/lib/elk-api";
 import {
   ReactFlow,
   Controls,
-  MiniMap,
   Edge,
   Position,
   useNodesState,
