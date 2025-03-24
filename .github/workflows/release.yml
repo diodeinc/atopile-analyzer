@@ -85,23 +85,25 @@ jobs:
         run: npm version --no-git-tag-version $(npx semver $(git describe --tags --exact-match HEAD))
 
       - name: Install dependencies and build VSIX
+        id: build-vsix
         run: |
           npm ci
           VERSION=$(node -p "require('./package.json').version")
           npx --yes vsce package --target ${{ matrix.platform }} --out "atopile-analyzer-$VERSION-${{ matrix.platform }}.vsix"
+          echo VSIX="vscode/atopile-analyzer-$VERSION-${{ matrix.platform }}.vsix" >> $GITHUB_OUTPUT
         working-directory: vscode
 
       - name: Upload VSIX to Release
         uses: softprops/action-gh-release@v1
         with:
-          files: vscode/atopile-analyzer-*.vsix
+          files: ${{ steps.build-vsix.outputs.VSIX }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Publish pre-release to VS Code Marketplace
         # if: github.event_name == 'release' && (github.event.release.prerelease || github.event.release.draft)
         # Skip duplicate here to allow manual triggering
-        run: npx vsce publish --skip-duplicate --pre-release -i "vscode/atopile-analyzer-*.vsix"
+        run: npx vsce publish --skip-duplicate --pre-release -i ${{ steps.build-vsix.outputs.VSIX }}
         env:
           VSCE_PAT: ${{ secrets.VSCE_PAT }}
 
@@ -109,6 +111,6 @@ jobs:
       # - name: Publish release to VS Code Marketplace
       #   if: github.event_name == 'release' && !github.event.release.prerelease && !github.event.release.draft
       #   # Skip duplicate here to allow manual triggering
-      #   run: npx vsce publish --skip-duplicate -i "vscode/atopile-analyzer-*.vsix"
+      #   run: npx vsce publish --skip-duplicate -i ${{ steps.build-vsix.outputs.VSIX }}
       #   env:
       #     VSCE_PAT: ${{ secrets.VSCE_PAT }}
