@@ -1,12 +1,8 @@
-import React, { useState, useEffect, useRef, useCallback } from "react";
+import React, { useState, useEffect } from "react";
 import ReactFlowSchematicViewer from "./ReactFlowSchematicViewer";
 import "./ReactFlowSchematicViewer.css";
 import { Netlist } from "../types/NetlistTypes";
 import "@vscode-elements/elements/dist/bundled.js";
-import {
-  TreeItem,
-  VscodeTree,
-} from "@vscode-elements/elements/dist/vscode-tree/vscode-tree";
 
 // Adjust styles for VSCode-like appearance
 const containerStyles = `

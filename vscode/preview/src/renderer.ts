@@ -929,7 +929,8 @@ export class SchematicRenderer {
 
     // Convert Map entries to array for iteration
     const netEntries = Array.from(netToEdges.entries());
-    for (const [_netId, edges] of netEntries) {
+    for (const netEntry of netEntries) {
+      const edges = netEntry[1];
       // Get all nodes connected to this net
       const connectedNodes = new Set<string>();
       for (const edge of edges) {
