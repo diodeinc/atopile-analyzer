@@ -20,11 +20,9 @@ jobs:
           - os: ubuntu-latest
             target: x86_64-pc-windows-gnu
             platform: win32-x64
-            # runs_on: ubuntu-001
           - os: ubuntu-24.04-arm
-            target: aarch64-pc-windows-gnu
+            target: aarch64-pc-windows-gnullvm
             platform: win32-arm64
-            # runs_on: ubuntu-001
           
           # Linux platforms
           - os: ubuntu-latest
