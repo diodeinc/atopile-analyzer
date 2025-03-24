@@ -20,11 +20,11 @@ jobs:
           - os: ubuntu-latest
             target: x86_64-pc-windows-gnu
             platform: win32-x64
-            runs_on: ubuntu-001
+            # runs_on: ubuntu-001
           - os: ubuntu-24.04-arm
             target: aarch64-pc-windows-gnu
             platform: win32-arm64
-            runs_on: ubuntu-001
+            # runs_on: ubuntu-001
           
           # Linux platforms
           - os: ubuntu-latest
@@ -53,13 +53,13 @@ jobs:
           sudo apt-get install -y mingw-w64
 
       
-      - name: Install Rust
-        uses: actions-rs/toolchain@v1
+      - uses: actions-rust-lang/setup-rust-toolchain@v1
         with:
           profile: minimal
           toolchain: stable
           target: ${{ matrix.target }}
           override: true
+
       
       - name: Build LSP
         run: cargo build --release --target ${{ matrix.target }} -p atopile_lsp
@@ -72,6 +72,7 @@ jobs:
       - name: Prepare LSP binary
         run: |
           mkdir -p vscode/lsp
+          ls -la target/
           cp target/${{ matrix.target }}/release/atopile_lsp${{ matrix.os == 'windows-latest' && '.exe' || '' }} vscode/lsp/atopile_lsp${{ matrix.os == 'windows-latest' && '.exe' || '' }}
           ${{ matrix.os != 'windows-latest' && 'chmod +x vscode/lsp/atopile_lsp' || '' }}
 
