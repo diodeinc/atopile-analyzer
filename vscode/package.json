@@ -3,7 +3,7 @@
   "displayName": "atopile",
   "icon": "ato_logo_256x256.png",
   "description": "atopile language server",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "author": "Diode Computers, Inc.",
   "serverInfo": {
     "name": "atopile",
