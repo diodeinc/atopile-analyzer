@@ -74,8 +74,8 @@ jobs:
         run: |
           mkdir -p vscode/lsp
           ls -la target/
-          cp target/${{ matrix.target }}/release/atopile_lsp${{ matrix.os == 'windows-latest' && '.exe' || '' }} vscode/lsp/atopile_lsp${{ matrix.os == 'windows-latest' && '.exe' || '' }}
-          ${{ matrix.os != 'windows-latest' && 'chmod +x vscode/lsp/atopile_lsp' || '' }}
+          cp target/${{ matrix.target }}/release/atopile_lsp${{ contains(matrix.target, 'windows') && '.exe' || '' }} vscode/lsp/atopile_lsp${{ contains(matrix.target, 'windows') && '.exe' || '' }}
+          ${{ !contains(matrix.target, 'windows') && 'chmod +x vscode/lsp/atopile_lsp' || '' }}
 
       - name: Install dependencies and build VSIX
         run: |
