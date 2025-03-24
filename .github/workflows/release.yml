@@ -42,7 +42,7 @@ jobs:
             target: aarch64-apple-darwin
             platform: darwin-arm64
 
-    runs-on: ${{ matrix.runs_on || matrix.os }}
+    runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v4
 
@@ -59,6 +59,7 @@ jobs:
           toolchain: stable
           target: ${{ matrix.target }}
           override: true
+          rustflags: ""
 
       
       - name: Build LSP
