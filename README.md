@@ -6,8 +6,9 @@ atopile analyzer is a new language server for atopile.
 
 ## Installation
 
-atopile analyzer is only tested on macOS, but other platforms should Just Work™
-if you install from source:
+atopile analyzer is only tested on macOS, but other platforms should Just Work™.
+
+Install via [VSCode Marketplace](https://marketplace.visualstudio.com/items?itemName=atopile.atopile), or from source:
 
 ```sh
 ./install.sh
@@ -15,5 +16,6 @@ if you install from source:
 
 ## Supported Features
 
-- [x] Schematics visualizer
-- [x] Goto definition
+- ✅ Schematics visualizer
+- ✅ Goto definition
+- [ ] Auto-complete
