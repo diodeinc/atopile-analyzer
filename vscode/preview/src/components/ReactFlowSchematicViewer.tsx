@@ -20,6 +20,7 @@ import {
   type Node,
   useOnSelectionChange,
   ReactFlowProvider,
+  Panel,
 } from "@xyflow/react";
 import "@xyflow/react/dist/style.css";
 import {
@@ -31,8 +32,10 @@ import {
   SchematicConfig,
   DEFAULT_CONFIG,
 } from "../renderer";
+import { PDFSchematicRenderer } from "../PDFSchematicRenderer";
 import { Netlist } from "../types/NetlistTypes";
 import { debounce } from "lodash";
+import { Download } from "react-feather";
 
 type SelectionState = {
   selectedNetId: string | null;
@@ -204,6 +207,34 @@ const customStyles = `
   .module-header, .component-header {
     color: ${electricalComponentColor} !important;
     font-weight: 600;
+  }
+
+  /* Style the download button */
+  .download-button {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background-color: var(--vscode-button-background, #0066cc);
+    color: var(--vscode-button-foreground, #fff);
+    border: 1px solid var(--vscode-button-border, transparent);
+    padding: 8px 12px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 12px;
+    transition: background-color 0.2s;
+  }
+
+  .download-button:hover {
+    background-color: var(--vscode-button-hoverBackground, #0052a3);
+  }
+
+  .download-button:active {
+    background-color: var(--vscode-button-activeBackground, #004080);
+  }
+
+  .download-button svg {
+    width: 16px;
+    height: 16px;
   }
 `;
 
@@ -1380,6 +1411,35 @@ const Visualizer = ({
     ),
   });
 
+  const handleDownloadPDF = useCallback(async () => {
+    if (!selectedComponent) return;
+
+    try {
+      // Create PDF renderer with current config
+      const pdfRenderer = new PDFSchematicRenderer(netlist, config);
+
+      // Render the PDF and get the blob
+      const pdfBlob = await pdfRenderer.renderToPDF(selectedComponent);
+
+      // Create download link
+      const url = URL.createObjectURL(pdfBlob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = `${selectedComponent.replace(
+        /[^a-zA-Z0-9]/g,
+        "_"
+      )}_schematic.pdf`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+
+      // Clean up
+      URL.revokeObjectURL(url);
+    } catch (error) {
+      console.error("Error generating PDF:", error);
+    }
+  }, [netlist, selectedComponent, config]);
+
   return (
     <div className="schematic-viewer">
       <style>{customStyles}</style>
@@ -1459,6 +1519,21 @@ const Visualizer = ({
           preventScrolling={false}
         >
           <Controls showInteractive={false} />
+          <Panel position="top-right">
+            <button
+              className="download-button"
+              onClick={handleDownloadPDF}
+              disabled={!selectedComponent}
+              title={
+                !selectedComponent
+                  ? "Select a component to download"
+                  : "Download schematic as PDF"
+              }
+            >
+              <Download size={16} />
+              Download PDF
+            </button>
+          </Panel>
         </ReactFlow>
       </div>
     </div>
