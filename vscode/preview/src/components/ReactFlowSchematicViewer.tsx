@@ -1411,34 +1411,23 @@ const Visualizer = ({
     ),
   });
 
-  const handleDownloadPDF = useCallback(async () => {
+  const handleDownloadPDF = async () => {
     if (!selectedComponent) return;
 
     try {
-      // Create PDF renderer with current config
+      // Create PDF renderer with current config - use the exact same config as the React viewer
       const pdfRenderer = new PDFSchematicRenderer(netlist, config);
 
-      // Render the PDF and get the blob
-      const pdfBlob = await pdfRenderer.renderToPDF(selectedComponent);
+      // Render the PDF
+      const doc = await pdfRenderer.render(selectedComponent);
 
-      // Create download link
-      const url = URL.createObjectURL(pdfBlob);
-      const link = document.createElement("a");
-      link.href = url;
-      link.download = `${selectedComponent.replace(
-        /[^a-zA-Z0-9]/g,
-        "_"
-      )}_schematic.pdf`;
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-
-      // Clean up
-      URL.revokeObjectURL(url);
+      // Save the PDF with a clean filename
+      const filename = `${selectedComponent.split(".").pop()}_schematic.pdf`;
+      doc.save(filename);
     } catch (error) {
       console.error("Error generating PDF:", error);
     }
-  }, [netlist, selectedComponent, config]);
+  };
 
   return (
     <div className="schematic-viewer">

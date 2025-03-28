@@ -119,6 +119,8 @@ export interface SchematicConfig {
     spacing: number;
     // Padding around the entire layout
     padding: number;
+    // Whether to explode modules into their component parts
+    explodeModules: boolean;
   };
 
   // Visual configuration - we'll add more options here later
@@ -171,6 +173,7 @@ export const DEFAULT_CONFIG: SchematicConfig = {
     direction: "LEFT",
     spacing: 50,
     padding: 20,
+    explodeModules: false,
   },
   visual: {
     showPortLabels: true,
@@ -785,6 +788,33 @@ export class SchematicRenderer {
     return node;
   }
 
+  _collectComponentsFromModule(instance_ref: string): ElkNode[] {
+    const instance = this.netlist.instances[instance_ref];
+    if (!instance) {
+      return [];
+    }
+
+    let components: ElkNode[] = [];
+
+    // Process all children
+    for (const [_child_name, child_ref] of Object.entries(instance.children)) {
+      const child_instance = this.netlist.instances[child_ref];
+      if (!child_instance) continue;
+
+      if (child_instance.kind === InstanceKind.COMPONENT) {
+        const node = this._nodeForInstance(child_ref);
+        if (node) components.push(node);
+      } else if (child_instance.kind === InstanceKind.MODULE) {
+        // Recursively collect components from submodules
+        components = components.concat(
+          this._collectComponentsFromModule(child_ref)
+        );
+      }
+    }
+
+    return components;
+  }
+
   _getAllNodes(
     node: ElkNode | ElkGraph | { id: string; children?: ElkNode[] }
   ): ElkNode[] {
@@ -802,6 +832,61 @@ export class SchematicRenderer {
     }
 
     return nodes;
+  }
+
+  _graphForInstance(instance_ref: string): ElkGraph {
+    const instance = this.netlist.instances[instance_ref];
+    if (!instance) {
+      // Find all instances that are in this file
+      const instances = Object.keys(this.netlist.instances).filter(
+        (sub_instance_ref) => {
+          const [filename, path] = sub_instance_ref.split(":");
+          return filename === instance_ref.split(":")[0] && !path.includes(".");
+        }
+      );
+
+      return {
+        id: instance_ref,
+        children: instances
+          .map((instance_ref) => this._nodeForInstance(instance_ref))
+          .filter((node) => node !== null) as ElkNode[],
+        edges: [],
+      };
+    }
+
+    // If explodeModules is true and this is a module, collect all components recursively
+    if (
+      this.config.layout.explodeModules &&
+      instance.kind === InstanceKind.MODULE
+    ) {
+      const nodes = this._collectComponentsFromModule(instance_ref);
+      let graph: ElkGraph = {
+        id: instance_ref,
+        children: nodes,
+        edges: [],
+      };
+
+      graph = this._addConnectivity(graph);
+      graph = this._createLayoutMetaNodes(graph);
+      return graph;
+    }
+
+    // Create all nodes.
+    const nodes: ElkNode[] = Object.values(instance.children)
+      .map((child_ref) => this._nodeForInstance(child_ref))
+      .filter((node) => node !== null) as ElkNode[];
+
+    // Create edges.
+    let graph: ElkGraph = {
+      id: instance_ref,
+      children: nodes,
+      edges: [],
+    };
+
+    graph = this._addConnectivity(graph);
+    graph = this._createLayoutMetaNodes(graph);
+
+    return graph;
   }
 
   _addConnectivity(graph: ElkGraph): ElkGraph {
@@ -1049,7 +1134,6 @@ export class SchematicRenderer {
     return graph;
   }
 
-  /// Analyze the graph and rewrite common sub-graphs as meta nodes with their own layout rules.
   _createLayoutMetaNodes(graph: ElkGraph): ElkGraph {
     let edgeIdsInMetaNodes: Set<string> = new Set();
 
@@ -1225,44 +1309,6 @@ export class SchematicRenderer {
       children: newChildren,
       edges: newEdges,
     };
-  }
-
-  _graphForInstance(instance_ref: string): ElkGraph {
-    const instance = this.netlist.instances[instance_ref];
-    if (!instance) {
-      // Find all instances that are in this file
-      const instances = Object.keys(this.netlist.instances).filter(
-        (sub_instance_ref) => {
-          const [filename, path] = sub_instance_ref.split(":");
-          return filename === instance_ref.split(":")[0] && !path.includes(".");
-        }
-      );
-
-      return {
-        id: instance_ref,
-        children: instances
-          .map((instance_ref) => this._nodeForInstance(instance_ref))
-          .filter((node) => node !== null) as ElkNode[],
-        edges: [],
-      };
-    }
-
-    // Create all nodes.
-    const nodes: ElkNode[] = Object.values(instance.children)
-      .map((child_ref) => this._nodeForInstance(child_ref))
-      .filter((node) => node !== null) as ElkNode[];
-
-    // Create edges.
-    let graph: ElkGraph = {
-      id: instance_ref,
-      children: nodes,
-      edges: [],
-    };
-
-    graph = this._addConnectivity(graph);
-    graph = this._createLayoutMetaNodes(graph);
-
-    return graph;
   }
 
   roots(): string[] {
