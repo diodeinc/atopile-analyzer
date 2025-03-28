@@ -28,6 +28,8 @@ import {
   ElkNode,
   NodeType,
   SchematicRenderer,
+  SchematicConfig,
+  DEFAULT_CONFIG,
 } from "../renderer";
 import { Netlist } from "../types/NetlistTypes";
 import { debounce } from "lodash";
@@ -1214,16 +1216,19 @@ interface ReactFlowSchematicViewerProps {
   onError?: (message: string) => void;
   onComponentSelect?: (componentId: string | null) => void;
   selectedComponent?: string | null;
+  config?: Partial<SchematicConfig>;
 }
 
 const Visualizer = ({
   netlist,
   onComponentSelect = () => {},
   selectedComponent = null,
+  config = DEFAULT_CONFIG,
 }: {
   netlist: Netlist;
   onComponentSelect?: (componentId: string | null) => void;
   selectedComponent?: string | null;
+  config?: Partial<SchematicConfig>;
 }) => {
   const [nodes, setNodes, onNodesChange] = useNodesState<SchematicNode>([]);
   const [edges, setEdges, onEdgesChange] = useEdgesState<SchematicEdge>([]);
@@ -1276,7 +1281,7 @@ const Visualizer = ({
 
   useEffect(() => {
     async function render() {
-      const renderer = new SchematicRenderer(netlist);
+      const renderer = new SchematicRenderer(netlist, config);
       if (selectedComponent) {
         console.log("Rendering selected component: ", selectedComponent);
         try {
@@ -1305,7 +1310,7 @@ const Visualizer = ({
     }
 
     render();
-  }, [netlist, selectedComponent, prevComponent]);
+  }, [netlist, selectedComponent, prevComponent, config]);
 
   // Update nodes and edges when layout changes
   useEffect(() => {
@@ -1464,6 +1469,7 @@ const ReactFlowSchematicViewer = ({
   netlist,
   onComponentSelect = () => {},
   selectedComponent = null,
+  config = DEFAULT_CONFIG,
 }: ReactFlowSchematicViewerProps) => {
   return (
     <ReactFlowProvider>
@@ -1471,9 +1477,12 @@ const ReactFlowSchematicViewer = ({
         netlist={netlist}
         onComponentSelect={onComponentSelect}
         selectedComponent={selectedComponent}
+        config={config}
       />
     </ReactFlowProvider>
   );
 };
 
+export type { SchematicConfig };
+export { DEFAULT_CONFIG };
 export default ReactFlowSchematicViewer;

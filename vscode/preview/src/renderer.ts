@@ -72,12 +72,120 @@ export interface ElkGraph {
   edges: ElkEdge[];
 }
 
+export interface NodeSizeConfig {
+  module: {
+    width: number;
+    height: number;
+  };
+  component: {
+    width: number;
+    height: number;
+  };
+  resistor: {
+    width: number;
+    height: number;
+  };
+  capacitor: {
+    width: number;
+    height: number;
+  };
+  inductor: {
+    width: number;
+    height: number;
+  };
+  netReference: {
+    width: number;
+    height: number;
+  };
+  netJunction: {
+    width: number;
+    height: number;
+  };
+  ground: {
+    width: number;
+    height: number;
+  };
+}
+
+export interface SchematicConfig {
+  // Node size configuration
+  nodeSizes: NodeSizeConfig;
+
+  // Layout configuration - we'll add more options here later
+  layout: {
+    // Direction of the layout - will be passed to ELK
+    direction: "LEFT" | "RIGHT" | "UP" | "DOWN";
+    // Spacing between nodes
+    spacing: number;
+    // Padding around the entire layout
+    padding: number;
+  };
+
+  // Visual configuration - we'll add more options here later
+  visual: {
+    // Whether to show port labels
+    showPortLabels: boolean;
+    // Whether to show component values
+    showComponentValues: boolean;
+    // Whether to show footprints
+    showFootprints: boolean;
+  };
+}
+
+export const DEFAULT_CONFIG: SchematicConfig = {
+  nodeSizes: {
+    module: {
+      width: 256,
+      height: 128,
+    },
+    component: {
+      width: 256,
+      height: 128,
+    },
+    resistor: {
+      width: 40,
+      height: 30,
+    },
+    capacitor: {
+      width: 40,
+      height: 20,
+    },
+    inductor: {
+      width: 40,
+      height: 40,
+    },
+    netReference: {
+      width: 15,
+      height: 15,
+    },
+    netJunction: {
+      width: 10,
+      height: 10,
+    },
+    ground: {
+      width: 30,
+      height: 40,
+    },
+  },
+  layout: {
+    direction: "LEFT",
+    spacing: 50,
+    padding: 20,
+  },
+  visual: {
+    showPortLabels: true,
+    showComponentValues: true,
+    showFootprints: true,
+  },
+};
+
 export class SchematicRenderer {
   netlist: Netlist;
   elk: ELKType;
   nets: Map<string, Set<string>>;
+  config: SchematicConfig;
 
-  constructor(netlist: Netlist) {
+  constructor(netlist: Netlist, config: Partial<SchematicConfig> = {}) {
     this.netlist = netlist;
     this.elk = new ELK({
       workerFactory: function (url) {
@@ -86,6 +194,24 @@ export class SchematicRenderer {
       },
     });
     this.nets = this._generateNets();
+    // Merge provided config with defaults
+    this.config = {
+      ...DEFAULT_CONFIG,
+      ...config,
+      // Deep merge for nested objects
+      nodeSizes: {
+        ...DEFAULT_CONFIG.nodeSizes,
+        ...config.nodeSizes,
+      },
+      layout: {
+        ...DEFAULT_CONFIG.layout,
+        ...config.layout,
+      },
+      visual: {
+        ...DEFAULT_CONFIG.visual,
+        ...config.visual,
+      },
+    };
   }
 
   _generateNets(): Map<string, Set<string>> {
@@ -215,15 +341,19 @@ export class SchematicRenderer {
       this._getAttributeValue(instance.attributes.package) ||
       this._getAttributeValue(instance.attributes.footprint);
 
+    const value = this._renderValue(instance.attributes.value);
+    const showValue = this.config.visual.showComponentValues && value;
+    const showFootprint = this.config.visual.showFootprints && footprint;
+
     return {
       id: instance_ref,
       type: NodeType.RESISTOR,
-      width: 12,
-      height: 30,
+      width: this.config.nodeSizes.resistor.width,
+      height: this.config.nodeSizes.resistor.height,
       labels: [
         {
-          text: `${this._renderValue(instance.attributes.value) || ""}${
-            footprint ? `\n${footprint}` : ""
+          text: `${showValue ? value : ""}${
+            showFootprint ? `\n${footprint}` : ""
           }`,
           x: 45,
           y: 15,
@@ -266,14 +396,19 @@ export class SchematicRenderer {
       this._getAttributeValue(instance.attributes.package) ||
       this._getAttributeValue(instance.attributes.footprint);
 
+    const showValue = this.config.visual.showComponentValues && value;
+    const showFootprint = this.config.visual.showFootprints && footprint;
+
     return {
       id: instance_ref,
       type: NodeType.CAPACITOR,
-      width: 40,
-      height: 20,
+      width: this.config.nodeSizes.capacitor.width,
+      height: this.config.nodeSizes.capacitor.height,
       labels: [
         {
-          text: `${value || ""}${footprint ? `\n${footprint}` : ""}`,
+          text: `${showValue ? value : ""}${
+            showFootprint ? `\n${footprint}` : ""
+          }`,
           x: 45,
           y: 10,
           width: 128,
@@ -315,14 +450,19 @@ export class SchematicRenderer {
       this._getAttributeValue(instance.attributes.package) ||
       this._getAttributeValue(instance.attributes.footprint);
 
+    const showValue = this.config.visual.showComponentValues && value;
+    const showFootprint = this.config.visual.showFootprints && footprint;
+
     return {
       id: instance_ref,
       type: NodeType.INDUCTOR,
-      width: 40,
-      height: 40,
+      width: this.config.nodeSizes.inductor.width,
+      height: this.config.nodeSizes.inductor.height,
       labels: [
         {
-          text: `${value || ""}${footprint ? `\n${footprint}` : ""}`,
+          text: `${showValue ? value : ""}${
+            showFootprint ? `\n${footprint}` : ""
+          }`,
           x: 45,
           y: 20,
           width: 128,
@@ -363,15 +503,14 @@ export class SchematicRenderer {
     side: "NORTH" | "WEST" = "WEST",
     isGround: boolean = false
   ): ElkNode {
-    // Use larger dimensions for ground symbols
-    const width = isGround ? 30 : 15;
-    const height = isGround ? 40 : 15;
-
+    const sizes = isGround
+      ? this.config.nodeSizes.ground
+      : this.config.nodeSizes.netReference;
     return {
       id: ref_id,
       type: NodeType.NET_REFERENCE,
-      width: width,
-      height: height,
+      width: sizes.width,
+      height: sizes.height,
       netId: name,
       isGround: isGround,
       labels: isGround ? [] : [{ text: name }],
@@ -390,7 +529,7 @@ export class SchematicRenderer {
         "elk.padding": "[top=0, left=0, bottom=0, right=0]",
         "elk.portConstraints": "FIXED_POS",
         "elk.nodeSize.constraints": "MINIMUM_SIZE",
-        "elk.nodeSize.minimum": `(${width}, ${height})`,
+        "elk.nodeSize.minimum": `(${sizes.width}, ${sizes.height})`,
       },
     };
   }
@@ -401,11 +540,16 @@ export class SchematicRenderer {
       throw new Error(`Instance ${instance_ref} not found`);
     }
 
+    const sizes =
+      instance.kind === InstanceKind.MODULE
+        ? this.config.nodeSizes.module
+        : this.config.nodeSizes.component;
+
     let node: ElkNode = {
       id: instance_ref,
       type: NodeType.MODULE,
-      width: 256,
-      height: 128,
+      width: sizes.width,
+      height: sizes.height,
       ports: [],
       labels: [{ text: instance_ref.split(".").pop() || "" }],
     };
@@ -1298,7 +1442,9 @@ export class SchematicRenderer {
 
     const layoutOptions = {
       "elk.algorithm": "layered",
-      "elk.direction": "LEFT",
+      "elk.direction": this.config.layout.direction,
+      "elk.spacing.nodeNode": `${this.config.layout.spacing}`,
+      "elk.padding": `[top=${this.config.layout.padding}, left=${this.config.layout.padding}, bottom=${this.config.layout.padding}, right=${this.config.layout.padding}]`,
       "elk.nodeSize.constraints": "NODE_LABELS PORTS PORT_LABELS MINIMUM_SIZE",
       "elk.nodeSize.minimum": "(256, 256)",
       "elk.partitioning.activate": "true",
