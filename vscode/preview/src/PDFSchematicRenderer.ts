@@ -35,20 +35,20 @@ export interface PDFRenderOptions {
 
 export const DEFAULT_PDF_OPTIONS: PDFRenderOptions = {
   pageSize: {
-    width: 595.28, // A4 width in points
-    height: 841.89, // A4 height in points
+    width: 841.89, // A4 height in points (swapped for landscape)
+    height: 595.28, // A4 width in points (swapped for landscape)
     margin: 20,
   },
   colors: {
     background: "#FFFFFF",
-    components: "#000000",
-    nets: "#000000",
+    components: "#8B0000", // Dark red for components
+    nets: "#2E8B57", // Sea green for nets/wires
     labels: "#000000",
   },
   fonts: {
-    labels: "helvetica",
-    values: "helvetica",
-    ports: "helvetica",
+    labels: "courier",
+    values: "courier",
+    ports: "courier",
   },
   components: {
     scale: 1.0,
@@ -117,10 +117,16 @@ export class PDFSchematicRenderer {
     // Add label if present
     if (node.labels?.[0]) {
       doc.setFont(this.options.fonts.values);
-      doc.setFontSize(10 * this.transform.scale);
-      doc.text(node.labels[0].text, centerX + resistorWidth + 5, centerY, {
-        baseline: "middle",
-      });
+      const fontSize = 10 * this.transform.scale;
+      doc.setFontSize(fontSize);
+      doc.text(
+        node.labels[0].text,
+        centerX + resistorWidth + 5 * this.transform.scale,
+        centerY,
+        {
+          baseline: "middle",
+        }
+      );
     }
   }
 
@@ -152,10 +158,16 @@ export class PDFSchematicRenderer {
     // Add label if present
     if (node.labels?.[0]) {
       doc.setFont(this.options.fonts.values);
-      doc.setFontSize(10);
-      doc.text(node.labels[0].text, x + width + 5, y + height / 2, {
-        baseline: "middle",
-      });
+      const fontSize = 10 * this.transform.scale;
+      doc.setFontSize(fontSize);
+      doc.text(
+        node.labels[0].text,
+        x + width + 5 * this.transform.scale,
+        y + height / 2,
+        {
+          baseline: "middle",
+        }
+      );
     }
   }
 
@@ -171,8 +183,13 @@ export class PDFSchematicRenderer {
     // Draw module name
     if (node.labels?.[0]) {
       doc.setFont(this.options.fonts.labels);
-      doc.setFontSize(12);
-      doc.text(node.labels[0].text, x + 5, y + 15);
+      const fontSize = 12 * this.transform.scale;
+      doc.setFontSize(fontSize);
+      doc.text(
+        node.labels[0].text,
+        x + ((node.labels[0].x || 0) + 5) * this.transform.scale,
+        y + ((node.labels[0].y || 0) + 15) * this.transform.scale
+      );
     }
 
     // Draw ports
@@ -188,21 +205,23 @@ export class PDFSchematicRenderer {
       // Draw port label
       if (port.labels?.[0]) {
         doc.setFont(this.options.fonts.ports);
-        doc.setFontSize(8);
+        const fontSize = 8 * this.transform.scale;
+        doc.setFontSize(fontSize);
 
         // Determine if port is on the right side
         const portSide = port.properties?.["port.side"] || "WEST";
         const isRightSide = portSide === "EAST";
+        const offset = 4 * this.transform.scale;
 
         if (isRightSide) {
           // For right-side ports, place label inside and right-aligned
-          doc.text(port.labels[0].text, portX - 4, portY, {
+          doc.text(port.labels[0].text, portX - offset, portY, {
             baseline: "middle",
             align: "right",
           });
         } else {
           // For left-side ports, place label outside and left-aligned
-          doc.text(port.labels[0].text, portX + 4, portY, {
+          doc.text(port.labels[0].text, portX + offset, portY, {
             baseline: "middle",
             align: "left",
           });
@@ -246,8 +265,8 @@ export class PDFSchematicRenderer {
     const [x, y] = this.toPageCoords(node.x || 0, node.y || 0);
     const width = (node.width || 0) * this.transform.scale;
     const height = (node.height || 0) * this.transform.scale;
-    const centerX = x + width / 2;
-    const centerY = y + height / 2;
+    const centerX = x;
+    const centerY = y;
 
     doc.setDrawColor(this.options.colors.components);
     doc.setLineWidth(1.5 * this.transform.scale);
@@ -258,16 +277,12 @@ export class PDFSchematicRenderer {
       const lineSpacing = 4 * this.transform.scale;
       const verticalLineLength = 10 * this.transform.scale;
 
-      // Draw vertical line from port to ground symbol
-      doc.line(
-        centerX,
-        y,
-        centerX,
-        y + height - verticalLineLength - 3 * lineSpacing
-      );
+      // Calculate the position of the first horizontal line
+      const groundY = y + height / 2 - 3 * lineSpacing;
 
-      // Draw ground symbol at the bottom
-      const groundY = y + height - 3 * lineSpacing;
+      // Draw vertical line from port to first horizontal line
+      doc.line(centerX, y, centerX, groundY);
+
       const groundLineWidths = [
         symbolWidth,
         symbolWidth * 0.75,
@@ -286,9 +301,9 @@ export class PDFSchematicRenderer {
       }
     } else {
       // Draw connection line from port
-      const portY = node.ports?.[0]?.y || y;
-      const [, portPageY] = this.toPageCoords(0, portY);
-      doc.line(centerX, portPageY, centerX, centerY);
+      // const portY = node.ports?.[0]?.y || y;
+      // const [, portPageY] = this.toPageCoords(0, portY);
+      // doc.line(centerX, portPageY, centerX, centerY);
 
       // Regular net reference - small circle with dot
       const circleRadius = 3 * this.transform.scale;
@@ -299,11 +314,17 @@ export class PDFSchematicRenderer {
       // Add net name label
       if (node.labels?.[0]) {
         doc.setFont(this.options.fonts.labels);
-        doc.setFontSize(10 * this.transform.scale);
-        doc.text(node.labels[0].text, centerX + circleRadius + 5, centerY, {
-          align: "left",
-          baseline: "middle",
-        });
+        const fontSize = 10 * this.transform.scale;
+        doc.setFontSize(fontSize);
+        doc.text(
+          node.labels[0].text,
+          centerX + circleRadius + 5 * this.transform.scale,
+          centerY,
+          {
+            align: "left",
+            baseline: "middle",
+          }
+        );
       }
     }
   }
@@ -352,10 +373,16 @@ export class PDFSchematicRenderer {
     // Add label if present
     if (node.labels?.[0]) {
       doc.setFont(this.options.fonts.values);
-      doc.setFontSize(10 * this.transform.scale);
-      doc.text(node.labels[0].text, centerX + coilWidth + 5, centerY, {
-        baseline: "middle",
-      });
+      const fontSize = 10 * this.transform.scale;
+      doc.setFontSize(fontSize);
+      doc.text(
+        node.labels[0].text,
+        centerX + coilWidth + 5 * this.transform.scale,
+        centerY,
+        {
+          baseline: "middle",
+        }
+      );
     }
   }
 
@@ -473,13 +500,14 @@ export class PDFSchematicRenderer {
 
     // Add a title for the module
     doc.setFont(this.options.fonts.labels, "bold");
-    doc.setFontSize(16);
+    const titleFontSize = 16 * this.transform.scale;
+    doc.setFontSize(titleFontSize);
     const title = instance_ref.split(".").pop() || instance_ref;
     const titleWidth = doc.getTextWidth(title);
     doc.text(
       title,
       (this.options.pageSize.width - titleWidth) / 2,
-      this.options.pageSize.margin
+      this.options.pageSize.margin + titleFontSize // Adjust vertical position based on font size
     );
 
     // Set line width for all drawings
@@ -520,9 +548,9 @@ export class PDFSchematicRenderer {
   async render(rootModule: string): Promise<jsPDF> {
     // Create a new PDF document
     const doc = new jsPDF({
-      orientation: "portrait",
+      orientation: "landscape",
       unit: "pt",
-      format: [this.options.pageSize.width, this.options.pageSize.height],
+      format: [this.options.pageSize.height, this.options.pageSize.width], // Note: jsPDF expects [width, height] even in landscape
     });
 
     // Get all modules in the subtree of the root module

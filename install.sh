@@ -31,7 +31,7 @@ if ! npx --yes vsce package; then
 fi
 
 echo "Installing vscode extension..."
-if ! code --install-extension atopile-analyzer-*.vsix; then
+if ! code --install-extension atopile-*.vsix; then
     echo "Failed to install vscode extension"
     exit 1
 fi

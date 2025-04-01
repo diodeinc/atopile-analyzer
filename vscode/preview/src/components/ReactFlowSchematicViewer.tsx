@@ -1005,7 +1005,7 @@ const NetReferenceNode = ({ data }: { data: SchematicNodeData }) => {
         >
           {data.isGround ? (
             // Ground Symbol
-            <g transform={`translate(${centerX}, ${centerY + 5})`}>
+            <g transform={`translate(${centerX}, ${centerY + 10})`}>
               {/* Vertical line */}
               <line
                 x1="0"

@@ -1,6 +1,7 @@
 import ELK from "elkjs/lib/elk-api.js";
 import type { ELK as ELKType } from "elkjs/lib/elk-api";
 import { InstanceKind, Netlist, AttributeValue } from "./types/NetlistTypes";
+import { createCanvas } from "canvas";
 
 export enum NodeType {
   META = "meta",
@@ -166,7 +167,7 @@ export const DEFAULT_CONFIG: SchematicConfig = {
     },
     ground: {
       width: 30,
-      height: 40,
+      height: 50,
     },
   },
   layout: {
@@ -181,6 +182,31 @@ export const DEFAULT_CONFIG: SchematicConfig = {
     showFootprints: true,
   },
 };
+
+// Add this helper function before the SchematicRenderer class
+function calculateTextDimensions(
+  text: string,
+  fontSize: number,
+  fontFamily: string = "monospace",
+  fontWeight: string = "normal"
+): { width: number; height: number } {
+  // Create a canvas for text measurement
+  const canvas = createCanvas(1, 1);
+  const context = canvas.getContext("2d");
+
+  // Set font properties
+  context.font = `${fontWeight} ${fontSize}px ${fontFamily}`;
+
+  // For multiline text, split by newline and find the widest line
+  const lines = text.split("\n");
+  const lineHeight = fontSize * 1.2; // Standard line height multiplier
+  const width = Math.max(
+    ...lines.map((line) => context.measureText(line).width)
+  );
+  const height = lineHeight * lines.length;
+
+  return { width, height };
+}
 
 export class SchematicRenderer {
   netlist: Netlist;
@@ -388,6 +414,8 @@ export class SchematicRenderer {
         "elk.padding": "[top=10, left=10, bottom=10, right=10]",
         "elk.portConstraints": "FIXED_SIDE",
         "elk.nodeSize.minimum": "(40, 30)",
+        "elk.nodeSize.constraints": "MINIMUM_SIZE",
+        "elk.nodeLabels.placement": "INSIDE",
       },
     };
   }
@@ -442,6 +470,8 @@ export class SchematicRenderer {
         "elk.padding": "[top=10, left=10, bottom=10, right=10]",
         "elk.portConstraints": "FIXED_SIDE",
         "elk.nodeSize.minimum": "(40, 20)",
+        "elk.nodeSize.constraints": "MINIMUM_SIZE",
+        "elk.nodeLabels.placement": "",
       },
     };
   }
@@ -496,6 +526,8 @@ export class SchematicRenderer {
         "elk.padding": "[top=10, left=10, bottom=10, right=10]",
         "elk.portConstraints": "FIXED_SIDE",
         "elk.nodeSize.minimum": "(40, 40)",
+        "elk.nodeSize.constraints": "MINIMUM_SIZE",
+        "elk.nodeLabels.placement": "",
       },
     };
   }
@@ -533,6 +565,7 @@ export class SchematicRenderer {
         "elk.portConstraints": "FIXED_POS",
         "elk.nodeSize.constraints": "MINIMUM_SIZE",
         "elk.nodeSize.minimum": `(${sizes.width}, ${sizes.height})`,
+        "elk.nodeLabels.placement": "",
       },
     };
   }
@@ -548,13 +581,48 @@ export class SchematicRenderer {
         ? this.config.nodeSizes.module
         : this.config.nodeSizes.component;
 
+    // Calculate main label dimensions
+    const instanceName = instance_ref.split(".").pop() || "";
+    const mainLabelDimensions = calculateTextDimensions(instanceName, 12);
+
+    // Initialize minimum width and height based on label dimensions
+    let minWidth = Math.max(sizes.width, mainLabelDimensions.width + 20); // Add padding
+    let minHeight = Math.max(sizes.height, mainLabelDimensions.height + 20); // Add padding
+
     let node: ElkNode = {
       id: instance_ref,
       type: NodeType.MODULE,
-      width: sizes.width,
-      height: sizes.height,
+      // width: minWidth,
+      // height: minHeight,
       ports: [],
-      labels: [{ text: instance_ref.split(".").pop() || "" }],
+      labels: [
+        {
+          text: instanceName,
+          width: mainLabelDimensions.width,
+          height: mainLabelDimensions.height,
+        },
+      ],
+      properties: {
+        "elk.nodeLabels.placement": "OUTSIDE H_LEFT V_TOP",
+      },
+    };
+
+    // Helper function to check if a port is connected to a ground net
+    const isGroundConnected = (port_ref: string): boolean => {
+      for (const [_netName, net] of Array.from(this.nets.entries())) {
+        if (!net.has(port_ref)) continue;
+
+        // Check if this net is a ground net
+        const isGndNet = Array.from(net).some(
+          (port) =>
+            port.toLowerCase().endsWith(".gnd") &&
+            !port.toLowerCase().endsWith(".power.gnd")
+        );
+
+        if (isGndNet) console.log("gnd net: ", port_ref);
+        if (isGndNet) return true;
+      }
+      return false;
     };
 
     // Add a port on this node for (a) every child of type Port, and (b) every Port of an Interface.
@@ -565,19 +633,76 @@ export class SchematicRenderer {
       }
 
       if (child_instance.kind === InstanceKind.PORT) {
+        const port_ref = `${instance_ref}.${child_name}`;
+        // For modules, skip ground-connected ports
+        if (
+          instance.kind === InstanceKind.MODULE &&
+          isGroundConnected(port_ref)
+        ) {
+          continue;
+        }
+
+        // Calculate port label dimensions
+        const portLabelDimensions = calculateTextDimensions(child_name, 10);
+
         node.ports?.push({
-          id: `${instance_ref}.${child_name}`,
-          labels: [{ text: child_name }],
+          id: port_ref,
+          labels: [
+            {
+              text: child_name,
+              width: portLabelDimensions.width,
+              height: portLabelDimensions.height,
+            },
+          ],
         });
+
+        // Update minimum width/height to accommodate port labels
+        minWidth = Math.max(minWidth, portLabelDimensions.width * 2 + 60); // Extra space for ports on both sides
+        minHeight = Math.max(
+          minHeight,
+          mainLabelDimensions.height + portLabelDimensions.height * 2 + 40
+        );
       } else if (child_instance.kind === InstanceKind.INTERFACE) {
-        for (let port_name of Object.keys(child_instance.children)) {
+        for (let [port_name, _port_ref] of Object.entries(
+          child_instance.children
+        )) {
+          const full_port_ref = `${instance_ref}.${child_name}.${port_name}`;
+          // For modules, skip ground-connected ports
+          if (
+            instance.kind === InstanceKind.MODULE &&
+            isGroundConnected(full_port_ref)
+          ) {
+            continue;
+          }
+
+          // Calculate port label dimensions for interface ports
+          const portLabel = `${child_name}.${port_name}`;
+          const portLabelDimensions = calculateTextDimensions(portLabel, 10);
+
           node.ports?.push({
-            id: `${instance_ref}.${child_name}.${port_name}`,
-            labels: [{ text: `${child_name}.${port_name}` }],
+            id: full_port_ref,
+            labels: [
+              {
+                text: portLabel,
+                width: portLabelDimensions.width,
+                height: portLabelDimensions.height,
+              },
+            ],
           });
+
+          // Update minimum width/height to accommodate interface port labels
+          minWidth = Math.max(minWidth, portLabelDimensions.width * 2 + 60);
+          minHeight = Math.max(
+            minHeight,
+            mainLabelDimensions.height + portLabelDimensions.height * 2 + 40
+          );
         }
       }
     }
+
+    // Update final node dimensions
+    node.width = minWidth;
+    node.height = minHeight;
 
     if (instance.kind === InstanceKind.COMPONENT) {
       node.type = NodeType.COMPONENT;
@@ -834,6 +959,39 @@ export class SchematicRenderer {
     return nodes;
   }
 
+  _cleanupGraph(graph: ElkGraph): ElkGraph {
+    // First, remove any self-edges (edges that connect a port to itself)
+    graph.edges = graph.edges.filter((edge) => {
+      return !(
+        edge.sources.length === 1 &&
+        edge.targets.length === 1 &&
+        edge.sources[0] === edge.targets[0]
+      );
+    });
+
+    // Next, for each module, remove ports that have no connections
+    const connectedPorts = new Set<string>();
+
+    // Collect all ports that are connected to any edge
+    for (const edge of graph.edges) {
+      edge.sources.forEach((port) => connectedPorts.add(port));
+      edge.targets.forEach((port) => connectedPorts.add(port));
+    }
+
+    // For each module node, remove unconnected ports
+    graph.children = graph.children.map((node) => {
+      if (node.type !== NodeType.MODULE) {
+        return node;
+      }
+
+      // Filter out ports that aren't in connectedPorts
+      node.ports = node.ports?.filter((port) => connectedPorts.has(port.id));
+      return node;
+    });
+
+    return graph;
+  }
+
   _graphForInstance(instance_ref: string): ElkGraph {
     const instance = this.netlist.instances[instance_ref];
     if (!instance) {
@@ -867,6 +1025,7 @@ export class SchematicRenderer {
       };
 
       graph = this._addConnectivity(graph);
+      graph = this._cleanupGraph(graph);
       graph = this._createLayoutMetaNodes(graph);
       return graph;
     }
@@ -884,6 +1043,7 @@ export class SchematicRenderer {
     };
 
     graph = this._addConnectivity(graph);
+    graph = this._cleanupGraph(graph);
     graph = this._createLayoutMetaNodes(graph);
 
     return graph;
@@ -958,7 +1118,7 @@ export class SchematicRenderer {
             return a.split(".").length - b.split(".").length;
           });
 
-          if (matchingInternalPorts.length > 0) {
+          if (matchingInternalPorts.length > 0 && !isGndNet) {
             portsInNetToInstanceRef.set(matchingInternalPorts[0], node.id);
             node.ports?.push({
               id: matchingInternalPorts[0],
@@ -1483,6 +1643,83 @@ export class SchematicRenderer {
     };
   }
 
+  _computeNodeDimensionsAfterPortAssignment(node: ElkNode): ElkNode {
+    if (node.type !== NodeType.MODULE && node.type !== NodeType.COMPONENT) {
+      return node;
+    }
+
+    // Get the main label dimensions
+    const mainLabelHeight = node.labels?.[0]?.height || 0;
+    const mainLabelWidth = node.labels?.[0]?.width || 0;
+
+    // Group ports by side
+    const portsBySide = {
+      WEST: [] as ElkPort[],
+      EAST: [] as ElkPort[],
+      NORTH: [] as ElkPort[],
+      SOUTH: [] as ElkPort[],
+    };
+
+    // Collect ports by their assigned sides
+    for (const port of node.ports || []) {
+      const side = port.properties?.["port.side"];
+      if (side && side in portsBySide) {
+        portsBySide[side as keyof typeof portsBySide].push(port);
+      }
+    }
+
+    // Calculate required width and height based on port labels
+    let requiredWidth = mainLabelWidth;
+    let requiredHeight = mainLabelHeight;
+
+    // Helper to get max label width for a set of ports
+    const getMaxPortLabelWidth = (ports: ElkPort[]): number => {
+      return Math.max(0, ...ports.map((port) => port.labels?.[0]?.width || 0));
+    };
+
+    // Helper to get total height needed for a set of ports
+    const getTotalPortHeight = (ports: ElkPort[]): number => {
+      return ports.reduce(
+        (sum, port) => sum + (port.labels?.[0]?.height || 0) + 10,
+        0
+      ); // 10px spacing between ports
+    };
+
+    // Calculate width needed for left and right ports
+    const leftPortsWidth = getMaxPortLabelWidth(portsBySide.WEST);
+    const rightPortsWidth = getMaxPortLabelWidth(portsBySide.EAST);
+    requiredWidth = Math.max(
+      requiredWidth,
+      leftPortsWidth + rightPortsWidth + 80 // Add padding and space between sides
+    );
+
+    // Calculate height needed for top and bottom ports
+    const topPortsHeight = getTotalPortHeight(portsBySide.NORTH);
+    const bottomPortsHeight = getTotalPortHeight(portsBySide.SOUTH);
+
+    // Calculate height needed for left and right side ports
+    const leftPortsHeight = getTotalPortHeight(portsBySide.WEST);
+    const rightPortsHeight = getTotalPortHeight(portsBySide.EAST);
+
+    // Take the maximum height needed
+    requiredHeight = Math.max(
+      requiredHeight + 40, // Add padding for the main label
+      topPortsHeight + bottomPortsHeight + 60, // Add padding between top and bottom
+      Math.max(leftPortsHeight, rightPortsHeight) + 40 // Height for side ports
+    );
+
+    // Update node dimensions
+    return {
+      ...node,
+      width: Math.max(requiredWidth, node.width || 0),
+      height: Math.max(requiredHeight, node.height || 0),
+      properties: {
+        ...node.properties,
+        "elk.nodeSize.minimum": `(${requiredWidth}, ${requiredHeight})`,
+      },
+    };
+  }
+
   async render(instance_ref: string): Promise<ElkGraph> {
     const graph = this._graphForInstance(instance_ref);
 
@@ -1492,9 +1729,10 @@ export class SchematicRenderer {
       "elk.spacing.nodeNode": `${this.config.layout.spacing}`,
       "elk.padding": `[top=${this.config.layout.padding}, left=${this.config.layout.padding}, bottom=${this.config.layout.padding}, right=${this.config.layout.padding}]`,
       "elk.nodeSize.constraints": "NODE_LABELS PORTS PORT_LABELS MINIMUM_SIZE",
-      "elk.nodeSize.minimum": "(256, 256)",
+      // "elk.nodeLabels.placement": "OUTSIDE H_RIGHT V_TOP",
       "elk.partitioning.activate": "true",
       "elk.layered.nodePlacement.strategy": "NETWORK_SIMPLEX",
+      "elk.portLabels.placement": "INSIDE NEXT_TO_PORT_IF_POSSIBLE",
     };
 
     // First pass - run layout with free port constraints
@@ -1586,6 +1824,11 @@ export class SchematicRenderer {
             "port.side": "EAST",
           };
         }
+
+        // After assigning port sides, compute final dimensions
+        const updatedNode =
+          this._computeNodeDimensionsAfterPortAssignment(node);
+        Object.assign(node, updatedNode);
       }
     }
 
