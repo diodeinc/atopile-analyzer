@@ -14,6 +14,12 @@ export enum NodeType {
   NET_JUNCTION = "net_junction",
 }
 
+export enum NetReferenceType {
+  NORMAL = "normal",
+  GROUND = "ground",
+  VDD = "vdd",
+}
+
 export interface ElkNode {
   id: string;
   width?: number;
@@ -25,7 +31,7 @@ export interface ElkNode {
   properties?: Record<string, string>;
   type: NodeType;
   netId?: string; // Only used for net reference nodes
-  isGround?: boolean; // Only used for net reference nodes
+  netReferenceType?: NetReferenceType; // Only used for net reference nodes
   children?: ElkNode[];
   edges?: ElkEdge[];
 }
@@ -106,6 +112,10 @@ export interface NodeSizeConfig {
     width: number;
     height: number;
   };
+  vdd: {
+    width: number;
+    height: number;
+  };
 }
 
 export interface SchematicConfig {
@@ -169,6 +179,10 @@ export const DEFAULT_CONFIG: SchematicConfig = {
       width: 30,
       height: 50,
     },
+    vdd: {
+      width: 30,
+      height: 10,
+    },
   },
   layout: {
     direction: "LEFT",
@@ -213,6 +227,7 @@ export class SchematicRenderer {
   elk: ELKType;
   nets: Map<string, Set<string>>;
   config: SchematicConfig;
+  netNames: Map<string, string>;
 
   constructor(netlist: Netlist, config: Partial<SchematicConfig> = {}) {
     this.netlist = netlist;
@@ -223,6 +238,7 @@ export class SchematicRenderer {
       },
     });
     this.nets = this._generateNets();
+    this.netNames = this._generateUniqueNetNames();
     // Merge provided config with defaults
     this.config = {
       ...DEFAULT_CONFIG,
@@ -364,6 +380,113 @@ export class SchematicRenderer {
     return undefined;
   }
 
+  _isGndNet(net: Set<string>): boolean {
+    return Array.from(net).some((port) => {
+      // This is a hack to work around capacitors exposing a `power` interface that will make it
+      // look like anything connected to `p2` is a ground net. We should really come up with
+      // something better here.
+      return (
+        port.toLowerCase().endsWith(".gnd") &&
+        !port.toLowerCase().endsWith(".power.gnd")
+      );
+    });
+  }
+
+  _isPowerNet(net: Set<string>): boolean {
+    for (const portRef of Array.from(net)) {
+      // Split the port reference into parts
+      const parts = portRef.split(".");
+      if (parts.length < 2) continue;
+      if (parts[parts.length - 1] !== "vcc") continue;
+
+      // Get the instance reference (everything before the last part)
+      const instanceRef = parts.slice(0, -1).join(".");
+      const instance = this.netlist.instances[instanceRef];
+      if (!instance) continue;
+
+      // Skip if this is a capacitor
+      const parentInstanceRef = parts.slice(0, -2).join(".");
+      const parentInstance = this.netlist.instances[parentInstanceRef];
+      const parentType = this._getAttributeValue(
+        parentInstance?.attributes.type
+      );
+      if (parentType === "capacitor") {
+        continue;
+      }
+
+      // Check if this port is part of a Power interface
+      if (instance.kind === InstanceKind.INTERFACE) {
+        const interfaceType = instance.module.module_name;
+        if (interfaceType === "Power") {
+          // Found a power interface that's not on a capacitor
+          return true;
+        }
+      }
+    }
+    return false;
+  }
+
+  _getPortConnections(instance_ref: string): {
+    p1: { isGnd: boolean; isPower: boolean };
+    p2: { isGnd: boolean; isPower: boolean };
+  } {
+    const connections = {
+      p1: { isGnd: false, isPower: false },
+      p2: { isGnd: false, isPower: false },
+    };
+
+    // Check each net for connections to our ports
+    for (const [_netName, net] of Array.from(this.nets.entries())) {
+      const p1Port = `${instance_ref}.p1`;
+      const p2Port = `${instance_ref}.p2`;
+
+      if (net.has(p1Port)) {
+        connections.p1.isGnd = this._isGndNet(net);
+        connections.p1.isPower = this._isPowerNet(net);
+      }
+      if (net.has(p2Port)) {
+        connections.p2.isGnd = this._isGndNet(net);
+        connections.p2.isPower = this._isPowerNet(net);
+      }
+    }
+
+    return connections;
+  }
+
+  _determinePortSides(instance_ref: string): {
+    p1Side: "NORTH" | "SOUTH";
+    p2Side: "NORTH" | "SOUTH";
+  } {
+    const connections = this._getPortConnections(instance_ref);
+
+    // Default orientation
+    let p1Side: "NORTH" | "SOUTH" = "NORTH";
+    let p2Side: "NORTH" | "SOUTH" = "SOUTH";
+
+    // Handle various cases
+    if (connections.p1.isGnd && !connections.p2.isGnd) {
+      // If p1 is ground and p2 isn't, p1 should be south
+      p1Side = "SOUTH";
+      p2Side = "NORTH";
+    } else if (connections.p2.isGnd && !connections.p1.isGnd) {
+      // If p2 is ground and p1 isn't, p2 should be south
+      p1Side = "NORTH";
+      p2Side = "SOUTH";
+    } else if (connections.p1.isPower && !connections.p2.isPower) {
+      // If p1 is power and p2 isn't, p1 should be north
+      p1Side = "NORTH";
+      p2Side = "SOUTH";
+    } else if (connections.p2.isPower && !connections.p1.isPower) {
+      // If p2 is power and p1 isn't, p2 should be north
+      p1Side = "SOUTH";
+      p2Side = "NORTH";
+    }
+    // In all other cases (including both ground, both power, or neither),
+    // we keep the default orientation
+
+    return { p1Side, p2Side };
+  }
+
   _resistorNode(instance_ref: string): ElkNode {
     const instance = this.netlist.instances[instance_ref];
     const footprint =
@@ -373,6 +496,8 @@ export class SchematicRenderer {
     const value = this._renderValue(instance.attributes.value);
     const showValue = this.config.visual.showComponentValues && value;
     const showFootprint = this.config.visual.showFootprints && footprint;
+
+    const { p1Side, p2Side } = this._determinePortSides(instance_ref);
 
     return {
       id: instance_ref,
@@ -385,7 +510,7 @@ export class SchematicRenderer {
             showFootprint ? `\n${footprint}` : ""
           }`,
           x: 45,
-          y: 15,
+          y: 0,
           width: 128,
           height: 30,
         },
@@ -394,7 +519,7 @@ export class SchematicRenderer {
         {
           id: `${instance_ref}.p1`,
           properties: {
-            "port.side": "NORTH",
+            "port.side": p1Side,
             "port.index": "0",
             "port.anchor": "CENTER",
             "port.alignment": "CENTER",
@@ -403,7 +528,7 @@ export class SchematicRenderer {
         {
           id: `${instance_ref}.p2`,
           properties: {
-            "port.side": "SOUTH",
+            "port.side": p2Side,
             "port.index": "0",
             "port.anchor": "CENTER",
             "port.alignment": "CENTER",
@@ -430,6 +555,8 @@ export class SchematicRenderer {
     const showValue = this.config.visual.showComponentValues && value;
     const showFootprint = this.config.visual.showFootprints && footprint;
 
+    const { p1Side, p2Side } = this._determinePortSides(instance_ref);
+
     return {
       id: instance_ref,
       type: NodeType.CAPACITOR,
@@ -441,7 +568,7 @@ export class SchematicRenderer {
             showFootprint ? `\n${footprint}` : ""
           }`,
           x: 45,
-          y: 10,
+          y: 0,
           width: 128,
           height: 20,
         },
@@ -450,7 +577,7 @@ export class SchematicRenderer {
         {
           id: `${instance_ref}.p1`,
           properties: {
-            "port.side": "NORTH",
+            "port.side": p1Side,
             "port.index": "0",
             "port.anchor": "CENTER",
             "port.alignment": "CENTER",
@@ -459,7 +586,7 @@ export class SchematicRenderer {
         {
           id: `${instance_ref}.p2`,
           properties: {
-            "port.side": "SOUTH",
+            "port.side": p2Side,
             "port.index": "0",
             "port.anchor": "CENTER",
             "port.alignment": "CENTER",
@@ -486,6 +613,8 @@ export class SchematicRenderer {
     const showValue = this.config.visual.showComponentValues && value;
     const showFootprint = this.config.visual.showFootprints && footprint;
 
+    const { p1Side, p2Side } = this._determinePortSides(instance_ref);
+
     return {
       id: instance_ref,
       type: NodeType.INDUCTOR,
@@ -497,7 +626,7 @@ export class SchematicRenderer {
             showFootprint ? `\n${footprint}` : ""
           }`,
           x: 45,
-          y: 20,
+          y: 0,
           width: 128,
           height: 40,
         },
@@ -506,7 +635,7 @@ export class SchematicRenderer {
         {
           id: `${instance_ref}.p1`,
           properties: {
-            "port.side": "NORTH",
+            "port.side": p1Side,
             "port.index": "0",
             "port.anchor": "CENTER",
             "port.alignment": "CENTER",
@@ -515,7 +644,7 @@ export class SchematicRenderer {
         {
           id: `${instance_ref}.p2`,
           properties: {
-            "port.side": "SOUTH",
+            "port.side": p2Side,
             "port.index": "0",
             "port.anchor": "CENTER",
             "port.alignment": "CENTER",
@@ -535,25 +664,104 @@ export class SchematicRenderer {
   _netReferenceNode(
     ref_id: string,
     name: string,
-    side: "NORTH" | "WEST" = "WEST",
-    isGround: boolean = false
+    side: "NORTH" | "WEST" | "SOUTH" | "EAST" = "WEST",
+    netReferenceType: NetReferenceType = NetReferenceType.NORMAL
   ): ElkNode {
-    const sizes = isGround
-      ? this.config.nodeSizes.ground
-      : this.config.nodeSizes.netReference;
+    const sizes =
+      netReferenceType === NetReferenceType.GROUND
+        ? this.config.nodeSizes.ground
+        : netReferenceType === NetReferenceType.VDD
+        ? this.config.nodeSizes.vdd
+        : this.config.nodeSizes.netReference;
+
+    // Use the generated unique name if this is a power net
+    const displayName =
+      netReferenceType === NetReferenceType.VDD
+        ? this.netNames.get(name) || name
+        : name;
+
+    // Calculate label dimensions
+    const fontSize = 12; // Base font size
+    const labelDimensions = calculateTextDimensions(displayName, fontSize);
+
+    // For VDD and normal nets, we want the label to be visible
+    // For ground symbols, we don't show a label
+    const labels =
+      netReferenceType === NetReferenceType.GROUND
+        ? []
+        : [
+            {
+              text: displayName,
+              width:
+                netReferenceType === NetReferenceType.VDD
+                  ? labelDimensions.width
+                  : 0,
+              height:
+                netReferenceType === NetReferenceType.VDD
+                  ? labelDimensions.height
+                  : 0,
+              // Position the label above the node for VDD and opposite to the port side for normal nets
+              x:
+                netReferenceType === NetReferenceType.VDD
+                  ? (sizes.width - labelDimensions.width) / 2 // Center horizontally
+                  : side === "EAST"
+                  ? -labelDimensions.width - 5 // Label on left when port is on east
+                  : sizes.width + 5, // Label on right when port is on west
+              y:
+                netReferenceType === NetReferenceType.VDD
+                  ? -labelDimensions.height - 5 // 5px above the node
+                  : (sizes.height - labelDimensions.height) / 2, // Center vertically
+            },
+          ];
+
+    // For VDD nodes, adjust the node height to account for the label if needed
+    const nodeHeight =
+      netReferenceType === NetReferenceType.VDD
+        ? sizes.height + labelDimensions.height + 5 // Add label height plus padding
+        : sizes.height;
+
+    // For normal nets, adjust width to account for label if needed
+    const nodeWidth =
+      netReferenceType === NetReferenceType.NORMAL
+        ? sizes.width + labelDimensions.width + 10 // Add label width plus padding
+        : sizes.width;
+
+    // Calculate port position - it should be centered on its side
+    let portX = 0;
+    let portY = nodeHeight / 2;
+
+    switch (side) {
+      case "EAST":
+        portX = nodeWidth;
+        break;
+      case "WEST":
+        portX = 0;
+        break;
+      case "NORTH":
+        portX = nodeWidth / 2;
+        portY = 0;
+        break;
+      case "SOUTH":
+        portX = nodeWidth / 2;
+        portY = nodeHeight;
+        break;
+    }
+
     return {
       id: ref_id,
       type: NodeType.NET_REFERENCE,
-      width: sizes.width,
-      height: sizes.height,
+      width: nodeWidth,
+      height: nodeHeight,
       netId: name,
-      isGround: isGround,
-      labels: isGround ? [] : [{ text: name }],
+      netReferenceType,
+      labels,
       ports: [
         {
           id: `${ref_id}.port`,
-          width: -1,
-          height: -1,
+          width: 0,
+          height: 0,
+          x: portX,
+          y: portY,
           properties: {
             "port.alignment": "CENTER",
             "port.side": side,
@@ -564,8 +772,11 @@ export class SchematicRenderer {
         "elk.padding": "[top=0, left=0, bottom=0, right=0]",
         "elk.portConstraints": "FIXED_POS",
         "elk.nodeSize.constraints": "MINIMUM_SIZE",
-        "elk.nodeSize.minimum": `(${sizes.width}, ${sizes.height})`,
-        "elk.nodeLabels.placement": "",
+        "elk.nodeSize.minimum": `(${nodeWidth}, ${nodeHeight})`,
+        "elk.nodeLabels.placement":
+          netReferenceType === NetReferenceType.VDD
+            ? "OUTSIDE H_CENTER V_TOP"
+            : "",
       },
     };
   }
@@ -613,14 +824,7 @@ export class SchematicRenderer {
         if (!net.has(port_ref)) continue;
 
         // Check if this net is a ground net
-        const isGndNet = Array.from(net).some(
-          (port) =>
-            port.toLowerCase().endsWith(".gnd") &&
-            !port.toLowerCase().endsWith(".power.gnd")
-        );
-
-        if (isGndNet) console.log("gnd net: ", port_ref);
-        if (isGndNet) return true;
+        if (this._isGndNet(net)) return true;
       }
       return false;
     };
@@ -711,8 +915,33 @@ export class SchematicRenderer {
         "elk.portConstraints": "FIXED_ORDER",
       };
 
+      // Helper function for natural sort comparison
+      const naturalCompare = (a: string, b: string): number => {
+        const splitIntoNumbersAndStrings = (str: string) => {
+          return str
+            .split(/(\d+)/)
+            .filter(Boolean)
+            .map((part) => (/^\d+$/.test(part) ? parseInt(part, 10) : part));
+        };
+
+        const aParts = splitIntoNumbersAndStrings(a);
+        const bParts = splitIntoNumbersAndStrings(b);
+
+        for (let i = 0; i < Math.min(aParts.length, bParts.length); i++) {
+          if (typeof aParts[i] !== typeof bParts[i]) {
+            return typeof aParts[i] === "number" ? -1 : 1;
+          }
+          if (aParts[i] < bParts[i]) return -1;
+          if (aParts[i] > bParts[i]) return 1;
+        }
+        return aParts.length - bParts.length;
+      };
+
       node.ports?.sort((a, b) => {
-        return a.id.localeCompare(b.id);
+        // Extract the port name from the ID (everything after the last dot)
+        const aName = a.id.split(".").pop() || "";
+        const bName = b.id.split(".").pop() || "";
+        return naturalCompare(aName, bName);
       });
 
       node.ports?.forEach((port, index) => {
@@ -989,6 +1218,169 @@ export class SchematicRenderer {
       return node;
     });
 
+    // For each edge that connects a passive component to a module/component,
+    // set the direction based on the port side of the module/component
+    graph.edges = graph.edges.map((edge) => {
+      // Find the nodes at each end of the edge
+      const sourceNode = graph.children.find(
+        (node) => node.id === edge.sourceComponentRef
+      );
+      const targetNode = graph.children.find(
+        (node) => node.id === edge.targetComponentRef
+      );
+
+      if (!sourceNode || !targetNode) return edge;
+
+      // Helper function to determine if a node is passive
+      const isPassive = (node: ElkNode) => {
+        return [
+          NodeType.RESISTOR,
+          NodeType.CAPACITOR,
+          NodeType.INDUCTOR,
+          NodeType.NET_REFERENCE,
+        ].includes(node.type);
+      };
+
+      // Helper function to determine if a node is a module or component
+      const isModuleOrComponent = (node: ElkNode) => {
+        return [NodeType.MODULE, NodeType.COMPONENT].includes(node.type);
+      };
+
+      // Helper function to get port side
+      const getPortSide = (
+        node: ElkNode,
+        portId: string
+      ): string | undefined => {
+        const port = node.ports?.find((p) => p.id === portId);
+        return port?.properties?.["port.side"];
+      };
+
+      // Only process if we have one passive and one module/component
+      if (isPassive(sourceNode) && isModuleOrComponent(targetNode)) {
+        // Get the port side on the module/component
+        const targetPortSide = getPortSide(targetNode, edge.targets[0]);
+
+        // If the target port is on the west side, swap source and target
+        if (targetPortSide === "WEST") {
+          return {
+            ...edge,
+            sources: edge.targets,
+            targets: edge.sources,
+            sourceComponentRef: edge.targetComponentRef,
+            targetComponentRef: edge.sourceComponentRef,
+          };
+        }
+      } else if (isModuleOrComponent(sourceNode) && isPassive(targetNode)) {
+        // Get the port side on the module/component
+        const sourcePortSide = getPortSide(sourceNode, edge.sources[0]);
+
+        // If the source port is on the east side, swap source and target
+        if (sourcePortSide === "EAST") {
+          return {
+            ...edge,
+            sources: edge.targets,
+            targets: edge.sources,
+            sourceComponentRef: edge.targetComponentRef,
+            targetComponentRef: edge.sourceComponentRef,
+          };
+        }
+      }
+
+      return edge;
+    });
+
+    // Create a map to track net reference connections
+    const netRefConnections = new Map<
+      string,
+      { node: ElkNode; edges: ElkEdge[] }
+    >();
+
+    // Collect information about net reference connections
+    for (const edge of graph.edges) {
+      const sourceNode = graph.children.find(
+        (node) => node.id === edge.sourceComponentRef
+      );
+      const targetNode = graph.children.find(
+        (node) => node.id === edge.targetComponentRef
+      );
+
+      if (!sourceNode || !targetNode) continue;
+
+      // If either node is a net reference, track its connections
+      if (sourceNode.type === NodeType.NET_REFERENCE) {
+        if (!netRefConnections.has(sourceNode.id)) {
+          netRefConnections.set(sourceNode.id, { node: sourceNode, edges: [] });
+        }
+        netRefConnections.get(sourceNode.id)!.edges.push(edge);
+      }
+      if (targetNode.type === NodeType.NET_REFERENCE) {
+        if (!netRefConnections.has(targetNode.id)) {
+          netRefConnections.set(targetNode.id, { node: targetNode, edges: [] });
+        }
+        netRefConnections.get(targetNode.id)!.edges.push(edge);
+      }
+    }
+
+    // Process each net reference
+    Array.from(netRefConnections.entries()).forEach(
+      ([netRefId, { node: netRefNode, edges }]) => {
+        // Skip if this is a ground or VDD net reference
+        if (
+          netRefNode.netReferenceType === NetReferenceType.GROUND ||
+          netRefNode.netReferenceType === NetReferenceType.VDD
+        ) {
+          return;
+        }
+
+        // Check all connected ports
+        let allWest = true;
+        let hasConnections = false;
+
+        for (const edge of edges) {
+          const otherNodeId =
+            edge.sourceComponentRef === netRefId
+              ? edge.targetComponentRef
+              : edge.sourceComponentRef;
+          const otherNode = graph.children.find(
+            (node) => node.id === otherNodeId
+          );
+
+          if (
+            !otherNode ||
+            ![NodeType.MODULE, NodeType.COMPONENT].includes(otherNode.type)
+          ) {
+            continue;
+          }
+
+          hasConnections = true;
+          const portId =
+            edge.sourceComponentRef === netRefId
+              ? edge.targets[0]
+              : edge.sources[0];
+          const portSide = otherNode.ports?.find((p) => p.id === portId)
+            ?.properties?.["port.side"];
+
+          if (portSide !== "WEST") {
+            allWest = false;
+            break;
+          }
+        }
+
+        // If all connected ports are on the WEST side, update the net reference port to be on the EAST side
+        if (
+          hasConnections &&
+          allWest &&
+          netRefNode.ports &&
+          netRefNode.ports.length > 0
+        ) {
+          netRefNode.ports[0].properties = {
+            ...netRefNode.ports[0].properties,
+            "port.side": "EAST",
+          };
+        }
+      }
+    );
+
     return graph;
   }
 
@@ -1076,15 +1468,8 @@ export class SchematicRenderer {
         }
       }
 
-      const isGndNet = Array.from(net).some((port) => {
-        // This is a hack to work around capacitors exposing a `power` interface that will make it
-        // look like anything connected to `p2` is a ground net. We should really come up with
-        // something better here.
-        return (
-          port.toLowerCase().endsWith(".gnd") &&
-          !port.toLowerCase().endsWith(".power.gnd")
-        );
-      });
+      const isGndNet = this._isGndNet(net);
+      const isPowerNet = this._isPowerNet(net);
 
       // For each node in the graph
       for (const node of this._getAllNodes(graph)) {
@@ -1134,7 +1519,8 @@ export class SchematicRenderer {
       if (
         portsInNetToInstanceRef.size >= 1 &&
         outsideConnections.size >= 1 &&
-        !isGndNet
+        !isGndNet &&
+        !isPowerNet
       ) {
         const netRefId = `${netName}_ref`;
         const netRefNode = this._netReferenceNode(netRefId, netName);
@@ -1195,9 +1581,48 @@ export class SchematicRenderer {
           const netRefId = `${netName}_gnd_${instanceRef.replace(/\./g, "_")}`;
           const netRefNode = this._netReferenceNode(
             netRefId,
-            "GND",
+            netName,
             "NORTH",
-            true
+            NetReferenceType.GROUND
+          );
+          netRefNode.netId = netName;
+
+          // For modules, connect all the ports to the net reference node.
+          graph.children.push(netRefNode);
+          for (const port of ports) {
+            graph.edges.push({
+              id: `${port}-${netRefId}`,
+              sources: [port],
+              targets: [netRefNode.ports![0].id],
+              sourceComponentRef: instanceRef,
+              targetComponentRef: netRefId,
+              netId: netName,
+            });
+          }
+        }
+      } else if (isPowerNet) {
+        // Group ports by their instance reference
+        const instanceToPorts = new Map<string, string[]>();
+        for (const [port, instanceRef] of portsList) {
+          if (!instanceToPorts.has(instanceRef)) {
+            instanceToPorts.set(instanceRef, []);
+          }
+          instanceToPorts.get(instanceRef)!.push(port);
+        }
+
+        // Create one GND reference per instance
+        for (const [instanceRef, ports] of Array.from(
+          instanceToPorts.entries()
+        )) {
+          const node = graph.children.find((n) => n.id === instanceRef);
+          if (!node) continue;
+
+          const netRefId = `${netName}_gnd_${instanceRef.replace(/\./g, "_")}`;
+          const netRefNode = this._netReferenceNode(
+            netRefId,
+            netName,
+            "SOUTH",
+            NetReferenceType.VDD
           );
           netRefNode.netId = netName;
 
@@ -1296,18 +1721,6 @@ export class SchematicRenderer {
 
   _createLayoutMetaNodes(graph: ElkGraph): ElkGraph {
     let edgeIdsInMetaNodes: Set<string> = new Set();
-
-    // Create a map of net IDs to their edges
-    const netToEdges = new Map<string, ElkEdge[]>();
-    for (const edge of graph.edges) {
-      if (!edge.netId) continue;
-      if (!netToEdges.has(edge.netId)) {
-        netToEdges.set(edge.netId, []);
-      }
-      netToEdges.get(edge.netId)!.push(edge);
-    }
-
-    // For each net, find passive components that are exclusively connected to net references
     const processedNodes = new Set<string>();
     const newChildren: ElkNode[] = [];
     const newEdges: ElkEdge[] = [];
@@ -1315,116 +1728,104 @@ export class SchematicRenderer {
     // Keep track of which meta nodes contain which passive components
     const passiveToMetaNode = new Map<string, string>();
 
-    // Convert Map entries to array for iteration
-    const netEntries = Array.from(netToEdges.entries());
-    for (const netEntry of netEntries) {
-      const edges = netEntry[1];
-      // Get all nodes connected to this net
-      const connectedNodes = new Set<string>();
-      for (const edge of edges) {
-        connectedNodes.add(edge.sourceComponentRef);
-        connectedNodes.add(edge.targetComponentRef);
+    // First pass: Process all passive nodes and their connected net references
+    for (const node of graph.children) {
+      // Skip if not a passive component or already processed
+      if (
+        ![NodeType.RESISTOR, NodeType.CAPACITOR, NodeType.INDUCTOR].includes(
+          node.type
+        ) ||
+        processedNodes.has(node.id)
+      ) {
+        continue;
       }
 
-      // Find passive nodes in this net
-      const passiveNodes = Array.from(connectedNodes).filter((nodeId) => {
-        const node = graph.children.find((n) => n.id === nodeId);
-        return (
-          node &&
-          [NodeType.RESISTOR, NodeType.CAPACITOR, NodeType.INDUCTOR].includes(
-            node.type
+      // Find all edges connected to this passive node
+      const connectedEdges = graph.edges.filter(
+        (e) =>
+          e.sourceComponentRef === node.id || e.targetComponentRef === node.id
+      );
+
+      // Find all net references connected to this passive node
+      const connectedRefs = new Set<string>();
+      for (const edge of connectedEdges) {
+        const otherNodeId =
+          edge.sourceComponentRef === node.id
+            ? edge.targetComponentRef
+            : edge.sourceComponentRef;
+        const otherNode = graph.children.find((n) => n.id === otherNodeId);
+
+        if (
+          otherNode?.type === NodeType.NET_REFERENCE &&
+          [NetReferenceType.GROUND, NetReferenceType.VDD].includes(
+            otherNode.netReferenceType!
           )
-        );
-      });
-
-      // For each passive node
-      for (const passiveNodeId of passiveNodes) {
-        if (processedNodes.has(passiveNodeId)) continue;
-
-        // Find all net references exclusively connected to this passive node
-        const connectedRefs = Array.from(connectedNodes).filter((nodeId) => {
-          const node = graph.children.find((n) => n.id === nodeId);
-          if (!node || node.type !== NodeType.NET_REFERENCE || !node.isGround)
-            return false;
-
-          // Check if this net reference is only connected to this passive node
-          const refEdges = edges.filter(
-            (e: ElkEdge) =>
-              e.sourceComponentRef === nodeId || e.targetComponentRef === nodeId
-          );
-          return refEdges.every(
-            (e: ElkEdge) =>
-              e.sourceComponentRef === passiveNodeId ||
-              e.targetComponentRef === passiveNodeId
-          );
-        });
-
-        // If we found exclusive net references, create a meta node
-        if (connectedRefs.length > 0) {
-          const passiveNode = graph.children.find(
-            (n) => n.id === passiveNodeId
-          )!;
-          const refNodes = connectedRefs.map(
-            (refId) => graph.children.find((n) => n.id === refId)!
-          );
-
-          // Find all ports that need to be exposed (those with external connections)
-          const exposedPorts = new Set<string>();
-          for (const edge of graph.edges) {
-            // If edge connects to our passive node but other end is not in our meta node
-            if (
-              edge.sourceComponentRef === passiveNodeId &&
-              !connectedRefs.includes(edge.targetComponentRef)
-            ) {
-              // Add all ports from this edge that belong to our passive node
-              edge.sources.forEach((port) => {
-                if (port.startsWith(passiveNodeId)) {
-                  exposedPorts.add(port);
-                }
-              });
-            }
-            if (
-              edge.targetComponentRef === passiveNodeId &&
-              !connectedRefs.includes(edge.sourceComponentRef)
-            ) {
-              edge.targets.forEach((port) => {
-                if (port.startsWith(passiveNodeId)) {
-                  exposedPorts.add(port);
-                }
-              });
-            }
-          }
-
-          // Create meta node containing the passive and its net references
-          const metaNodeId = `${passiveNodeId}_with_refs`;
-          const metaNodeEdges = edges.filter(
-            (e: ElkEdge) =>
-              (e.sourceComponentRef === passiveNodeId ||
-                connectedRefs.includes(e.sourceComponentRef)) &&
-              (e.targetComponentRef === passiveNodeId ||
-                connectedRefs.includes(e.targetComponentRef))
-          );
-
-          for (const edge of metaNodeEdges) {
-            edgeIdsInMetaNodes.add(edge.id);
-          }
-
-          const metaNode = this._metaNode(
-            [passiveNode, ...refNodes],
-            metaNodeEdges,
-            exposedPorts
-          );
-
-          // Keep track of which meta node contains this passive component
-          passiveToMetaNode.set(passiveNodeId, metaNodeId);
-
-          // Mark these nodes as processed
-          processedNodes.add(passiveNodeId);
-          connectedRefs.forEach((refId) => processedNodes.add(refId));
-
-          // Add the meta node to our new children
-          newChildren.push(metaNode);
+        ) {
+          connectedRefs.add(otherNodeId);
         }
+      }
+
+      // If we found connected net references, create a meta node
+      if (connectedRefs.size > 0) {
+        const refNodes = Array.from(connectedRefs).map(
+          (refId) => graph.children.find((n) => n.id === refId)!
+        );
+
+        // Find all ports that need to be exposed (those with external connections)
+        const exposedPorts = new Set<string>();
+        for (const edge of graph.edges) {
+          // If edge connects to our passive node but other end is not in our meta node
+          if (
+            edge.sourceComponentRef === node.id &&
+            !connectedRefs.has(edge.targetComponentRef)
+          ) {
+            edge.sources.forEach((port) => {
+              if (port.startsWith(node.id)) {
+                exposedPorts.add(port);
+              }
+            });
+          }
+          if (
+            edge.targetComponentRef === node.id &&
+            !connectedRefs.has(edge.sourceComponentRef)
+          ) {
+            edge.targets.forEach((port) => {
+              if (port.startsWith(node.id)) {
+                exposedPorts.add(port);
+              }
+            });
+          }
+        }
+
+        // Create meta node containing the passive and its net references
+        const metaNodeId = `${node.id}_with_refs`;
+        const metaNodeEdges = connectedEdges.filter(
+          (e) =>
+            (e.sourceComponentRef === node.id ||
+              connectedRefs.has(e.sourceComponentRef)) &&
+            (e.targetComponentRef === node.id ||
+              connectedRefs.has(e.targetComponentRef))
+        );
+
+        for (const edge of metaNodeEdges) {
+          edgeIdsInMetaNodes.add(edge.id);
+        }
+
+        const metaNode = this._metaNode(
+          [node, ...refNodes],
+          metaNodeEdges,
+          exposedPorts
+        );
+
+        // Keep track of which meta node contains this passive component
+        passiveToMetaNode.set(node.id, metaNodeId);
+
+        // Mark these nodes as processed
+        processedNodes.add(node.id);
+        connectedRefs.forEach((refId) => processedNodes.add(refId));
+
+        // Add the meta node to our new children
+        newChildren.push(metaNode);
       }
     }
 
@@ -1729,7 +2130,6 @@ export class SchematicRenderer {
       "elk.spacing.nodeNode": `${this.config.layout.spacing}`,
       "elk.padding": `[top=${this.config.layout.padding}, left=${this.config.layout.padding}, bottom=${this.config.layout.padding}, right=${this.config.layout.padding}]`,
       "elk.nodeSize.constraints": "NODE_LABELS PORTS PORT_LABELS MINIMUM_SIZE",
-      // "elk.nodeLabels.placement": "OUTSIDE H_RIGHT V_TOP",
       "elk.partitioning.activate": "true",
       "elk.layered.nodePlacement.strategy": "NETWORK_SIMPLEX",
       "elk.portLabels.placement": "INSIDE NEXT_TO_PORT_IF_POSSIBLE",
@@ -1875,5 +2275,124 @@ export class SchematicRenderer {
 
     // Flatten the graph before returning
     return flattenedGraph;
+  }
+
+  _getPowerInterfaceName(instance_ref: string): string | null {
+    const instance = this.netlist.instances[instance_ref];
+    if (!instance || instance.kind !== InstanceKind.INTERFACE) return null;
+
+    // Check if this is a Power interface
+    if (instance.module.module_name !== "Power") return null;
+
+    // Get the parent instance (the component that owns this interface)
+    const parentRef = instance_ref.split(".").slice(0, -1).join(".");
+    const parentInstance = this.netlist.instances[parentRef];
+    if (!parentInstance || parentInstance.module.module_name === "Capacitor")
+      return null;
+
+    return instance_ref.split(":").pop()?.split(".").pop() || null;
+  }
+
+  _generatePowerNetName(net: Set<string>): string[] {
+    const powerNamesToLength: Map<string, number> = new Map();
+
+    // Find all power interfaces connected to this net
+    for (const portRef of Array.from(net)) {
+      // Get the interface reference (everything up to the last dot)
+      const interfaceRef = portRef.split(".").slice(0, -1).join(".");
+      const powerName = this._getPowerInterfaceName(interfaceRef);
+      if (powerName) {
+        powerNamesToLength.set(powerName, interfaceRef.split(".").length);
+      }
+    }
+
+    // Sort by length (prefer shorter names) and then alphabetically for deterministic behavior
+    return Array.from(powerNamesToLength.entries())
+      .sort((a, b) => {
+        if (a[1] !== b[1]) return a[1] - b[1];
+        return a[0].localeCompare(b[0]);
+      })
+      .map(([name]) => name);
+  }
+
+  _generateUniqueNetNames(): Map<string, string> {
+    const netNames = new Map<string, string>();
+
+    // Group nets by their top-level module
+    const netsByModule = new Map<string, Map<string, Set<string>>>();
+
+    for (const [netId, net] of Array.from(this.nets.entries())) {
+      if (!this._isPowerNet(net)) continue;
+
+      // Find the top-level module for this net
+      let topLevelModule = "";
+      for (const portRef of Array.from(net)) {
+        const parts = (portRef as string).split(".");
+        if (parts.length > 0) {
+          // The first part is the filename, second part is the top-level module
+          if (parts.length > 1) {
+            topLevelModule = parts[1];
+            break;
+          }
+        }
+      }
+
+      if (!topLevelModule) continue;
+
+      // Initialize map for this module if it doesn't exist
+      if (!netsByModule.has(topLevelModule)) {
+        netsByModule.set(topLevelModule, new Map());
+      }
+      netsByModule.get(topLevelModule)!.set(netId, net);
+    }
+
+    // Process each module's nets separately
+    for (const [moduleName, moduleNets] of Array.from(netsByModule.entries())) {
+      const usedNames = new Set<string>();
+
+      // Collect all nets and their possible names for this module
+      const netsAndNames = Array.from(moduleNets.entries())
+        .map(([netId, net]: [string, Set<string>]) => ({
+          netId,
+          possibleNames: this._generatePowerNetName(net),
+        }))
+        // Sort by number of name options (handle nets with fewer options first)
+        .sort((a, b) => a.possibleNames.length - b.possibleNames.length);
+
+      // Process each net within this module
+      for (const { netId, possibleNames } of netsAndNames) {
+        let assigned = false;
+
+        // Try each possible name in order
+        if (possibleNames.length > 0) {
+          for (const name of possibleNames) {
+            const fullName = `${name}`;
+            if (!usedNames.has(fullName)) {
+              usedNames.add(fullName);
+              netNames.set(netId, fullName);
+              assigned = true;
+              break;
+            }
+          }
+        }
+
+        // If we couldn't assign any of the preferred names, use the shortest one with a prime
+        if (!assigned) {
+          const baseName = possibleNames.length > 0 ? possibleNames[0] : "VDD";
+          let uniqueName = `${baseName}`;
+          let primeCount = 0;
+
+          while (usedNames.has(uniqueName)) {
+            primeCount++;
+            uniqueName = `${baseName}${"'".repeat(primeCount)}`;
+          }
+
+          usedNames.add(uniqueName);
+          netNames.set(netId, uniqueName);
+        }
+      }
+    }
+
+    return netNames;
   }
 }
