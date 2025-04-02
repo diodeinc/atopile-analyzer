@@ -4,6 +4,7 @@ import React, {
   useRef,
   useState,
   useMemo,
+  CSSProperties,
 } from "react";
 import ELK from "elkjs/lib/elk.bundled.js";
 import type { ELK as ELKType } from "elkjs/lib/elk-api";
@@ -20,6 +21,7 @@ import {
   type Node,
   useOnSelectionChange,
   ReactFlowProvider,
+  Panel,
 } from "@xyflow/react";
 import "@xyflow/react/dist/style.css";
 import {
@@ -28,9 +30,14 @@ import {
   ElkNode,
   NodeType,
   SchematicRenderer,
+  SchematicConfig,
+  DEFAULT_CONFIG,
+  NetReferenceType,
 } from "../renderer";
+import { PDFSchematicRenderer } from "../PDFSchematicRenderer";
 import { Netlist } from "../types/NetlistTypes";
 import { debounce } from "lodash";
+import { Download, Loader } from "react-feather";
 
 type SelectionState = {
   selectedNetId: string | null;
@@ -203,6 +210,52 @@ const customStyles = `
     color: ${electricalComponentColor} !important;
     font-weight: 600;
   }
+
+  /* Style the download button */
+  .download-button {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background-color: var(--vscode-button-background, #0066cc);
+    color: var(--vscode-button-foreground, #fff);
+    border: 1px solid var(--vscode-button-border, transparent);
+    padding: 8px 12px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 12px;
+    transition: background-color 0.2s;
+  }
+
+  .download-button:disabled {
+    opacity: 0.7;
+    cursor: not-allowed;
+  }
+
+  .download-button:not(:disabled):hover {
+    background-color: var(--vscode-button-hoverBackground, #0052a3);
+  }
+
+  .download-button:active {
+    background-color: var(--vscode-button-activeBackground, #004080);
+  }
+
+  .download-button svg {
+    width: 16px;
+    height: 16px;
+  }
+
+  .download-button .loading-icon {
+    animation: spin 1s linear infinite;
+  }
+
+  @keyframes spin {
+    from {
+      transform: rotate(0deg);
+    }
+    to {
+      transform: rotate(360deg);
+    }
+  }
 `;
 
 // Common style for all handles - subtle dots on component borders
@@ -245,34 +298,48 @@ const ModuleNode = ({ data }: { data: SchematicNodeData }) => {
     return isPortHighlighted ? 1 : 0.2;
   };
 
+  // Different styles for modules vs components
+  const nodeStyle: CSSProperties = {
+    width: data.width,
+    height: data.height,
+    backgroundColor: isModule
+      ? "var(--vscode-editor-background, #fff)"
+      : `color-mix(in srgb, var(--vscode-editorLineNumber-foreground, #666) 5%, var(--vscode-editor-background, #fff))`,
+    border: `1px solid ${electricalComponentColor}`,
+    opacity: moduleOpacity,
+    cursor: isModule ? "pointer" : "default",
+    pointerEvents: isModule ? "auto" : "none",
+    borderRadius: "0px",
+  };
+
   return (
     <div
       className={`react-flow-${isModule ? "module" : "component"}-node`}
-      style={{
-        width: data.width,
-        height: data.height,
-        backgroundColor: "var(--vscode-editor-background, #fff)",
-        border: `1px solid ${electricalComponentColor}`,
-        opacity: moduleOpacity,
-        cursor: isModule ? "pointer" : "default",
-        pointerEvents: isModule ? "auto" : "none", // Only enable pointer events for modules
-      }}
+      style={nodeStyle}
     >
       {/* Component/Module label - top left corner */}
-      <div
-        className={`${isModule ? "module" : "component"}-header`}
-        style={{
-          position: "absolute",
-          top: data.labels?.[0]?.y,
-          left: data.labels?.[0]?.x,
-          padding: "4px",
-          fontSize: "12px",
-          fontWeight: "bold",
-          color: "var(--vscode-foreground, #000)",
-        }}
-      >
-        {data.labels?.[0]?.text}
-      </div>
+      {data.labels?.map((label, index) => (
+        <div
+          key={`label-${index}`}
+          className={`${isModule ? "module" : "component"}-header`}
+          style={{
+            position: "absolute",
+            top: label.y,
+            left: label.x,
+            padding: "4px",
+            fontSize: "12px",
+            fontWeight: "bold",
+            color: "var(--vscode-foreground, #000)",
+            textAlign: label.textAlign || "left",
+            width: label.width || "auto",
+            // ...(label.properties?.["elk.nodeLabels.placement"] && {
+            //   transform: "translateX(-100%)",
+            // }),
+          }}
+        >
+          {label.text}
+        </div>
+      ))}
 
       {/* Port connections */}
       <div className={`${isModule ? "module" : "component"}-content`}>
@@ -499,28 +566,27 @@ const CapacitorNode = ({ data }: { data: any }) => {
           }}
         />
 
-        {/* Component Label */}
-        {data.labels?.[0] && (
+        {/* Component Labels */}
+        {data.labels?.map((label: any, index: number) => (
           <div
+            key={index}
             style={{
               position: "absolute",
-              left: centerX + symbolSize + 10,
-              top: "50%",
-              transform: "translateY(-50%)",
+              left: label.x,
+              top: label.y,
               fontSize: "12px",
               color: electricalComponentColor,
               whiteSpace: "pre-line",
-              width: data.labels?.[0]?.width,
-              height: data.labels?.[0]?.height,
-              textAlign: "left",
-              display: "flex",
+              width: label.width,
+              height: label.height,
+              textAlign: label.textAlign || "left",
               alignItems: "center",
               fontWeight: "600",
             }}
           >
-            {data.labels[0].text}
+            {label.text}
           </div>
-        )}
+        ))}
       </div>
 
       {/* Hidden port connections with no visible dots */}
@@ -650,28 +716,26 @@ const ResistorNode = ({ data }: { data: any }) => {
           }}
         />
 
-        {/* Component Label */}
-        {data.labels?.[0] && (
+        {/* Component Labels */}
+        {data.labels?.map((label: any, index: number) => (
           <div
+            key={index}
             style={{
               position: "absolute",
-              left: centerX + resistorWidth + 10,
-              top: "50%",
-              transform: "translateY(-50%)",
+              left: label.x,
+              top: label.y,
               fontSize: "12px",
               color: electricalComponentColor,
               whiteSpace: "pre-line",
-              width: data.labels?.[0]?.width,
-              height: data.labels?.[0]?.height,
-              textAlign: "left",
-              display: "flex",
-              alignItems: "center",
+              width: label.width,
+              height: label.height,
+              textAlign: label.textAlign || "left",
               fontWeight: "600",
             }}
           >
-            {data.labels[0].text}
+            {label.text}
           </div>
-        )}
+        ))}
       </div>
 
       {/* Hidden port connections with no visible dots */}
@@ -814,28 +878,27 @@ const InductorNode = ({ data }: { data: SchematicNodeData }) => {
           />
         </svg>
 
-        {/* Component Label */}
-        {data.labels?.[0] && (
+        {/* Component Labels */}
+        {data.labels?.map((label: any, index: number) => (
           <div
+            key={index}
             style={{
               position: "absolute",
-              left: centerX + inductorHeight / 2 + 10,
-              top: "50%",
-              transform: "translateY(-50%)",
+              left: label.x,
+              top: label.y,
               fontSize: "12px",
               color: electricalComponentColor,
               whiteSpace: "pre-line",
-              width: data.labels?.[0]?.width,
-              height: data.labels?.[0]?.height,
-              textAlign: "left",
-              display: "flex",
+              width: label.width,
+              height: label.height,
+              textAlign: label.textAlign || "left",
               alignItems: "center",
               fontWeight: "600",
             }}
           >
-            {data.labels[0].text}
+            {label.text}
           </div>
-        )}
+        ))}
       </div>
 
       {/* Hidden port connections with no visible dots */}
@@ -904,16 +967,24 @@ const InductorNode = ({ data }: { data: SchematicNodeData }) => {
   );
 };
 
-// Define a node specifically for net references with an open circle symbol or ground symbol
+// Define a node specifically for net references with an open circle symbol or ground/VDD symbol
 const NetReferenceNode = ({ data }: { data: SchematicNodeData }) => {
-  // Calculate center point for drawing the symbol
-  const centerX = (data.width || 0) / 2;
-  const centerY = (data.height || 0) / 2;
+  const isGround = data.netReferenceType === NetReferenceType.GROUND;
+  const isVdd = data.netReferenceType === NetReferenceType.VDD;
 
-  // Size of the net reference circle or ground symbol
-  const symbolSize = data.isGround
-    ? (data.width || 0) * 0.8
-    : (data.width || 0) / 2 - 2;
+  // Use fixed size for circle, ground, and VDD symbols
+  const circleRadius = 3;
+  const symbolSize = isGround || isVdd ? 20 : circleRadius * 2;
+
+  // Determine label position based on port side
+  const portSide = data.ports?.[0]?.properties?.["port.side"] || "WEST";
+  const isEastSide = portSide === "EAST";
+
+  // Calculate circle position - it should be at the port side
+  const circleX = isEastSide
+    ? (data.width || 0) - circleRadius * 2
+    : circleRadius * 2;
+  const circleY = (data.height || 0) / 2;
 
   // Determine if this node should be dimmed based on selection state
   const selectionState = data.selectionState;
@@ -927,38 +998,40 @@ const NetReferenceNode = ({ data }: { data: SchematicNodeData }) => {
 
   // Ground symbol dimensions
   const groundSymbolWidth = symbolSize;
-  const groundLineSpacing = 6; // Increased spacing between ground lines
-  const numGroundLines = 3; // Number of horizontal lines in ground symbol
+  const groundLineSpacing = 6;
+  const numGroundLines = 3;
   const groundLineWidth = [
     groundSymbolWidth,
     groundSymbolWidth * 0.6,
     groundSymbolWidth * 0.2,
-  ]; // More pronounced width differences
-  const verticalLineLength = 15; // Length of vertical line for ground symbol
+  ];
+  const verticalLineLength = 15;
+
+  // VDD symbol dimensions
+  const vddSymbolWidth = symbolSize;
+  const vddVerticalLineLength = 15;
 
   return (
     <div
       className="react-flow-net-reference-node"
       style={{
-        width: data.width,
-        height: data.height,
-        backgroundColor: data.isGround ? "transparent" : "white",
-        borderRadius: data.isGround ? "0" : "50%",
+        width: data.width || 0,
+        height: data.height || 0,
+        backgroundColor: "transparent",
         border: "none",
         cursor: "default",
         pointerEvents: "none",
         position: "relative",
-        transform: "translate(-50%, -50%)",
         opacity: opacity,
       }}
     >
-      {/* Net Reference Symbol - Either Ground Symbol or Open Circle */}
+      {/* Net Reference Symbol - Either Ground Symbol, VDD Symbol, or Open Circle */}
       <div
         className="net-reference-symbol"
         style={{
           position: "absolute",
-          width: data.width,
-          height: data.height,
+          width: data.width || 0,
+          height: data.height || 0,
         }}
       >
         <svg
@@ -970,9 +1043,11 @@ const NetReferenceNode = ({ data }: { data: SchematicNodeData }) => {
             height: "100%",
           }}
         >
-          {data.isGround ? (
+          {isGround ? (
             // Ground Symbol
-            <g transform={`translate(${centerX}, ${centerY + 5})`}>
+            <g
+              transform={`translate(${(data.width || 0) / 2}, ${circleY - 10})`}
+            >
               {/* Vertical line */}
               <line
                 x1="0"
@@ -995,16 +1070,48 @@ const NetReferenceNode = ({ data }: { data: SchematicNodeData }) => {
                 />
               ))}
             </g>
+          ) : isVdd ? (
+            // VDD Symbol
+            <g transform={`translate(${(data.width || 0) / 2}, ${circleY})`}>
+              {/* Vertical line */}
+              <line
+                x1="0"
+                y1={vddVerticalLineLength}
+                x2="0"
+                y2="0"
+                stroke={electricalComponentColor}
+                strokeWidth="1.5"
+              />
+              {/* Horizontal line at top */}
+              <line
+                x1={-vddSymbolWidth / 2}
+                y1="0"
+                x2={vddSymbolWidth / 2}
+                y2="0"
+                stroke={electricalComponentColor}
+                strokeWidth="2"
+              />
+            </g>
           ) : (
-            // Regular Net Reference Circle
-            <circle
-              cx={centerX}
-              cy={centerY}
-              r={symbolSize}
-              stroke={electricalComponentColor}
-              strokeWidth="1.5"
-              fill="transparent"
-            />
+            // Regular Net Reference Circle - position at the port side
+            <>
+              {/* White background circle */}
+              <circle
+                cx={circleX}
+                cy={circleY}
+                r={circleRadius + 1}
+                fill="white"
+              />
+              {/* Net reference circle */}
+              <circle
+                cx={circleX}
+                cy={circleY}
+                r={circleRadius}
+                stroke={electricalComponentColor}
+                strokeWidth="1.5"
+                fill="transparent"
+              />
+            </>
           )}
         </svg>
       </div>
@@ -1016,13 +1123,13 @@ const NetReferenceNode = ({ data }: { data: SchematicNodeData }) => {
           className="component-port"
           style={{
             position: "absolute",
-            left: centerX,
-            top: centerY - (data.isGround ? verticalLineLength + 10 : 0), // Adjust port position for ground symbol
+            left: isEastSide ? data.width || 0 : 0,
+            top: circleY,
             width: 1,
             height: 1,
             opacity: 0,
             zIndex: 10,
-            pointerEvents: "auto", // Enable pointer events for port only
+            pointerEvents: "auto",
           }}
           data-port-id={data.ports?.[0]?.id}
         >
@@ -1042,16 +1149,17 @@ const NetReferenceNode = ({ data }: { data: SchematicNodeData }) => {
         </div>
       </div>
 
-      {/* Net reference name/label - only show for non-ground nets */}
-      {!data.isGround && data.labels && data.labels[0] && (
+      {/* Net reference name/label - only show for regular nets and VDD nets */}
+      {!isGround && data.labels && data.labels[0] && (
         <div
           className="net-reference-label"
           style={{
             position: "absolute",
-            top: centerY + symbolSize + 5,
-            left: 0,
-            width: "100%",
-            textAlign: "center",
+            top: isVdd ? circleY - 15 : circleY,
+            left: isVdd ? "50%" : isEastSide ? "auto" : circleRadius * 4,
+            right: isVdd ? "auto" : isEastSide ? circleRadius * 4 : "auto",
+            transform: isVdd ? "translateX(-50%)" : "translateY(-50%)",
+            textAlign: isVdd ? "center" : isEastSide ? "left" : "right",
             fontSize: "10px",
             fontWeight: "bold",
             color: electricalComponentColor,
@@ -1066,12 +1174,6 @@ const NetReferenceNode = ({ data }: { data: SchematicNodeData }) => {
 
 // Define a node specifically for net junctions - invisible in the final rendering
 const NetJunctionNode = ({ data }: { data: SchematicNodeData }) => {
-  console.log(
-    "Rendering net junction node with handles: ",
-    data,
-    `${data.ports?.[0]?.id}-source`,
-    `${data.ports?.[0]?.id}-target`
-  );
   return (
     <div
       className="react-flow-net-junction-node"
@@ -1214,16 +1316,19 @@ interface ReactFlowSchematicViewerProps {
   onError?: (message: string) => void;
   onComponentSelect?: (componentId: string | null) => void;
   selectedComponent?: string | null;
+  config?: Partial<SchematicConfig>;
 }
 
 const Visualizer = ({
   netlist,
   onComponentSelect = () => {},
   selectedComponent = null,
+  config = DEFAULT_CONFIG,
 }: {
   netlist: Netlist;
   onComponentSelect?: (componentId: string | null) => void;
   selectedComponent?: string | null;
+  config?: Partial<SchematicConfig>;
 }) => {
   const [nodes, setNodes, onNodesChange] = useNodesState<SchematicNode>([]);
   const [edges, setEdges, onEdgesChange] = useEdgesState<SchematicEdge>([]);
@@ -1235,6 +1340,7 @@ const Visualizer = ({
   });
   const [prevComponent, setPrevComponent] = useState<string | null>(null);
   const [shouldAnimate, setShouldAnimate] = useState(false);
+  const [isGeneratingPDF, setIsGeneratingPDF] = useState(false);
   const elkInstance = useRef<ELKType | null>(null);
   const reactFlowInstance = useRef<any>(null);
 
@@ -1276,9 +1382,8 @@ const Visualizer = ({
 
   useEffect(() => {
     async function render() {
-      const renderer = new SchematicRenderer(netlist);
+      const renderer = new SchematicRenderer(netlist, config);
       if (selectedComponent) {
-        console.log("Rendering selected component: ", selectedComponent);
         try {
           let layout = await renderer.render(selectedComponent);
 
@@ -1305,7 +1410,7 @@ const Visualizer = ({
     }
 
     render();
-  }, [netlist, selectedComponent, prevComponent]);
+  }, [netlist, selectedComponent, prevComponent, config]);
 
   // Update nodes and edges when layout changes
   useEffect(() => {
@@ -1362,8 +1467,6 @@ const Visualizer = ({
   useOnSelectionChange({
     onChange: useCallback(
       ({ nodes, edges }) => {
-        console.log("Selection changed: ", nodes, edges);
-
         let selectedNetId =
           edges.length > 0 ? (edges[0].data?.netId as string) : null;
 
@@ -1374,6 +1477,27 @@ const Visualizer = ({
       [selectionState.selectedNetId, debouncedSetSelectedNet]
     ),
   });
+
+  const handleDownloadPDF = async () => {
+    if (!selectedComponent) return;
+
+    setIsGeneratingPDF(true);
+    try {
+      // Create PDF renderer with current config - use the exact same config as the React viewer
+      const pdfRenderer = new PDFSchematicRenderer(netlist, config);
+
+      // Render the PDF
+      const doc = await pdfRenderer.render(selectedComponent);
+
+      // Save the PDF with a clean filename
+      const filename = `${selectedComponent.split(".").pop()}_schematic.pdf`;
+      doc.save(filename);
+    } catch (error) {
+      console.error("Error generating PDF:", error);
+    } finally {
+      setIsGeneratingPDF(false);
+    }
+  };
 
   return (
     <div className="schematic-viewer">
@@ -1454,6 +1578,27 @@ const Visualizer = ({
           preventScrolling={false}
         >
           <Controls showInteractive={false} />
+          <Panel position="top-right">
+            <button
+              className="download-button"
+              onClick={handleDownloadPDF}
+              disabled={!selectedComponent || isGeneratingPDF}
+              title={
+                !selectedComponent
+                  ? "Select a component to download"
+                  : isGeneratingPDF
+                  ? "Generating PDF..."
+                  : "Download schematic as PDF"
+              }
+            >
+              {isGeneratingPDF ? (
+                <Loader size={16} className="loading-icon" />
+              ) : (
+                <Download size={16} />
+              )}
+              {isGeneratingPDF ? "Generating..." : "Download PDF"}
+            </button>
+          </Panel>
         </ReactFlow>
       </div>
     </div>
@@ -1464,6 +1609,7 @@ const ReactFlowSchematicViewer = ({
   netlist,
   onComponentSelect = () => {},
   selectedComponent = null,
+  config = DEFAULT_CONFIG,
 }: ReactFlowSchematicViewerProps) => {
   return (
     <ReactFlowProvider>
@@ -1471,9 +1617,12 @@ const ReactFlowSchematicViewer = ({
         netlist={netlist}
         onComponentSelect={onComponentSelect}
         selectedComponent={selectedComponent}
+        config={config}
       />
     </ReactFlowProvider>
   );
 };
 
+export type { SchematicConfig };
+export { DEFAULT_CONFIG };
 export default ReactFlowSchematicViewer;

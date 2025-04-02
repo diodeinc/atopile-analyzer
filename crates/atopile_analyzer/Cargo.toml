@@ -8,8 +8,10 @@ anyhow = "1.0.93"
 assert_fs = "1.1.2"
 atopile_parser = { path = "../atopile_parser" }
 insta = { version = "1.41.1", features = ["filters", "yaml"] }
+lazy_static = "1.4.0"
 log = "0.4.22"
 regex = "1.11.1"
+fancy-regex = "0.14.0"
 serde = { version = "1.0.214", features = ["derive", "rc"] }
 serde_json = "1.0.140"
 thiserror = "1.0"

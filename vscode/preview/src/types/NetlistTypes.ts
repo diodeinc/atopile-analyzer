@@ -49,6 +49,7 @@ export interface Instance {
   attributes: Record<string, AttributeValue | string>; // Support both new AttributeValue and legacy string format
   children: Record<string, string>;
   connections: NodeConnection[];
+  reference_designator?: string | null;
 }
 
 /**
@@ -56,21 +57,4 @@ export interface Instance {
  */
 export interface Netlist {
   instances: Record<string, Instance>;
-}
-
-/**
- * Optional metadata that might be present in the netlist
- */
-export interface NetlistMetadata {
-  version?: string;
-  project?: string;
-  timestamp?: string;
-  // Add other metadata fields as needed
-}
-
-/**
- * Complete netlist with optional metadata
- */
-export interface NetlistWithMetadata extends Netlist {
-  metadata?: NetlistMetadata;
 }
