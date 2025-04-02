@@ -168,8 +168,8 @@ export const DEFAULT_CONFIG: SchematicConfig = {
       height: 40,
     },
     netReference: {
-      width: 15,
-      height: 15,
+      width: 10,
+      height: 10,
     },
     netJunction: {
       width: 10,
@@ -186,7 +186,7 @@ export const DEFAULT_CONFIG: SchematicConfig = {
   },
   layout: {
     direction: "LEFT",
-    spacing: 50,
+    spacing: 10,
     padding: 20,
     explodeModules: false,
   },
@@ -2128,6 +2128,7 @@ export class SchematicRenderer {
       "elk.algorithm": "layered",
       "elk.direction": this.config.layout.direction,
       "elk.spacing.nodeNode": `${this.config.layout.spacing}`,
+      "elk.layered.spacing.nodeNodeBetweenLayers": `${this.config.layout.spacing}`,
       "elk.padding": `[top=${this.config.layout.padding}, left=${this.config.layout.padding}, bottom=${this.config.layout.padding}, right=${this.config.layout.padding}]`,
       "elk.nodeSize.constraints": "NODE_LABELS PORTS PORT_LABELS MINIMUM_SIZE",
       "elk.partitioning.activate": "true",
@@ -2236,9 +2237,10 @@ export class SchematicRenderer {
       this._moveMetaNodePorts(node);
     }
 
-    // Clear junction points; they will be re-computed in the second pass
+    // Clear junction points and sections; they will be re-computed in the second pass
     for (const edge of firstPassLayout.edges || []) {
       edge.junctionPoints = [];
+      edge.sections = [];
     }
 
     // Second pass - run layout with fixed port sides
