@@ -1,5 +1,6 @@
 use std::{
     collections::HashMap,
+    fs,
     ops::Deref,
     path::{Path, PathBuf},
     time::Instant,
@@ -9,6 +10,8 @@ use atopile_parser::{
     parser::{BlockKind, BlockStmt, Connectable, Expr, Stmt, Symbol},
     AtopileSource, Spanned,
 };
+use fancy_regex::Regex;
+use lazy_static::lazy_static;
 use log::debug;
 use serde::{Deserialize, Serialize};
 use thiserror::Error;
@@ -27,6 +30,113 @@ impl EvaluatorState {
     fn new() -> Self {
         Self {
             instances: HashMap::new(),
+        }
+    }
+
+    pub(crate) fn resolve_reference_designators(&mut self) {
+        lazy_static! {
+            static ref COMP_RE: Regex = Regex::new(r#"(?s)\(comp\s+\(ref\s+"([^"]+)"\)(?:(?!\(comp\s+).)*?sheetpath\s+\(names\s+"([^"]+)"\)"#).unwrap();
+        }
+
+        // Keep track of already processed netlists to avoid reading them multiple times
+        let mut processed_netlists: HashMap<PathBuf, HashMap<String, String>> = HashMap::new();
+
+        // First, collect all component instances
+        let component_instances: Vec<_> = self
+            .instances
+            .iter()
+            .filter(|(_, instance)| instance.kind == InstanceKind::Component)
+            .map(|(instance_ref, _)| instance_ref.clone())
+            .collect();
+
+        for instance_ref in component_instances {
+            // Convert instance path to filesystem path
+            let source_path = &instance_ref.module.source_path;
+            if let Some(source_dir) = source_path.parent() {
+                // Walk up the directory tree to find ato.yaml
+                let mut current_dir = source_dir;
+                let mut found_root = false;
+
+                // First check the current directory
+                if current_dir.join("ato.yaml").exists() {
+                    found_root = true;
+                }
+
+                // If not found, walk up the tree
+                while !found_root {
+                    match current_dir.parent() {
+                        Some(parent) => {
+                            current_dir = parent;
+                            if current_dir.join("ato.yaml").exists() {
+                                found_root = true;
+                            }
+                        }
+                        None => break,
+                    }
+                }
+
+                if !found_root {
+                    continue;
+                }
+
+                // Look for the netlist file
+                let netlist_path = current_dir.join("build").join("default.net");
+                if !netlist_path.exists() {
+                    continue;
+                }
+
+                // Get or create the cache for this netlist
+                let ref_map = if let Some(map) = processed_netlists.get(&netlist_path) {
+                    map
+                } else {
+                    // Read and parse the netlist file
+                    match fs::read_to_string(&netlist_path) {
+                        Ok(contents) => {
+                            let mut map: HashMap<String, String> = HashMap::new();
+                            for cap in COMP_RE.captures_iter(&contents) {
+                                let ref_des = cap
+                                    .as_ref()
+                                    .expect("Failed to get captures")
+                                    .get(1)
+                                    .expect("Failed to get ref_des")
+                                    .as_str();
+                                let sheet_path = cap
+                                    .as_ref()
+                                    .expect("Failed to get captures")
+                                    .get(2)
+                                    .expect("Failed to get sheet_path")
+                                    .as_str();
+                                map.insert(sheet_path.to_string(), ref_des.to_string());
+                            }
+                            processed_netlists.insert(netlist_path.clone(), map);
+                            processed_netlists.get(&netlist_path).unwrap()
+                        }
+                        Err(_) => continue,
+                    }
+                };
+
+                // Convert our instance path format to netlist format
+                // From: path/to/file.ato:RootModule.path.to.instance
+                // To: /absolute/path/to/file.ato:RootModule::path.to.instance
+                let instance_path = format!(
+                    "{}:{}::{}",
+                    source_path.display(),
+                    instance_ref.module.module_name,
+                    instance_ref
+                        .instance_path
+                        .iter()
+                        .map(|s| s.to_string())
+                        .collect::<Vec<_>>()
+                        .join(".")
+                );
+
+                // Look up the reference designator
+                if let Some(ref_des) = ref_map.get(&instance_path) {
+                    if let Some(instance) = self.instances.get_mut(&instance_ref) {
+                        instance.reference_designator = Some(ref_des.clone());
+                    }
+                }
+            }
         }
     }
 }
@@ -210,6 +320,7 @@ pub(crate) struct Instance {
     attributes: HashMap<Symbol, AttributeValue>,
     children: HashMap<Symbol, InstanceRef>,
     connections: Vec<Connection>,
+    reference_designator: Option<String>,
 }
 
 impl Instance {
@@ -220,6 +331,7 @@ impl Instance {
             attributes: HashMap::new(),
             children: HashMap::new(),
             connections: Vec::new(),
+            reference_designator: None,
         }
     }
 
@@ -230,6 +342,7 @@ impl Instance {
             attributes: HashMap::new(),
             children: HashMap::new(),
             connections: Vec::new(),
+            reference_designator: None,
         }
     }
 

@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import "./App.css";
 import SchematicContainer from "./components/SchematicContainer";
 import demoData from "./data/demo.json";
+import { Netlist } from "./types/NetlistTypes";
 
 // Get VSCode API
 declare const acquireVsCodeApi: () => {
@@ -23,7 +24,7 @@ const isVSCodeEnvironment = () => {
 const vscode = isVSCodeEnvironment() ? acquireVsCodeApi() : null;
 
 function App() {
-  const [netlistData, setNetlistData] = useState<any>(null);
+  const [netlistData, setNetlistData] = useState<Netlist | null>(null);
   const [currentFile, setCurrentFile] = useState<string | undefined>();
   const [isLoading, setIsLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
@@ -64,7 +65,7 @@ function App() {
     } else {
       // Browser environment - use demo data
       setIsLoading(false);
-      setNetlistData(demoData);
+      setNetlistData(demoData as Netlist);
       setCurrentFile(
         "/Users/lenny/code/stdlib/boards/dev_tusb4020/eval_tusb4020.ato:Usb1v1.buck"
       );

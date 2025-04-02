@@ -743,7 +743,9 @@ impl AtopileAnalyzer {
 
     pub fn get_netlist(&mut self, source: &AtopileSource) -> Result<EvaluatorState> {
         self.evaluator.reset();
-        Ok(self.evaluator.evaluate(source))
+        let mut netlist = self.evaluator.evaluate(source);
+        netlist.resolve_reference_designators();
+        Ok(netlist)
     }
 }
 

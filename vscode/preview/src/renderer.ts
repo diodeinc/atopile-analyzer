@@ -53,6 +53,8 @@ export interface ElkLabel {
   y?: number;
   width?: number;
   height?: number;
+  textAlign?: "left" | "right" | "center";
+  properties?: Record<string, string>;
 }
 
 export interface ElkEdge {
@@ -497,6 +499,9 @@ export class SchematicRenderer {
     const showValue = this.config.visual.showComponentValues && value;
     const showFootprint = this.config.visual.showFootprints && footprint;
 
+    // Get reference designator if available
+    const refDes = instance.reference_designator;
+
     const { p1Side, p2Side } = this._determinePortSides(instance_ref);
 
     return {
@@ -505,14 +510,28 @@ export class SchematicRenderer {
       width: this.config.nodeSizes.resistor.width,
       height: this.config.nodeSizes.resistor.height,
       labels: [
+        // Add reference designator label if available
+        ...(refDes
+          ? [
+              {
+                text: refDes,
+                x: -15, // Position to the left of the component
+                y: 10,
+                width: 20,
+                height: 10,
+                textAlign: "right" as const,
+              },
+            ]
+          : []),
         {
           text: `${showValue ? value : ""}${
             showFootprint ? `\n${footprint}` : ""
           }`,
-          x: 45,
-          y: 0,
+          x: 35,
+          y: 4,
           width: 128,
-          height: 30,
+          height: 25,
+          textAlign: "left" as const,
         },
       ],
       ports: [
@@ -563,14 +582,28 @@ export class SchematicRenderer {
       width: this.config.nodeSizes.capacitor.width,
       height: this.config.nodeSizes.capacitor.height,
       labels: [
+        // Add reference designator label if available
+        ...(instance.reference_designator
+          ? [
+              {
+                text: instance.reference_designator,
+                x: -20, // Position to the left of the component
+                y: 7,
+                width: 20,
+                height: 10,
+                textAlign: "right" as const,
+              },
+            ]
+          : []),
         {
           text: `${showValue ? value : ""}${
             showFootprint ? `\n${footprint}` : ""
           }`,
-          x: 45,
-          y: 0,
+          x: 40,
+          y: 2,
           width: 128,
           height: 20,
+          textAlign: "left" as const,
         },
       ],
       ports: [
@@ -613,6 +646,9 @@ export class SchematicRenderer {
     const showValue = this.config.visual.showComponentValues && value;
     const showFootprint = this.config.visual.showFootprints && footprint;
 
+    // Get reference designator if available
+    const refDes = instance.reference_designator;
+
     const { p1Side, p2Side } = this._determinePortSides(instance_ref);
 
     return {
@@ -621,6 +657,19 @@ export class SchematicRenderer {
       width: this.config.nodeSizes.inductor.width,
       height: this.config.nodeSizes.inductor.height,
       labels: [
+        // Add reference designator label if available
+        ...(refDes
+          ? [
+              {
+                text: refDes,
+                x: -20, // Position to the left of the component
+                y: 5,
+                width: 15,
+                height: 10,
+                textAlign: "right" as const,
+              },
+            ]
+          : []),
         {
           text: `${showValue ? value : ""}${
             showFootprint ? `\n${footprint}` : ""
@@ -629,6 +678,7 @@ export class SchematicRenderer {
           y: 0,
           width: 128,
           height: 40,
+          textAlign: "left" as const,
         },
       ],
       ports: [
@@ -811,11 +861,26 @@ export class SchematicRenderer {
           text: instanceName,
           width: mainLabelDimensions.width,
           height: mainLabelDimensions.height,
+          textAlign: "left" as const,
+          properties: {
+            "elk.nodeLabels.placement": "OUTSIDE H_LEFT V_TOP",
+          },
         },
+        ...(instance.reference_designator
+          ? [
+              {
+                text: instance.reference_designator,
+                width: 20,
+                height: mainLabelDimensions.height,
+                textAlign: "right" as const,
+                properties: {
+                  "elk.nodeLabels.placement": "OUTSIDE H_RIGHT V_TOP",
+                },
+              },
+            ]
+          : []),
       ],
-      properties: {
-        "elk.nodeLabels.placement": "OUTSIDE H_LEFT V_TOP",
-      },
+      properties: {},
     };
 
     // Helper function to check if a port is connected to a ground net
@@ -1043,7 +1108,7 @@ export class SchematicRenderer {
       properties: {
         "elk.padding": "[top=0, left=0, bottom=0, right=0]",
         "elk.direction": "DOWN",
-        "elk.layered.spacing.nodeNodeBetweenLayers": "0",
+        "elk.layered.spacing.nodeNodeBetweenLayers": "5",
         "elk.nodeSize.minimum": "(0, 0)",
       },
     };

@@ -127,19 +127,27 @@ export class PDFSchematicRenderer {
       resistorHeight
     );
 
-    // Add label if present
-    if (node.labels?.[0]) {
+    // Add labels if present
+    if (node.labels?.length) {
       doc.setFont(this.options.fonts.values);
       const fontSize = 10 * this.transform.scale;
       doc.setFontSize(fontSize);
-      doc.text(
-        node.labels[0].text,
-        centerX + resistorWidth + 5 * this.transform.scale,
-        centerY,
-        {
-          baseline: "middle",
+
+      node.labels.forEach((label) => {
+        let [labelX, labelY] = this.toPageCoords(
+          (node.x || 0) + (label.x || 0),
+          (node.y || 0) + (label.y || 0)
+        );
+
+        if (label.textAlign === "right") {
+          labelX += (label.width || 0) * this.transform.scale;
+          labelX -= doc.getTextWidth(label.text);
         }
-      );
+
+        doc.text(label.text, labelX, labelY, {
+          baseline: "middle",
+        });
+      });
     }
   }
 
@@ -175,19 +183,27 @@ export class PDFSchematicRenderer {
       centerY + plateGap / 2
     );
 
-    // Add label if present
-    if (node.labels?.[0]) {
+    // Add labels if present
+    if (node.labels?.length) {
       doc.setFont(this.options.fonts.values);
       const fontSize = 10 * this.transform.scale;
       doc.setFontSize(fontSize);
-      doc.text(
-        node.labels[0].text,
-        centerX + symbolWidth + 5 * this.transform.scale,
-        centerY,
-        {
-          baseline: "middle",
+
+      node.labels.forEach((label) => {
+        let [labelX, labelY] = this.toPageCoords(
+          (node.x || 0) + (label.x || 0),
+          (node.y || 0) + (label.y || 0)
+        );
+
+        if (label.textAlign === "right") {
+          labelX += (label.width || 0) * this.transform.scale;
+          labelX -= doc.getTextWidth(label.text);
         }
-      );
+
+        doc.text(label.text, labelX, labelY, {
+          baseline: "middle",
+        });
+      });
     }
   }
 
@@ -214,16 +230,28 @@ export class PDFSchematicRenderer {
     }
     doc.rect(x, y, width, height, "FD");
 
-    // Draw module name
-    if (node.labels?.[0]) {
+    // Draw module/component labels
+    if (node.labels?.length) {
       doc.setFont(this.options.fonts.labels);
       const fontSize = 12 * this.transform.scale;
       doc.setFontSize(fontSize);
-      doc.text(
-        node.labels[0].text,
-        x + ((node.labels[0].x || 0) + 5) * this.transform.scale,
-        y + ((node.labels[0].y || 0) + 15) * this.transform.scale
-      );
+
+      for (let i = 0; i < node.labels.length; i++) {
+        const label = node.labels[i];
+        let [labelX, labelY] = this.toPageCoords(
+          (node.x || 0) + (label.x || 0),
+          (node.y || 0) + (label.y || 0) + 8 // aesthetic correction
+        );
+
+        if (label.textAlign === "right") {
+          labelX += (label.width || 0) * this.transform.scale;
+          labelX -= doc.getTextWidth(label.text);
+        }
+
+        doc.text(label.text, labelX, labelY, {
+          baseline: "middle",
+        });
+      }
     }
 
     // Draw ports
@@ -452,19 +480,22 @@ export class PDFSchematicRenderer {
       }
     }
 
-    // Add label if present
-    if (node.labels?.[0]) {
+    // Add labels if present
+    if (node.labels?.length) {
       doc.setFont(this.options.fonts.values);
       const fontSize = 10 * this.transform.scale;
       doc.setFontSize(fontSize);
-      doc.text(
-        node.labels[0].text,
-        centerX + coilWidth + 5 * this.transform.scale,
-        centerY,
-        {
+
+      node.labels.forEach((label) => {
+        const [labelX, labelY] = this.toPageCoords(
+          (node.x || 0) + (label.x || 0),
+          (node.y || 0) + (label.y || 0)
+        );
+        doc.text(label.text, labelX, labelY, {
           baseline: "middle",
-        }
-      );
+          align: label.textAlign || "left",
+        });
+      });
     }
   }
 
@@ -778,7 +809,6 @@ export class PDFSchematicRenderer {
     // Set up dimensions accounting for title block
     const margin = this.options.pageSize.margin;
     const titleBlockHeight = 80; // Match the height from drawBorder
-    const titleBlockWidth = 300; // Match the width from drawBorder
 
     // Calculate available space for schematic
     const availableWidth = this.options.pageSize.width - 2 * margin;

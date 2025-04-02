@@ -318,20 +318,28 @@ const ModuleNode = ({ data }: { data: SchematicNodeData }) => {
       style={nodeStyle}
     >
       {/* Component/Module label - top left corner */}
-      <div
-        className={`${isModule ? "module" : "component"}-header`}
-        style={{
-          position: "absolute",
-          top: data.labels?.[0]?.y,
-          left: data.labels?.[0]?.x,
-          padding: "4px",
-          fontSize: "12px",
-          fontWeight: "bold",
-          color: "var(--vscode-foreground, #000)",
-        }}
-      >
-        {data.labels?.[0]?.text}
-      </div>
+      {data.labels?.map((label, index) => (
+        <div
+          key={`label-${index}`}
+          className={`${isModule ? "module" : "component"}-header`}
+          style={{
+            position: "absolute",
+            top: label.y,
+            left: label.x,
+            padding: "4px",
+            fontSize: "12px",
+            fontWeight: "bold",
+            color: "var(--vscode-foreground, #000)",
+            textAlign: label.textAlign || "left",
+            width: label.width || "auto",
+            // ...(label.properties?.["elk.nodeLabels.placement"] && {
+            //   transform: "translateX(-100%)",
+            // }),
+          }}
+        >
+          {label.text}
+        </div>
+      ))}
 
       {/* Port connections */}
       <div className={`${isModule ? "module" : "component"}-content`}>
@@ -558,28 +566,27 @@ const CapacitorNode = ({ data }: { data: any }) => {
           }}
         />
 
-        {/* Component Label */}
-        {data.labels?.[0] && (
+        {/* Component Labels */}
+        {data.labels?.map((label: any, index: number) => (
           <div
+            key={index}
             style={{
               position: "absolute",
-              left: centerX + symbolSize + 10,
-              top: "50%",
-              transform: "translateY(-50%)",
+              left: label.x,
+              top: label.y,
               fontSize: "12px",
               color: electricalComponentColor,
               whiteSpace: "pre-line",
-              width: data.labels?.[0]?.width,
-              height: data.labels?.[0]?.height,
-              textAlign: "left",
-              display: "flex",
+              width: label.width,
+              height: label.height,
+              textAlign: label.textAlign || "left",
               alignItems: "center",
               fontWeight: "600",
             }}
           >
-            {data.labels[0].text}
+            {label.text}
           </div>
-        )}
+        ))}
       </div>
 
       {/* Hidden port connections with no visible dots */}
@@ -709,28 +716,26 @@ const ResistorNode = ({ data }: { data: any }) => {
           }}
         />
 
-        {/* Component Label */}
-        {data.labels?.[0] && (
+        {/* Component Labels */}
+        {data.labels?.map((label: any, index: number) => (
           <div
+            key={index}
             style={{
               position: "absolute",
-              left: centerX + resistorWidth + 10,
-              top: "50%",
-              transform: "translateY(-50%)",
+              left: label.x,
+              top: label.y,
               fontSize: "12px",
               color: electricalComponentColor,
               whiteSpace: "pre-line",
-              width: data.labels?.[0]?.width,
-              height: data.labels?.[0]?.height,
-              textAlign: "left",
-              display: "flex",
-              alignItems: "center",
+              width: label.width,
+              height: label.height,
+              textAlign: label.textAlign || "left",
               fontWeight: "600",
             }}
           >
-            {data.labels[0].text}
+            {label.text}
           </div>
-        )}
+        ))}
       </div>
 
       {/* Hidden port connections with no visible dots */}
@@ -873,28 +878,27 @@ const InductorNode = ({ data }: { data: SchematicNodeData }) => {
           />
         </svg>
 
-        {/* Component Label */}
-        {data.labels?.[0] && (
+        {/* Component Labels */}
+        {data.labels?.map((label: any, index: number) => (
           <div
+            key={index}
             style={{
               position: "absolute",
-              left: centerX + inductorHeight / 2 + 10,
-              top: "50%",
-              transform: "translateY(-50%)",
+              left: label.x,
+              top: label.y,
               fontSize: "12px",
               color: electricalComponentColor,
               whiteSpace: "pre-line",
-              width: data.labels?.[0]?.width,
-              height: data.labels?.[0]?.height,
-              textAlign: "left",
-              display: "flex",
+              width: label.width,
+              height: label.height,
+              textAlign: label.textAlign || "left",
               alignItems: "center",
               fontWeight: "600",
             }}
           >
-            {data.labels[0].text}
+            {label.text}
           </div>
-        )}
+        ))}
       </div>
 
       {/* Hidden port connections with no visible dots */}
