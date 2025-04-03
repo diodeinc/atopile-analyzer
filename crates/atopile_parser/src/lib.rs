@@ -483,7 +483,9 @@ module M:
                     value: Spanned(
                         New(
                             Spanned(
-                                "Resistor",
+                                Symbol(
+                                    "Resistor",
+                                ),
                                 56..64,
                             ),
                         ),
