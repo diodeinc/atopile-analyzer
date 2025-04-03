@@ -1,0 +1,70 @@
+---
+source: crates/atopile_analyzer/tests/evaluator.rs
+expression: result
+---
+EvaluatorState {
+    instances: {
+        InstanceRef {
+            module: ModuleRef {
+                source_path: "tests/resources/corpus/bma400.ato",
+                module_name: Symbol(
+                    "Bma400",
+                ),
+            },
+            instance_path: [],
+        }: Instance {
+            type_ref: ModuleRef {
+                source_path: "tests/resources/corpus/bma400.ato",
+                module_name: Symbol(
+                    "Bma400",
+                ),
+            },
+            kind: Module,
+            attributes: {},
+            children: {
+                Symbol(
+                    "gnd",
+                ): InstanceRef {
+                    module: ModuleRef {
+                        source_path: "tests/resources/corpus/bma400.ato",
+                        module_name: Symbol(
+                            "Bma400",
+                        ),
+                    },
+                    instance_path: [
+                        Symbol(
+                            "gnd",
+                        ),
+                    ],
+                },
+            },
+            connections: [],
+            reference_designator: None,
+        },
+        InstanceRef {
+            module: ModuleRef {
+                source_path: "tests/resources/corpus/bma400.ato",
+                module_name: Symbol(
+                    "Bma400",
+                ),
+            },
+            instance_path: [
+                Symbol(
+                    "gnd",
+                ),
+            ],
+        }: Instance {
+            type_ref: ModuleRef {
+                source_path: "",
+                module_name: Symbol(
+                    "",
+                ),
+            },
+            kind: Port,
+            attributes: {},
+            children: {},
+            connections: [],
+            reference_designator: None,
+        },
+    },
+}

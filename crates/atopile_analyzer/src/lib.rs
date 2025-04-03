@@ -1,5 +1,5 @@
 pub mod diagnostics;
-mod evaluator;
+pub mod evaluator;
 mod module;
 mod unused_interface;
 
@@ -331,6 +331,12 @@ impl AtopileAnalyzer {
             evaluator: Evaluator::new(),
             open_files: std::collections::HashSet::new(),
         }
+    }
+
+    #[cfg(test)]
+    pub fn evaluate_source_for_test(&self, source: &AtopileSource) -> EvaluatorState {
+        let mut evaluator = Evaluator::new();
+        evaluator.evaluate(source)
     }
 
     /// Get the source for a file from the cache, if it exists.

@@ -1,0 +1,916 @@
+---
+source: crates/atopile_analyzer/tests/evaluator.rs
+expression: result
+---
+EvaluatorState {
+    instances: {
+        InstanceRef {
+            module: ModuleRef {
+                source_path: "/home/ubuntu/repos/atopile-analyzer/crates/atopile_analyzer/tests/resources/corpus/resistors.ato",
+                module_name: Symbol(
+                    "I2CPullup",
+                ),
+            },
+            instance_path: [
+                Symbol(
+                    "r_sda",
+                ),
+            ],
+        }: Instance {
+            type_ref: ModuleRef {
+                source_path: "/home/ubuntu/repos/atopile-analyzer/crates/atopile_analyzer/tests/resources/corpus/resistors.ato",
+                module_name: Symbol(
+                    "Resistor",
+                ),
+            },
+            kind: Component,
+            attributes: {
+                Symbol(
+                    "mpn",
+                ): String(
+                    "generic_resistor",
+                ),
+                Symbol(
+                    "type",
+                ): String(
+                    "resistor",
+                ),
+                Symbol(
+                    "value",
+                ): Physical(
+                    "10kohm ± 20%",
+                ),
+                Symbol(
+                    "package",
+                ): String(
+                    "0402",
+                ),
+                Symbol(
+                    "designator_prefix",
+                ): String(
+                    "R",
+                ),
+            },
+            children: {
+                Symbol(
+                    "p1",
+                ): InstanceRef {
+                    module: ModuleRef {
+                        source_path: "/home/ubuntu/repos/atopile-analyzer/crates/atopile_analyzer/tests/resources/corpus/resistors.ato",
+                        module_name: Symbol(
+                            "I2CPullup",
+                        ),
+                    },
+                    instance_path: [
+                        Symbol(
+                            "r_sda",
+                        ),
+                        Symbol(
+                            "p1",
+                        ),
+                    ],
+                },
+                Symbol(
+                    "p2",
+                ): InstanceRef {
+                    module: ModuleRef {
+                        source_path: "/home/ubuntu/repos/atopile-analyzer/crates/atopile_analyzer/tests/resources/corpus/resistors.ato",
+                        module_name: Symbol(
+                            "I2CPullup",
+                        ),
+                    },
+                    instance_path: [
+                        Symbol(
+                            "r_sda",
+                        ),
+                        Symbol(
+                            "p2",
+                        ),
+                    ],
+                },
+            },
+            connections: [],
+            reference_designator: None,
+        },
+        InstanceRef {
+            module: ModuleRef {
+                source_path: "tests/resources/corpus/vdivs.ato",
+                module_name: Symbol(
+                    "_VDiv",
+                ),
+            },
+            instance_path: [
+                Symbol(
+                    "r_bottom",
+                ),
+                Symbol(
+                    "p2",
+                ),
+            ],
+        }: Instance {
+            type_ref: ModuleRef {
+                source_path: "",
+                module_name: Symbol(
+                    "",
+                ),
+            },
+            kind: Port,
+            attributes: {},
+            children: {},
+            connections: [],
+            reference_designator: None,
+        },
+        InstanceRef {
+            module: ModuleRef {
+                source_path: "tests/resources/corpus/vdivs.ato",
+                module_name: Symbol(
+                    "_VDiv",
+                ),
+            },
+            instance_path: [
+                Symbol(
+                    "r_bottom",
+                ),
+            ],
+        }: Instance {
+            type_ref: ModuleRef {
+                source_path: "/home/ubuntu/repos/atopile-analyzer/crates/atopile_analyzer/tests/resources/corpus/resistors.ato",
+                module_name: Symbol(
+                    "Resistor",
+                ),
+            },
+            kind: Component,
+            attributes: {
+                Symbol(
+                    "mpn",
+                ): String(
+                    "generic_resistor",
+                ),
+                Symbol(
+                    "type",
+                ): String(
+                    "resistor",
+                ),
+                Symbol(
+                    "package",
+                ): String(
+                    "0402",
+                ),
+                Symbol(
+                    "designator_prefix",
+                ): String(
+                    "R",
+                ),
+            },
+            children: {
+                Symbol(
+                    "p1",
+                ): InstanceRef {
+                    module: ModuleRef {
+                        source_path: "tests/resources/corpus/vdivs.ato",
+                        module_name: Symbol(
+                            "_VDiv",
+                        ),
+                    },
+                    instance_path: [
+                        Symbol(
+                            "r_bottom",
+                        ),
+                        Symbol(
+                            "p1",
+                        ),
+                    ],
+                },
+                Symbol(
+                    "p2",
+                ): InstanceRef {
+                    module: ModuleRef {
+                        source_path: "tests/resources/corpus/vdivs.ato",
+                        module_name: Symbol(
+                            "_VDiv",
+                        ),
+                    },
+                    instance_path: [
+                        Symbol(
+                            "r_bottom",
+                        ),
+                        Symbol(
+                            "p2",
+                        ),
+                    ],
+                },
+            },
+            connections: [],
+            reference_designator: None,
+        },
+        InstanceRef {
+            module: ModuleRef {
+                source_path: "tests/resources/corpus/vdivs.ato",
+                module_name: Symbol(
+                    "_VDiv",
+                ),
+            },
+            instance_path: [
+                Symbol(
+                    "out",
+                ),
+            ],
+        }: Instance {
+            type_ref: ModuleRef {
+                source_path: "",
+                module_name: Symbol(
+                    "",
+                ),
+            },
+            kind: Port,
+            attributes: {},
+            children: {},
+            connections: [],
+            reference_designator: None,
+        },
+        InstanceRef {
+            module: ModuleRef {
+                source_path: "tests/resources/corpus/vdivs.ato",
+                module_name: Symbol(
+                    "_VDiv",
+                ),
+            },
+            instance_path: [],
+        }: Instance {
+            type_ref: ModuleRef {
+                source_path: "tests/resources/corpus/vdivs.ato",
+                module_name: Symbol(
+                    "_VDiv",
+                ),
+            },
+            kind: Module,
+            attributes: {},
+            children: {
+                Symbol(
+                    "out",
+                ): InstanceRef {
+                    module: ModuleRef {
+                        source_path: "tests/resources/corpus/vdivs.ato",
+                        module_name: Symbol(
+                            "_VDiv",
+                        ),
+                    },
+                    instance_path: [
+                        Symbol(
+                            "out",
+                        ),
+                    ],
+                },
+                Symbol(
+                    "top",
+                ): InstanceRef {
+                    module: ModuleRef {
+                        source_path: "tests/resources/corpus/vdivs.ato",
+                        module_name: Symbol(
+                            "_VDiv",
+                        ),
+                    },
+                    instance_path: [
+                        Symbol(
+                            "top",
+                        ),
+                    ],
+                },
+                Symbol(
+                    "r_top",
+                ): InstanceRef {
+                    module: ModuleRef {
+                        source_path: "tests/resources/corpus/vdivs.ato",
+                        module_name: Symbol(
+                            "_VDiv",
+                        ),
+                    },
+                    instance_path: [
+                        Symbol(
+                            "r_top",
+                        ),
+                    ],
+                },
+                Symbol(
+                    "bottom",
+                ): InstanceRef {
+                    module: ModuleRef {
+                        source_path: "tests/resources/corpus/vdivs.ato",
+                        module_name: Symbol(
+                            "_VDiv",
+                        ),
+                    },
+                    instance_path: [
+                        Symbol(
+                            "bottom",
+                        ),
+                    ],
+                },
+                Symbol(
+                    "r_bottom",
+                ): InstanceRef {
+                    module: ModuleRef {
+                        source_path: "tests/resources/corpus/vdivs.ato",
+                        module_name: Symbol(
+                            "_VDiv",
+                        ),
+                    },
+                    instance_path: [
+                        Symbol(
+                            "r_bottom",
+                        ),
+                    ],
+                },
+            },
+            connections: [],
+            reference_designator: None,
+        },
+        InstanceRef {
+            module: ModuleRef {
+                source_path: "tests/resources/corpus/vdivs.ato",
+                module_name: Symbol(
+                    "_VDiv",
+                ),
+            },
+            instance_path: [
+                Symbol(
+                    "bottom",
+                ),
+            ],
+        }: Instance {
+            type_ref: ModuleRef {
+                source_path: "",
+                module_name: Symbol(
+                    "",
+                ),
+            },
+            kind: Port,
+            attributes: {},
+            children: {},
+            connections: [],
+            reference_designator: None,
+        },
+        InstanceRef {
+            module: ModuleRef {
+                source_path: "/home/ubuntu/repos/atopile-analyzer/crates/atopile_analyzer/tests/resources/corpus/resistors.ato",
+                module_name: Symbol(
+                    "I2CPullup",
+                ),
+            },
+            instance_path: [
+                Symbol(
+                    "r_scl",
+                ),
+                Symbol(
+                    "p1",
+                ),
+            ],
+        }: Instance {
+            type_ref: ModuleRef {
+                source_path: "",
+                module_name: Symbol(
+                    "",
+                ),
+            },
+            kind: Port,
+            attributes: {},
+            children: {},
+            connections: [],
+            reference_designator: None,
+        },
+        InstanceRef {
+            module: ModuleRef {
+                source_path: "/home/ubuntu/repos/atopile-analyzer/crates/atopile_analyzer/tests/resources/corpus/resistors.ato",
+                module_name: Symbol(
+                    "I2CPullup",
+                ),
+            },
+            instance_path: [],
+        }: Instance {
+            type_ref: ModuleRef {
+                source_path: "/home/ubuntu/repos/atopile-analyzer/crates/atopile_analyzer/tests/resources/corpus/resistors.ato",
+                module_name: Symbol(
+                    "I2CPullup",
+                ),
+            },
+            kind: Module,
+            attributes: {},
+            children: {
+                Symbol(
+                    "r_scl",
+                ): InstanceRef {
+                    module: ModuleRef {
+                        source_path: "/home/ubuntu/repos/atopile-analyzer/crates/atopile_analyzer/tests/resources/corpus/resistors.ato",
+                        module_name: Symbol(
+                            "I2CPullup",
+                        ),
+                    },
+                    instance_path: [
+                        Symbol(
+                            "r_scl",
+                        ),
+                    ],
+                },
+                Symbol(
+                    "r_sda",
+                ): InstanceRef {
+                    module: ModuleRef {
+                        source_path: "/home/ubuntu/repos/atopile-analyzer/crates/atopile_analyzer/tests/resources/corpus/resistors.ato",
+                        module_name: Symbol(
+                            "I2CPullup",
+                        ),
+                    },
+                    instance_path: [
+                        Symbol(
+                            "r_sda",
+                        ),
+                    ],
+                },
+            },
+            connections: [],
+            reference_designator: None,
+        },
+        InstanceRef {
+            module: ModuleRef {
+                source_path: "/home/ubuntu/repos/atopile-analyzer/crates/atopile_analyzer/tests/resources/corpus/resistors.ato",
+                module_name: Symbol(
+                    "Resistor",
+                ),
+            },
+            instance_path: [
+                Symbol(
+                    "p1",
+                ),
+            ],
+        }: Instance {
+            type_ref: ModuleRef {
+                source_path: "",
+                module_name: Symbol(
+                    "",
+                ),
+            },
+            kind: Port,
+            attributes: {},
+            children: {},
+            connections: [],
+            reference_designator: None,
+        },
+        InstanceRef {
+            module: ModuleRef {
+                source_path: "tests/resources/corpus/vdivs.ato",
+                module_name: Symbol(
+                    "_VDiv",
+                ),
+            },
+            instance_path: [
+                Symbol(
+                    "top",
+                ),
+            ],
+        }: Instance {
+            type_ref: ModuleRef {
+                source_path: "",
+                module_name: Symbol(
+                    "",
+                ),
+            },
+            kind: Port,
+            attributes: {},
+            children: {},
+            connections: [],
+            reference_designator: None,
+        },
+        InstanceRef {
+            module: ModuleRef {
+                source_path: "tests/resources/corpus/vdivs.ato",
+                module_name: Symbol(
+                    "_VDiv",
+                ),
+            },
+            instance_path: [
+                Symbol(
+                    "r_top",
+                ),
+            ],
+        }: Instance {
+            type_ref: ModuleRef {
+                source_path: "/home/ubuntu/repos/atopile-analyzer/crates/atopile_analyzer/tests/resources/corpus/resistors.ato",
+                module_name: Symbol(
+                    "Resistor",
+                ),
+            },
+            kind: Component,
+            attributes: {
+                Symbol(
+                    "mpn",
+                ): String(
+                    "generic_resistor",
+                ),
+                Symbol(
+                    "type",
+                ): String(
+                    "resistor",
+                ),
+                Symbol(
+                    "package",
+                ): String(
+                    "0402",
+                ),
+                Symbol(
+                    "designator_prefix",
+                ): String(
+                    "R",
+                ),
+            },
+            children: {
+                Symbol(
+                    "p1",
+                ): InstanceRef {
+                    module: ModuleRef {
+                        source_path: "tests/resources/corpus/vdivs.ato",
+                        module_name: Symbol(
+                            "_VDiv",
+                        ),
+                    },
+                    instance_path: [
+                        Symbol(
+                            "r_top",
+                        ),
+                        Symbol(
+                            "p1",
+                        ),
+                    ],
+                },
+                Symbol(
+                    "p2",
+                ): InstanceRef {
+                    module: ModuleRef {
+                        source_path: "tests/resources/corpus/vdivs.ato",
+                        module_name: Symbol(
+                            "_VDiv",
+                        ),
+                    },
+                    instance_path: [
+                        Symbol(
+                            "r_top",
+                        ),
+                        Symbol(
+                            "p2",
+                        ),
+                    ],
+                },
+            },
+            connections: [],
+            reference_designator: None,
+        },
+        InstanceRef {
+            module: ModuleRef {
+                source_path: "/home/ubuntu/repos/atopile-analyzer/crates/atopile_analyzer/tests/resources/corpus/resistors.ato",
+                module_name: Symbol(
+                    "Resistor",
+                ),
+            },
+            instance_path: [],
+        }: Instance {
+            type_ref: ModuleRef {
+                source_path: "/home/ubuntu/repos/atopile-analyzer/crates/atopile_analyzer/tests/resources/corpus/resistors.ato",
+                module_name: Symbol(
+                    "Resistor",
+                ),
+            },
+            kind: Component,
+            attributes: {
+                Symbol(
+                    "mpn",
+                ): String(
+                    "generic_resistor",
+                ),
+                Symbol(
+                    "type",
+                ): String(
+                    "resistor",
+                ),
+                Symbol(
+                    "designator_prefix",
+                ): String(
+                    "R",
+                ),
+            },
+            children: {
+                Symbol(
+                    "p1",
+                ): InstanceRef {
+                    module: ModuleRef {
+                        source_path: "/home/ubuntu/repos/atopile-analyzer/crates/atopile_analyzer/tests/resources/corpus/resistors.ato",
+                        module_name: Symbol(
+                            "Resistor",
+                        ),
+                    },
+                    instance_path: [
+                        Symbol(
+                            "p1",
+                        ),
+                    ],
+                },
+                Symbol(
+                    "p2",
+                ): InstanceRef {
+                    module: ModuleRef {
+                        source_path: "/home/ubuntu/repos/atopile-analyzer/crates/atopile_analyzer/tests/resources/corpus/resistors.ato",
+                        module_name: Symbol(
+                            "Resistor",
+                        ),
+                    },
+                    instance_path: [
+                        Symbol(
+                            "p2",
+                        ),
+                    ],
+                },
+            },
+            connections: [],
+            reference_designator: None,
+        },
+        InstanceRef {
+            module: ModuleRef {
+                source_path: "tests/resources/corpus/vdivs.ato",
+                module_name: Symbol(
+                    "_VDiv",
+                ),
+            },
+            instance_path: [
+                Symbol(
+                    "r_top",
+                ),
+                Symbol(
+                    "p2",
+                ),
+            ],
+        }: Instance {
+            type_ref: ModuleRef {
+                source_path: "",
+                module_name: Symbol(
+                    "",
+                ),
+            },
+            kind: Port,
+            attributes: {},
+            children: {},
+            connections: [],
+            reference_designator: None,
+        },
+        InstanceRef {
+            module: ModuleRef {
+                source_path: "/home/ubuntu/repos/atopile-analyzer/crates/atopile_analyzer/tests/resources/corpus/resistors.ato",
+                module_name: Symbol(
+                    "I2CPullup",
+                ),
+            },
+            instance_path: [
+                Symbol(
+                    "r_sda",
+                ),
+                Symbol(
+                    "p1",
+                ),
+            ],
+        }: Instance {
+            type_ref: ModuleRef {
+                source_path: "",
+                module_name: Symbol(
+                    "",
+                ),
+            },
+            kind: Port,
+            attributes: {},
+            children: {},
+            connections: [],
+            reference_designator: None,
+        },
+        InstanceRef {
+            module: ModuleRef {
+                source_path: "/home/ubuntu/repos/atopile-analyzer/crates/atopile_analyzer/tests/resources/corpus/resistors.ato",
+                module_name: Symbol(
+                    "I2CPullup",
+                ),
+            },
+            instance_path: [
+                Symbol(
+                    "r_scl",
+                ),
+            ],
+        }: Instance {
+            type_ref: ModuleRef {
+                source_path: "/home/ubuntu/repos/atopile-analyzer/crates/atopile_analyzer/tests/resources/corpus/resistors.ato",
+                module_name: Symbol(
+                    "Resistor",
+                ),
+            },
+            kind: Component,
+            attributes: {
+                Symbol(
+                    "mpn",
+                ): String(
+                    "generic_resistor",
+                ),
+                Symbol(
+                    "type",
+                ): String(
+                    "resistor",
+                ),
+                Symbol(
+                    "value",
+                ): Physical(
+                    "10kohm ± 20%",
+                ),
+                Symbol(
+                    "package",
+                ): String(
+                    "0402",
+                ),
+                Symbol(
+                    "designator_prefix",
+                ): String(
+                    "R",
+                ),
+            },
+            children: {
+                Symbol(
+                    "p1",
+                ): InstanceRef {
+                    module: ModuleRef {
+                        source_path: "/home/ubuntu/repos/atopile-analyzer/crates/atopile_analyzer/tests/resources/corpus/resistors.ato",
+                        module_name: Symbol(
+                            "I2CPullup",
+                        ),
+                    },
+                    instance_path: [
+                        Symbol(
+                            "r_scl",
+                        ),
+                        Symbol(
+                            "p1",
+                        ),
+                    ],
+                },
+                Symbol(
+                    "p2",
+                ): InstanceRef {
+                    module: ModuleRef {
+                        source_path: "/home/ubuntu/repos/atopile-analyzer/crates/atopile_analyzer/tests/resources/corpus/resistors.ato",
+                        module_name: Symbol(
+                            "I2CPullup",
+                        ),
+                    },
+                    instance_path: [
+                        Symbol(
+                            "r_scl",
+                        ),
+                        Symbol(
+                            "p2",
+                        ),
+                    ],
+                },
+            },
+            connections: [],
+            reference_designator: None,
+        },
+        InstanceRef {
+            module: ModuleRef {
+                source_path: "/home/ubuntu/repos/atopile-analyzer/crates/atopile_analyzer/tests/resources/corpus/resistors.ato",
+                module_name: Symbol(
+                    "Resistor",
+                ),
+            },
+            instance_path: [
+                Symbol(
+                    "p2",
+                ),
+            ],
+        }: Instance {
+            type_ref: ModuleRef {
+                source_path: "",
+                module_name: Symbol(
+                    "",
+                ),
+            },
+            kind: Port,
+            attributes: {},
+            children: {},
+            connections: [],
+            reference_designator: None,
+        },
+        InstanceRef {
+            module: ModuleRef {
+                source_path: "/home/ubuntu/repos/atopile-analyzer/crates/atopile_analyzer/tests/resources/corpus/resistors.ato",
+                module_name: Symbol(
+                    "I2CPullup",
+                ),
+            },
+            instance_path: [
+                Symbol(
+                    "r_sda",
+                ),
+                Symbol(
+                    "p2",
+                ),
+            ],
+        }: Instance {
+            type_ref: ModuleRef {
+                source_path: "",
+                module_name: Symbol(
+                    "",
+                ),
+            },
+            kind: Port,
+            attributes: {},
+            children: {},
+            connections: [],
+            reference_designator: None,
+        },
+        InstanceRef {
+            module: ModuleRef {
+                source_path: "tests/resources/corpus/vdivs.ato",
+                module_name: Symbol(
+                    "_VDiv",
+                ),
+            },
+            instance_path: [
+                Symbol(
+                    "r_top",
+                ),
+                Symbol(
+                    "p1",
+                ),
+            ],
+        }: Instance {
+            type_ref: ModuleRef {
+                source_path: "",
+                module_name: Symbol(
+                    "",
+                ),
+            },
+            kind: Port,
+            attributes: {},
+            children: {},
+            connections: [],
+            reference_designator: None,
+        },
+        InstanceRef {
+            module: ModuleRef {
+                source_path: "/home/ubuntu/repos/atopile-analyzer/crates/atopile_analyzer/tests/resources/corpus/resistors.ato",
+                module_name: Symbol(
+                    "I2CPullup",
+                ),
+            },
+            instance_path: [
+                Symbol(
+                    "r_scl",
+                ),
+                Symbol(
+                    "p2",
+                ),
+            ],
+        }: Instance {
+            type_ref: ModuleRef {
+                source_path: "",
+                module_name: Symbol(
+                    "",
+                ),
+            },
+            kind: Port,
+            attributes: {},
+            children: {},
+            connections: [],
+            reference_designator: None,
+        },
+        InstanceRef {
+            module: ModuleRef {
+                source_path: "tests/resources/corpus/vdivs.ato",
+                module_name: Symbol(
+                    "_VDiv",
+                ),
+            },
+            instance_path: [
+                Symbol(
+                    "r_bottom",
+                ),
+                Symbol(
+                    "p1",
+                ),
+            ],
+        }: Instance {
+            type_ref: ModuleRef {
+                source_path: "",
+                module_name: Symbol(
+                    "",
+                ),
+            },
+            kind: Port,
+            attributes: {},
+            children: {},
+            connections: [],
+            reference_designator: None,
+        },
+    },
+}

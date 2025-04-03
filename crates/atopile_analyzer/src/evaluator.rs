@@ -141,7 +141,7 @@ impl EvaluatorState {
     }
 }
 
-pub(crate) struct Evaluator {
+pub struct Evaluator {
     state: EvaluatorState,
     reporter: AnalyzerReporter,
     file_cache: FileCache,
@@ -556,7 +556,7 @@ pub(crate) fn resolve_import_path(ctx_path: &Path, import_path: &Path) -> Option
 }
 
 impl Evaluator {
-    pub(crate) fn new() -> Self {
+    pub fn new() -> Self {
         debug!("Creating new Evaluator instance");
         Self {
             state: EvaluatorState::new(),
@@ -1177,7 +1177,7 @@ impl Evaluator {
         }
     }
 
-    pub(crate) fn evaluate(&mut self, source: &AtopileSource) -> EvaluatorState {
+    pub fn evaluate(&mut self, source: &AtopileSource) -> EvaluatorState {
         debug!("Starting evaluation of source: {:?}", source.path());
         let start = Instant::now();
         self.evaluate_inner(source, vec![]);

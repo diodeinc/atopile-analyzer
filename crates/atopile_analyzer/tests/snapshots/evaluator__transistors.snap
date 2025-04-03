@@ -1,0 +1,452 @@
+---
+source: crates/atopile_analyzer/tests/evaluator.rs
+expression: result
+---
+EvaluatorState {
+    instances: {
+        InstanceRef {
+            module: ModuleRef {
+                source_path: "tests/resources/corpus/transistors.ato",
+                module_name: Symbol(
+                    "NPN",
+                ),
+            },
+            instance_path: [
+                Symbol(
+                    "collector",
+                ),
+            ],
+        }: Instance {
+            type_ref: ModuleRef {
+                source_path: "",
+                module_name: Symbol(
+                    "",
+                ),
+            },
+            kind: Port,
+            attributes: {},
+            children: {},
+            connections: [],
+            reference_designator: None,
+        },
+        InstanceRef {
+            module: ModuleRef {
+                source_path: "tests/resources/corpus/transistors.ato",
+                module_name: Symbol(
+                    "PNP",
+                ),
+            },
+            instance_path: [
+                Symbol(
+                    "emitter",
+                ),
+            ],
+        }: Instance {
+            type_ref: ModuleRef {
+                source_path: "",
+                module_name: Symbol(
+                    "",
+                ),
+            },
+            kind: Port,
+            attributes: {},
+            children: {},
+            connections: [],
+            reference_designator: None,
+        },
+        InstanceRef {
+            module: ModuleRef {
+                source_path: "tests/resources/corpus/transistors.ato",
+                module_name: Symbol(
+                    "Triac",
+                ),
+            },
+            instance_path: [
+                Symbol(
+                    "MT2",
+                ),
+            ],
+        }: Instance {
+            type_ref: ModuleRef {
+                source_path: "",
+                module_name: Symbol(
+                    "",
+                ),
+            },
+            kind: Port,
+            attributes: {},
+            children: {},
+            connections: [],
+            reference_designator: None,
+        },
+        InstanceRef {
+            module: ModuleRef {
+                source_path: "tests/resources/corpus/transistors.ato",
+                module_name: Symbol(
+                    "PNP",
+                ),
+            },
+            instance_path: [
+                Symbol(
+                    "collector",
+                ),
+            ],
+        }: Instance {
+            type_ref: ModuleRef {
+                source_path: "",
+                module_name: Symbol(
+                    "",
+                ),
+            },
+            kind: Port,
+            attributes: {},
+            children: {},
+            connections: [],
+            reference_designator: None,
+        },
+        InstanceRef {
+            module: ModuleRef {
+                source_path: "tests/resources/corpus/transistors.ato",
+                module_name: Symbol(
+                    "Triac",
+                ),
+            },
+            instance_path: [
+                Symbol(
+                    "MT1",
+                ),
+            ],
+        }: Instance {
+            type_ref: ModuleRef {
+                source_path: "",
+                module_name: Symbol(
+                    "",
+                ),
+            },
+            kind: Port,
+            attributes: {},
+            children: {},
+            connections: [],
+            reference_designator: None,
+        },
+        InstanceRef {
+            module: ModuleRef {
+                source_path: "tests/resources/corpus/transistors.ato",
+                module_name: Symbol(
+                    "NPN",
+                ),
+            },
+            instance_path: [],
+        }: Instance {
+            type_ref: ModuleRef {
+                source_path: "tests/resources/corpus/transistors.ato",
+                module_name: Symbol(
+                    "NPN",
+                ),
+            },
+            kind: Component,
+            attributes: {
+                Symbol(
+                    "designator_prefix",
+                ): String(
+                    "Q",
+                ),
+            },
+            children: {
+                Symbol(
+                    "collector",
+                ): InstanceRef {
+                    module: ModuleRef {
+                        source_path: "tests/resources/corpus/transistors.ato",
+                        module_name: Symbol(
+                            "NPN",
+                        ),
+                    },
+                    instance_path: [
+                        Symbol(
+                            "collector",
+                        ),
+                    ],
+                },
+                Symbol(
+                    "base",
+                ): InstanceRef {
+                    module: ModuleRef {
+                        source_path: "tests/resources/corpus/transistors.ato",
+                        module_name: Symbol(
+                            "NPN",
+                        ),
+                    },
+                    instance_path: [
+                        Symbol(
+                            "base",
+                        ),
+                    ],
+                },
+                Symbol(
+                    "emitter",
+                ): InstanceRef {
+                    module: ModuleRef {
+                        source_path: "tests/resources/corpus/transistors.ato",
+                        module_name: Symbol(
+                            "NPN",
+                        ),
+                    },
+                    instance_path: [
+                        Symbol(
+                            "emitter",
+                        ),
+                    ],
+                },
+            },
+            connections: [],
+            reference_designator: None,
+        },
+        InstanceRef {
+            module: ModuleRef {
+                source_path: "tests/resources/corpus/transistors.ato",
+                module_name: Symbol(
+                    "Triac",
+                ),
+            },
+            instance_path: [],
+        }: Instance {
+            type_ref: ModuleRef {
+                source_path: "tests/resources/corpus/transistors.ato",
+                module_name: Symbol(
+                    "Triac",
+                ),
+            },
+            kind: Component,
+            attributes: {
+                Symbol(
+                    "designator_prefix",
+                ): String(
+                    "TR",
+                ),
+            },
+            children: {
+                Symbol(
+                    "MT1",
+                ): InstanceRef {
+                    module: ModuleRef {
+                        source_path: "tests/resources/corpus/transistors.ato",
+                        module_name: Symbol(
+                            "Triac",
+                        ),
+                    },
+                    instance_path: [
+                        Symbol(
+                            "MT1",
+                        ),
+                    ],
+                },
+                Symbol(
+                    "MT2",
+                ): InstanceRef {
+                    module: ModuleRef {
+                        source_path: "tests/resources/corpus/transistors.ato",
+                        module_name: Symbol(
+                            "Triac",
+                        ),
+                    },
+                    instance_path: [
+                        Symbol(
+                            "MT2",
+                        ),
+                    ],
+                },
+                Symbol(
+                    "gate",
+                ): InstanceRef {
+                    module: ModuleRef {
+                        source_path: "tests/resources/corpus/transistors.ato",
+                        module_name: Symbol(
+                            "Triac",
+                        ),
+                    },
+                    instance_path: [
+                        Symbol(
+                            "gate",
+                        ),
+                    ],
+                },
+            },
+            connections: [],
+            reference_designator: None,
+        },
+        InstanceRef {
+            module: ModuleRef {
+                source_path: "tests/resources/corpus/transistors.ato",
+                module_name: Symbol(
+                    "NPN",
+                ),
+            },
+            instance_path: [
+                Symbol(
+                    "base",
+                ),
+            ],
+        }: Instance {
+            type_ref: ModuleRef {
+                source_path: "",
+                module_name: Symbol(
+                    "",
+                ),
+            },
+            kind: Port,
+            attributes: {},
+            children: {},
+            connections: [],
+            reference_designator: None,
+        },
+        InstanceRef {
+            module: ModuleRef {
+                source_path: "tests/resources/corpus/transistors.ato",
+                module_name: Symbol(
+                    "NPN",
+                ),
+            },
+            instance_path: [
+                Symbol(
+                    "emitter",
+                ),
+            ],
+        }: Instance {
+            type_ref: ModuleRef {
+                source_path: "",
+                module_name: Symbol(
+                    "",
+                ),
+            },
+            kind: Port,
+            attributes: {},
+            children: {},
+            connections: [],
+            reference_designator: None,
+        },
+        InstanceRef {
+            module: ModuleRef {
+                source_path: "tests/resources/corpus/transistors.ato",
+                module_name: Symbol(
+                    "PNP",
+                ),
+            },
+            instance_path: [
+                Symbol(
+                    "base",
+                ),
+            ],
+        }: Instance {
+            type_ref: ModuleRef {
+                source_path: "",
+                module_name: Symbol(
+                    "",
+                ),
+            },
+            kind: Port,
+            attributes: {},
+            children: {},
+            connections: [],
+            reference_designator: None,
+        },
+        InstanceRef {
+            module: ModuleRef {
+                source_path: "tests/resources/corpus/transistors.ato",
+                module_name: Symbol(
+                    "PNP",
+                ),
+            },
+            instance_path: [],
+        }: Instance {
+            type_ref: ModuleRef {
+                source_path: "tests/resources/corpus/transistors.ato",
+                module_name: Symbol(
+                    "PNP",
+                ),
+            },
+            kind: Component,
+            attributes: {
+                Symbol(
+                    "designator_prefix",
+                ): String(
+                    "Q",
+                ),
+            },
+            children: {
+                Symbol(
+                    "base",
+                ): InstanceRef {
+                    module: ModuleRef {
+                        source_path: "tests/resources/corpus/transistors.ato",
+                        module_name: Symbol(
+                            "PNP",
+                        ),
+                    },
+                    instance_path: [
+                        Symbol(
+                            "base",
+                        ),
+                    ],
+                },
+                Symbol(
+                    "collector",
+                ): InstanceRef {
+                    module: ModuleRef {
+                        source_path: "tests/resources/corpus/transistors.ato",
+                        module_name: Symbol(
+                            "PNP",
+                        ),
+                    },
+                    instance_path: [
+                        Symbol(
+                            "collector",
+                        ),
+                    ],
+                },
+                Symbol(
+                    "emitter",
+                ): InstanceRef {
+                    module: ModuleRef {
+                        source_path: "tests/resources/corpus/transistors.ato",
+                        module_name: Symbol(
+                            "PNP",
+                        ),
+                    },
+                    instance_path: [
+                        Symbol(
+                            "emitter",
+                        ),
+                    ],
+                },
+            },
+            connections: [],
+            reference_designator: None,
+        },
+        InstanceRef {
+            module: ModuleRef {
+                source_path: "tests/resources/corpus/transistors.ato",
+                module_name: Symbol(
+                    "Triac",
+                ),
+            },
+            instance_path: [
+                Symbol(
+                    "gate",
+                ),
+            ],
+        }: Instance {
+            type_ref: ModuleRef {
+                source_path: "",
+                module_name: Symbol(
+                    "",
+                ),
+            },
+            kind: Port,
+            attributes: {},
+            children: {},
+            connections: [],
+            reference_designator: None,
+        },
+    },
+}

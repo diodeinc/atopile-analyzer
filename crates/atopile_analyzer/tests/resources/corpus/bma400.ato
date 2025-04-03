@@ -1,0 +1,48 @@
+from "generics/interfaces.ato" import Power, I2C, SPI, GPIO
+from "generics/capacitors.ato" import Capacitor
+from "_BMA400/BMA400.ato" import BMA400
+
+module Bma400:
+    """Ultra-low power triaxial accelerometer driver module based on the BMA400 from Bosch.
+    
+    Features:
+    - Ultra-low power consumption (14.5μA in normal mode, 850nA in low-power mode)
+    - 12-bit digital resolution
+    - Programmable measurement ranges: ±2g, ±4g, ±8g, ±16g
+    - Built-in power management with auto wake-up/sleep capability
+    - Integrated FIFO (1KB)
+    - Smart interrupts including:
+      - Activity/inactivity detection
+      - Step counting with low power consumption (4μA)
+      - Orientation detection
+      - Tap/double-tap sensing
+    - Digital interfaces: I2C or SPI
+    - VDDIO voltage range: 1.2V to 3.6V
+    - VDD voltage range: 1.7V to 3.6V
+    
+    Example Usage:
+    ```
+    from 'generics/interfaces.ato' import Power, I2C, GPIO
+    from 'bma400/bma400.ato' import Bma400, Bma400_I2C
+    
+    module UserBoard:
+        '''User board with BMA400 accelerometer'''
+        
+        # Interfaces
+        power_1v8 = new Power  # 1.8V power supply
+        i2c = new I2C          # I2C bus
+        int1 = new GPIO        # Interrupt 1 input
+        
+        # Accelerometer
+        accel = new Bma400
+        accel.ic -> Bma400_I2C  # Use I2C interface
+        
+        # Connections
+        accel.power ~ power_1v8
+        accel.i2c ~ i2c
+        accel.int1 ~ int1
+    ```
+    """
+    
+    signal gnd
+    

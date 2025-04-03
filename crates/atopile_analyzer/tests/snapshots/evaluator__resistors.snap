@@ -1,0 +1,466 @@
+---
+source: crates/atopile_analyzer/tests/evaluator.rs
+expression: result
+---
+EvaluatorState {
+    instances: {
+        InstanceRef {
+            module: ModuleRef {
+                source_path: "tests/resources/corpus/resistors.ato",
+                module_name: Symbol(
+                    "I2CPullup",
+                ),
+            },
+            instance_path: [
+                Symbol(
+                    "r_sda",
+                ),
+            ],
+        }: Instance {
+            type_ref: ModuleRef {
+                source_path: "tests/resources/corpus/resistors.ato",
+                module_name: Symbol(
+                    "Resistor",
+                ),
+            },
+            kind: Component,
+            attributes: {
+                Symbol(
+                    "type",
+                ): String(
+                    "resistor",
+                ),
+                Symbol(
+                    "package",
+                ): String(
+                    "0402",
+                ),
+                Symbol(
+                    "designator_prefix",
+                ): String(
+                    "R",
+                ),
+                Symbol(
+                    "mpn",
+                ): String(
+                    "generic_resistor",
+                ),
+                Symbol(
+                    "value",
+                ): Physical(
+                    "10kohm ± 20%",
+                ),
+            },
+            children: {
+                Symbol(
+                    "p2",
+                ): InstanceRef {
+                    module: ModuleRef {
+                        source_path: "tests/resources/corpus/resistors.ato",
+                        module_name: Symbol(
+                            "I2CPullup",
+                        ),
+                    },
+                    instance_path: [
+                        Symbol(
+                            "r_sda",
+                        ),
+                        Symbol(
+                            "p2",
+                        ),
+                    ],
+                },
+                Symbol(
+                    "p1",
+                ): InstanceRef {
+                    module: ModuleRef {
+                        source_path: "tests/resources/corpus/resistors.ato",
+                        module_name: Symbol(
+                            "I2CPullup",
+                        ),
+                    },
+                    instance_path: [
+                        Symbol(
+                            "r_sda",
+                        ),
+                        Symbol(
+                            "p1",
+                        ),
+                    ],
+                },
+            },
+            connections: [],
+            reference_designator: None,
+        },
+        InstanceRef {
+            module: ModuleRef {
+                source_path: "tests/resources/corpus/resistors.ato",
+                module_name: Symbol(
+                    "I2CPullup",
+                ),
+            },
+            instance_path: [
+                Symbol(
+                    "r_scl",
+                ),
+            ],
+        }: Instance {
+            type_ref: ModuleRef {
+                source_path: "tests/resources/corpus/resistors.ato",
+                module_name: Symbol(
+                    "Resistor",
+                ),
+            },
+            kind: Component,
+            attributes: {
+                Symbol(
+                    "type",
+                ): String(
+                    "resistor",
+                ),
+                Symbol(
+                    "package",
+                ): String(
+                    "0402",
+                ),
+                Symbol(
+                    "designator_prefix",
+                ): String(
+                    "R",
+                ),
+                Symbol(
+                    "mpn",
+                ): String(
+                    "generic_resistor",
+                ),
+                Symbol(
+                    "value",
+                ): Physical(
+                    "10kohm ± 20%",
+                ),
+            },
+            children: {
+                Symbol(
+                    "p2",
+                ): InstanceRef {
+                    module: ModuleRef {
+                        source_path: "tests/resources/corpus/resistors.ato",
+                        module_name: Symbol(
+                            "I2CPullup",
+                        ),
+                    },
+                    instance_path: [
+                        Symbol(
+                            "r_scl",
+                        ),
+                        Symbol(
+                            "p2",
+                        ),
+                    ],
+                },
+                Symbol(
+                    "p1",
+                ): InstanceRef {
+                    module: ModuleRef {
+                        source_path: "tests/resources/corpus/resistors.ato",
+                        module_name: Symbol(
+                            "I2CPullup",
+                        ),
+                    },
+                    instance_path: [
+                        Symbol(
+                            "r_scl",
+                        ),
+                        Symbol(
+                            "p1",
+                        ),
+                    ],
+                },
+            },
+            connections: [],
+            reference_designator: None,
+        },
+        InstanceRef {
+            module: ModuleRef {
+                source_path: "tests/resources/corpus/resistors.ato",
+                module_name: Symbol(
+                    "I2CPullup",
+                ),
+            },
+            instance_path: [],
+        }: Instance {
+            type_ref: ModuleRef {
+                source_path: "tests/resources/corpus/resistors.ato",
+                module_name: Symbol(
+                    "I2CPullup",
+                ),
+            },
+            kind: Module,
+            attributes: {},
+            children: {
+                Symbol(
+                    "r_sda",
+                ): InstanceRef {
+                    module: ModuleRef {
+                        source_path: "tests/resources/corpus/resistors.ato",
+                        module_name: Symbol(
+                            "I2CPullup",
+                        ),
+                    },
+                    instance_path: [
+                        Symbol(
+                            "r_sda",
+                        ),
+                    ],
+                },
+                Symbol(
+                    "r_scl",
+                ): InstanceRef {
+                    module: ModuleRef {
+                        source_path: "tests/resources/corpus/resistors.ato",
+                        module_name: Symbol(
+                            "I2CPullup",
+                        ),
+                    },
+                    instance_path: [
+                        Symbol(
+                            "r_scl",
+                        ),
+                    ],
+                },
+            },
+            connections: [],
+            reference_designator: None,
+        },
+        InstanceRef {
+            module: ModuleRef {
+                source_path: "tests/resources/corpus/resistors.ato",
+                module_name: Symbol(
+                    "Resistor",
+                ),
+            },
+            instance_path: [],
+        }: Instance {
+            type_ref: ModuleRef {
+                source_path: "tests/resources/corpus/resistors.ato",
+                module_name: Symbol(
+                    "Resistor",
+                ),
+            },
+            kind: Component,
+            attributes: {
+                Symbol(
+                    "type",
+                ): String(
+                    "resistor",
+                ),
+                Symbol(
+                    "mpn",
+                ): String(
+                    "generic_resistor",
+                ),
+                Symbol(
+                    "designator_prefix",
+                ): String(
+                    "R",
+                ),
+            },
+            children: {
+                Symbol(
+                    "p2",
+                ): InstanceRef {
+                    module: ModuleRef {
+                        source_path: "tests/resources/corpus/resistors.ato",
+                        module_name: Symbol(
+                            "Resistor",
+                        ),
+                    },
+                    instance_path: [
+                        Symbol(
+                            "p2",
+                        ),
+                    ],
+                },
+                Symbol(
+                    "p1",
+                ): InstanceRef {
+                    module: ModuleRef {
+                        source_path: "tests/resources/corpus/resistors.ato",
+                        module_name: Symbol(
+                            "Resistor",
+                        ),
+                    },
+                    instance_path: [
+                        Symbol(
+                            "p1",
+                        ),
+                    ],
+                },
+            },
+            connections: [],
+            reference_designator: None,
+        },
+        InstanceRef {
+            module: ModuleRef {
+                source_path: "tests/resources/corpus/resistors.ato",
+                module_name: Symbol(
+                    "I2CPullup",
+                ),
+            },
+            instance_path: [
+                Symbol(
+                    "r_sda",
+                ),
+                Symbol(
+                    "p1",
+                ),
+            ],
+        }: Instance {
+            type_ref: ModuleRef {
+                source_path: "",
+                module_name: Symbol(
+                    "",
+                ),
+            },
+            kind: Port,
+            attributes: {},
+            children: {},
+            connections: [],
+            reference_designator: None,
+        },
+        InstanceRef {
+            module: ModuleRef {
+                source_path: "tests/resources/corpus/resistors.ato",
+                module_name: Symbol(
+                    "I2CPullup",
+                ),
+            },
+            instance_path: [
+                Symbol(
+                    "r_scl",
+                ),
+                Symbol(
+                    "p1",
+                ),
+            ],
+        }: Instance {
+            type_ref: ModuleRef {
+                source_path: "",
+                module_name: Symbol(
+                    "",
+                ),
+            },
+            kind: Port,
+            attributes: {},
+            children: {},
+            connections: [],
+            reference_designator: None,
+        },
+        InstanceRef {
+            module: ModuleRef {
+                source_path: "tests/resources/corpus/resistors.ato",
+                module_name: Symbol(
+                    "I2CPullup",
+                ),
+            },
+            instance_path: [
+                Symbol(
+                    "r_scl",
+                ),
+                Symbol(
+                    "p2",
+                ),
+            ],
+        }: Instance {
+            type_ref: ModuleRef {
+                source_path: "",
+                module_name: Symbol(
+                    "",
+                ),
+            },
+            kind: Port,
+            attributes: {},
+            children: {},
+            connections: [],
+            reference_designator: None,
+        },
+        InstanceRef {
+            module: ModuleRef {
+                source_path: "tests/resources/corpus/resistors.ato",
+                module_name: Symbol(
+                    "I2CPullup",
+                ),
+            },
+            instance_path: [
+                Symbol(
+                    "r_sda",
+                ),
+                Symbol(
+                    "p2",
+                ),
+            ],
+        }: Instance {
+            type_ref: ModuleRef {
+                source_path: "",
+                module_name: Symbol(
+                    "",
+                ),
+            },
+            kind: Port,
+            attributes: {},
+            children: {},
+            connections: [],
+            reference_designator: None,
+        },
+        InstanceRef {
+            module: ModuleRef {
+                source_path: "tests/resources/corpus/resistors.ato",
+                module_name: Symbol(
+                    "Resistor",
+                ),
+            },
+            instance_path: [
+                Symbol(
+                    "p2",
+                ),
+            ],
+        }: Instance {
+            type_ref: ModuleRef {
+                source_path: "",
+                module_name: Symbol(
+                    "",
+                ),
+            },
+            kind: Port,
+            attributes: {},
+            children: {},
+            connections: [],
+            reference_designator: None,
+        },
+        InstanceRef {
+            module: ModuleRef {
+                source_path: "tests/resources/corpus/resistors.ato",
+                module_name: Symbol(
+                    "Resistor",
+                ),
+            },
+            instance_path: [
+                Symbol(
+                    "p1",
+                ),
+            ],
+        }: Instance {
+            type_ref: ModuleRef {
+                source_path: "",
+                module_name: Symbol(
+                    "",
+                ),
+            },
+            kind: Port,
+            attributes: {},
+            children: {},
+            connections: [],
+            reference_designator: None,
+        },
+    },
+}
