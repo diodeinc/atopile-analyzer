@@ -1,9 +1,11 @@
+use atopile_analyzer::diagnostics::{
+    AnalyzerDiagnostic, AnalyzerDiagnosticKind, AnalyzerDiagnosticSeverity,
+};
 use atopile_analyzer::evaluator::Evaluator;
-use atopile_analyzer::diagnostics::{AnalyzerDiagnostic, AnalyzerDiagnosticSeverity, AnalyzerDiagnosticKind};
 use atopile_parser::AtopileSource;
+use serde::Serialize;
 use std::fs;
 use std::path::PathBuf;
-use serde::Serialize;
 
 #[derive(Debug, Serialize)]
 struct DiagnosticInfo {
@@ -18,12 +20,12 @@ impl From<&AnalyzerDiagnostic> for DiagnosticInfo {
             AnalyzerDiagnosticSeverity::Error => "Error",
             AnalyzerDiagnosticSeverity::Warning => "Warning",
         };
-        
+
         let kind = match &diag.kind {
             AnalyzerDiagnosticKind::UnconnectedInterface(_) => "UnconnectedInterface",
             AnalyzerDiagnosticKind::Evaluator(_) => "Evaluator",
         };
-        
+
         Self {
             severity: severity.to_string(),
             kind: kind.to_string(),
@@ -52,22 +54,22 @@ macro_rules! create_evaluator_test {
 
             let file_path = concat!("tests/resources/corpus/", stringify!($name), ".ato");
             let path_buf = PathBuf::from(file_path);
-            
+
             let (source, _errors) = AtopileSource::new(
                 normalized_input.to_string(),
                 path_buf.clone(),
             );
-            
+
             let mut evaluator = Evaluator::new();
             let state = evaluator.evaluate(&source);
-            
+
             let diagnostics = evaluator.reporter()
                 .diagnostics()
                 .get(&path_buf)
                 .map_or_else(Vec::new, |diags| {
                     diags.iter().map(DiagnosticInfo::from).collect()
                 });
-            
+
             let result = EvaluatorTestResult {
                 state,
                 diagnostics,
