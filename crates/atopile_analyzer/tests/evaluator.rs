@@ -1,7 +1,42 @@
 use atopile_analyzer::evaluator::Evaluator;
+use atopile_analyzer::diagnostics::{AnalyzerDiagnostic, AnalyzerDiagnosticSeverity, AnalyzerDiagnosticKind};
 use atopile_parser::AtopileSource;
 use std::fs;
 use std::path::PathBuf;
+use serde::Serialize;
+
+#[derive(Debug, Serialize)]
+struct DiagnosticInfo {
+    severity: String,
+    kind: String,
+    file: String,
+}
+
+impl From<&AnalyzerDiagnostic> for DiagnosticInfo {
+    fn from(diag: &AnalyzerDiagnostic) -> Self {
+        let severity = match diag.severity {
+            AnalyzerDiagnosticSeverity::Error => "Error",
+            AnalyzerDiagnosticSeverity::Warning => "Warning",
+        };
+        
+        let kind = match &diag.kind {
+            AnalyzerDiagnosticKind::UnconnectedInterface(_) => "UnconnectedInterface",
+            AnalyzerDiagnosticKind::Evaluator(_) => "Evaluator",
+        };
+        
+        Self {
+            severity: severity.to_string(),
+            kind: kind.to_string(),
+            file: diag.file.to_string_lossy().to_string(),
+        }
+    }
+}
+
+#[derive(Debug, Serialize)]
+struct EvaluatorTestResult {
+    state: atopile_analyzer::evaluator::EvaluatorState,
+    diagnostics: Vec<DiagnosticInfo>,
+}
 
 macro_rules! create_evaluator_test {
     ($name:ident) => {
@@ -24,14 +59,29 @@ macro_rules! create_evaluator_test {
             );
             
             let mut evaluator = Evaluator::new();
-            let result = evaluator.evaluate(&source);
+            let state = evaluator.evaluate(&source);
+            
+            let diagnostics = evaluator.reporter()
+                .diagnostics()
+                .get(&path_buf)
+                .map_or_else(Vec::new, |diags| {
+                    diags.iter().map(DiagnosticInfo::from).collect()
+                });
+            
+            let result = EvaluatorTestResult {
+                state,
+                diagnostics,
+            };
 
-            insta::assert_debug_snapshot!(result);
+            insta::with_settings!({
+                sort_maps => true
+            }, {
+                insta::assert_yaml_snapshot!(result);
+            });
         }
     };
 }
 
-create_evaluator_test!(vdivs);
-create_evaluator_test!(resistors);
-create_evaluator_test!(transistors);
-create_evaluator_test!(bma400);
+create_evaluator_test!(simple_module);
+create_evaluator_test!(simple_component);
+create_evaluator_test!(simple_connection);

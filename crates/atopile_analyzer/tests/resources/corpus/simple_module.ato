@@ -1,0 +1,10 @@
+module SimpleModule:
+    signal input
+    signal output
+    
+    # Define some properties
+    resistance: resistance = 10kohm
+    voltage_in: voltage = 5V
+    
+    # Define assertions
+    assert voltage_in > 0V

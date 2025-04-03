@@ -1,0 +1,44 @@
+---
+source: crates/atopile_analyzer/tests/evaluator.rs
+expression: result
+---
+state:
+  instances:
+    "tests/resources/corpus/simple_component.ato:SimpleComponent":
+      type_ref:
+        source_path: tests/resources/corpus/simple_component.ato
+        module_name: SimpleComponent
+      kind: Component
+      attributes:
+        designator_prefix:
+          String: C
+        mpn:
+          String: simple_component
+        type:
+          String: capacitor
+        value:
+          Physical: "100nF "
+      children:
+        p1: "tests/resources/corpus/simple_component.ato:SimpleComponent.p1"
+        p2: "tests/resources/corpus/simple_component.ato:SimpleComponent.p2"
+      connections: []
+      reference_designator: ~
+    "tests/resources/corpus/simple_component.ato:SimpleComponent.p1":
+      type_ref:
+        source_path: ""
+        module_name: ""
+      kind: Port
+      attributes: {}
+      children: {}
+      connections: []
+      reference_designator: ~
+    "tests/resources/corpus/simple_component.ato:SimpleComponent.p2":
+      type_ref:
+        source_path: ""
+        module_name: ""
+      kind: Port
+      attributes: {}
+      children: {}
+      connections: []
+      reference_designator: ~
+diagnostics: []

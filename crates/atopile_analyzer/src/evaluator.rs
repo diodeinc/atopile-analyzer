@@ -569,7 +569,7 @@ impl Evaluator {
         self.state = EvaluatorState::new();
     }
 
-    pub(crate) fn reporter(&self) -> &AnalyzerReporter {
+    pub fn reporter(&self) -> &AnalyzerReporter {
         &self.reporter
     }
 
