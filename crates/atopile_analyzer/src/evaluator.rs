@@ -315,7 +315,7 @@ impl From<Expr> for AttributeValue {
 
 #[derive(Debug, Clone, Serialize)]
 pub(crate) struct Instance {
-    module: ModuleRef,
+    type_ref: ModuleRef,
     kind: InstanceKind,
     attributes: HashMap<Symbol, AttributeValue>,
     children: HashMap<Symbol, InstanceRef>,
@@ -326,7 +326,7 @@ pub(crate) struct Instance {
 impl Instance {
     fn new(module: &ModuleRef, kind: InstanceKind) -> Self {
         Self {
-            module: module.clone(),
+            type_ref: module.clone(),
             kind,
             attributes: HashMap::new(),
             children: HashMap::new(),
@@ -337,7 +337,7 @@ impl Instance {
 
     fn port() -> Self {
         Self {
-            module: ModuleRef::port(),
+            type_ref: ModuleRef::port(),
             kind: InstanceKind::Port,
             attributes: HashMap::new(),
             children: HashMap::new(),
@@ -608,7 +608,7 @@ impl Evaluator {
                 )
             })?;
 
-            let mut to_instance = Instance::new(&from_instance.module, from_instance.kind);
+            let mut to_instance = Instance::new(&from_instance.type_ref, from_instance.kind);
 
             to_instance.attributes = from_instance.attributes.clone();
             (
@@ -711,14 +711,14 @@ impl Evaluator {
                 )]
             }
             (InstanceKind::Interface, InstanceKind::Interface) => {
-                if left_instance.module != right_instance.module {
+                if left_instance.type_ref != right_instance.type_ref {
                     return Err(EvaluatorError::new(
                         EvaluatorErrorKind::InvalidAssignment,
                         &assignment.location(),
                     )
                     .with_message(format!(
                         "Cannot connect interfaces of different type: `{}` and `{}`",
-                        left_instance.module, right_instance.module
+                        left_instance.type_ref, right_instance.type_ref
                     )));
                 }
 
@@ -814,7 +814,7 @@ impl Evaluator {
             {
                 let module_ref = ModuleRef::new(&resolved_path, symbol.deref());
                 if let Some(instance) = self.resolve_instance(&module_ref.into()) {
-                    file_scope.define(symbol.deref(), &instance.module);
+                    file_scope.define(symbol.deref(), &instance.type_ref);
                 } else {
                     load_file = true;
                 }
@@ -860,7 +860,7 @@ impl Evaluator {
             let instance_ref = ModuleRef::new(&path, imported_symbol.deref()).into();
 
             if let Some(instance) = self.resolve_instance(&instance_ref) {
-                file_scope.define(imported_symbol.deref(), &instance.module);
+                file_scope.define(imported_symbol.deref(), &instance.type_ref);
             } else {
                 self.reporter.report(
                     EvaluatorError::new(
@@ -1097,7 +1097,7 @@ impl Evaluator {
             )
         })?;
 
-        instance.module = module_ref.clone();
+        instance.type_ref = module_ref.clone();
 
         for stmt in &block.body {
             if let Err(e) =

@@ -844,7 +844,13 @@ export class SchematicRenderer {
 
     // Calculate main label dimensions
     const instanceName = instance_ref.split(".").pop() || "";
+    const mpn = this._getAttributeValue(instance.attributes.mpn);
     const mainLabelDimensions = calculateTextDimensions(instanceName, 12);
+    const refDesLabelDimensions = calculateTextDimensions(
+      instance.reference_designator || "",
+      12
+    );
+    const mpnLabelDimensions = calculateTextDimensions(mpn || "", 12);
 
     // Initialize minimum width and height based on label dimensions
     let minWidth = Math.max(sizes.width, mainLabelDimensions.width + 20); // Add padding
@@ -870,11 +876,24 @@ export class SchematicRenderer {
           ? [
               {
                 text: instance.reference_designator,
-                width: 20,
-                height: mainLabelDimensions.height,
+                width: refDesLabelDimensions.width,
+                height: refDesLabelDimensions.height,
                 textAlign: "right" as const,
                 properties: {
                   "elk.nodeLabels.placement": "OUTSIDE H_RIGHT V_TOP",
+                },
+              },
+            ]
+          : []),
+        ...(mpn
+          ? [
+              {
+                text: mpn,
+                width: mpnLabelDimensions.width,
+                height: mpnLabelDimensions.height,
+                textAlign: "left" as const,
+                properties: {
+                  "elk.nodeLabels.placement": "OUTSIDE H_LEFT V_BOTTOM",
                 },
               },
             ]

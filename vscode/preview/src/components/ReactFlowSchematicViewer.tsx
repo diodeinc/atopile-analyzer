@@ -332,9 +332,6 @@ const ModuleNode = ({ data }: { data: SchematicNodeData }) => {
             color: "var(--vscode-foreground, #000)",
             textAlign: label.textAlign || "left",
             width: label.width || "auto",
-            // ...(label.properties?.["elk.nodeLabels.placement"] && {
-            //   transform: "translateX(-100%)",
-            // }),
           }}
         >
           {label.text}
