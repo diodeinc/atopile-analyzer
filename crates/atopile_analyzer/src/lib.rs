@@ -112,11 +112,11 @@ impl<T> IntoLocated<T> for Spanned<T> {
 }
 
 trait IntoLocation {
-    fn into_location(&self, source: &AtopileSource) -> Location;
+    fn to_location(&self, source: &AtopileSource) -> Location;
 }
 
 impl IntoLocation for Span {
-    fn into_location(&self, source: &AtopileSource) -> Location {
+    fn to_location(&self, source: &AtopileSource) -> Location {
         Location {
             file: source.path().to_path_buf(),
             range: Range {
@@ -140,6 +140,7 @@ pub struct GotoDefinitionResult {
 #[derive(Debug, Clone)]
 pub(crate) struct AnalyzerSource {
     pub(crate) file: AtopileSource,
+    #[allow(dead_code)]
     pub(crate) modules: HashMap<Symbol, Arc<Module>>,
 }
 
@@ -152,8 +153,9 @@ impl AnalyzerSource {
     }
 
     #[allow(dead_code)]
+    #[allow(clippy::only_used_in_recursion)]
     fn port_ref_at_in_expr<'a>(
-        &'a self,
+        &self,
         index: usize,
         expr: &'a Spanned<Expr>,
     ) -> Option<&'a Spanned<PortRef>> {
@@ -219,8 +221,9 @@ impl AnalyzerSource {
         }
     }
 
+    #[allow(clippy::only_used_in_recursion)]
     fn symbol_name_at_in_expr<'a>(
-        &'a self,
+        &self,
         index: usize,
         expr: &'a Spanned<Expr>,
     ) -> Option<&'a Spanned<Symbol>> {
@@ -332,7 +335,15 @@ impl AtopileAnalyzer {
             open_files: std::collections::HashSet::new(),
         }
     }
+}
 
+impl Default for AtopileAnalyzer {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
+impl AtopileAnalyzer {
     #[cfg(test)]
     pub fn evaluate_source_for_test(&self, source: &AtopileSource) -> EvaluatorState {
         let mut evaluator = Evaluator::new();
