@@ -510,7 +510,7 @@ pub(crate) fn resolve_import_path(ctx_path: &Path, import_path: &Path) -> Option
     // 2. If we're in a .ato folder, use its parent as project root
     let mut current_dir = ctx_path.parent();
     while let Some(dir) = current_dir {
-        if dir.file_name().map_or(false, |name| name == ".ato") {
+        if dir.file_name().is_some_and(|name| name == ".ato") {
             if let Some(project_root) = dir.parent() {
                 // Check relative to project root
                 let project_relative = project_root.join(import_path);
