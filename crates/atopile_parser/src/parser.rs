@@ -225,9 +225,10 @@ pub struct PhysicalValue {
     pub tolerance: Option<Spanned<Tolerance>>,
 }
 
-impl ToString for PhysicalValue {
-    fn to_string(&self) -> String {
-        format!(
+impl std::fmt::Display for PhysicalValue {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(
+            f, 
             "{}{} {}",
             self.value.0,
             self.unit
@@ -254,11 +255,12 @@ pub enum Tolerance {
     },
 }
 
-impl ToString for Tolerance {
-    fn to_string(&self) -> String {
+impl std::fmt::Display for Tolerance {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
             Tolerance::Bilateral { value, unit } => {
-                format!(
+                write!(
+                    f,
                     "± {}{}",
                     value.0,
                     unit.as_ref()
@@ -267,19 +269,23 @@ impl ToString for Tolerance {
                 )
             }
             Tolerance::Bound { min, max } => {
-                format!("({} to {})", min.0, max.0)
+                write!(f, "({} to {})", min.0, max.0)
             }
         }
     }
 }
 
-impl ToString for PortRef {
-    fn to_string(&self) -> String {
-        self.parts
-            .iter()
-            .map(|p| p.0.as_str())
-            .collect::<Vec<&str>>()
-            .join(".")
+impl std::fmt::Display for PortRef {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(
+            f, 
+            "{}",
+            self.parts
+                .iter()
+                .map(|p| p.0.as_str())
+                .collect::<Vec<&str>>()
+                .join(".")
+        )
     }
 }
 
@@ -768,7 +774,7 @@ pub fn parser() -> impl Parser<Token, Vec<Spanned<Stmt>>, Error = Simple<Token>>
     stmt().repeated().then_ignore(end())
 }
 
-pub fn parse(tokens: &Vec<Spanned<Token>>) -> (Vec<Spanned<Stmt>>, Vec<Simple<Token>>) {
+pub fn parse(tokens: &[Spanned<Token>]) -> (Vec<Spanned<Stmt>>, Vec<Simple<Token>>) {
     let raw_tokens: Vec<Token> = tokens.iter().map(|t| t.0.clone()).collect();
     parse_raw(raw_tokens)
 }
