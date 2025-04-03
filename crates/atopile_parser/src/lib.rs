@@ -76,10 +76,7 @@ impl<T: Hash + Eq + Debug + Clone> From<chumsky::error::Simple<T>> for AtopileEr
         Self {
             span: err.span(),
             reason: format!("{:?}", err.reason()),
-            expected: err
-                .expected()
-                .cloned()
-                .collect(),
+            expected: err.expected().cloned().collect(),
             found: err.found().cloned(),
         }
     }

@@ -228,7 +228,7 @@ pub struct PhysicalValue {
 impl std::fmt::Display for PhysicalValue {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(
-            f, 
+            f,
             "{}{} {}",
             self.value.0,
             self.unit
@@ -278,7 +278,7 @@ impl std::fmt::Display for Tolerance {
 impl std::fmt::Display for PortRef {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(
-            f, 
+            f,
             "{}",
             self.parts
                 .iter()
