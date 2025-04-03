@@ -200,13 +200,13 @@ impl AnalyzerSource {
             Stmt::Connect(connect) => {
                 if let Connectable::Port(port) = &connect.left.deref() {
                     if port.span().contains(&index) {
-                        Some(&port)
+                        Some(port)
                     } else {
                         None
                     }
                 } else if let Connectable::Port(port) = &connect.right.deref() {
                     if port.span().contains(&index) {
-                        Some(&port)
+                        Some(port)
                     } else {
                         None
                     }
@@ -225,7 +225,7 @@ impl AnalyzerSource {
         expr: &'a Spanned<Expr>,
     ) -> Option<&'a Spanned<Symbol>> {
         match &expr.deref() {
-            Expr::New(symbol) => symbol.span().contains(&index).then(|| symbol),
+            Expr::New(symbol) => symbol.span().contains(&index).then_some(symbol),
             Expr::BinaryOp(binary_op) => {
                 if binary_op.left.span().contains(&index) {
                     self.symbol_name_at_in_expr(index, &binary_op.left)
@@ -245,17 +245,17 @@ impl AnalyzerSource {
         let stmt = self.file.stmt_at(index)?;
         match &stmt.deref() {
             Stmt::Import(import) => import.imports.iter().find(|i| i.span().contains(&index)),
-            Stmt::DepImport(import) => import.name.span().contains(&index).then(|| &import.name),
+            Stmt::DepImport(import) => import.name.span().contains(&index).then_some(&import.name),
             Stmt::Assign(assign) => self.symbol_name_at_in_expr(index, &assign.value),
             Stmt::Specialize(specialize) => specialize
                 .value
                 .span()
                 .contains(&index)
-                .then(|| &specialize.value),
+                .then_some(&specialize.value),
             Stmt::Block(block) => block
                 .parent
                 .as_ref()
-                .and_then(|p| p.span().contains(&index).then(|| p)),
+                .and_then(|p| p.span().contains(&index).then_some(p)),
             _ => None,
         }
     }
@@ -267,12 +267,12 @@ impl AnalyzerSource {
                 .from_path
                 .span()
                 .contains(&index)
-                .then(|| &import.from_path),
+                .then_some(&import.from_path),
             Stmt::DepImport(import) => import
                 .from_path
                 .span()
                 .contains(&index)
-                .then(|| &import.from_path),
+                .then_some(&import.from_path),
             _ => None,
         }
     }
@@ -380,27 +380,27 @@ impl AtopileAnalyzer {
     }
 
     /// Set the source file at the given path.
-    pub fn set_source(&mut self, path: &PathBuf, source: AtopileSource) -> Result<()> {
+    pub fn set_source(&mut self, path: &Path, source: AtopileSource) -> Result<()> {
         let path = path.canonicalize()?;
         self.files.insert(path, source);
         Ok(())
     }
 
     /// Remove the source file at the given path.
-    pub fn remove_source(&mut self, path: &PathBuf) -> Result<()> {
+    pub fn remove_source(&mut self, path: &Path) -> Result<()> {
         self.files.remove(&path.canonicalize()?);
         self.open_files.remove(&path.canonicalize()?);
         Ok(())
     }
 
     /// Mark a file as open in the editor.
-    pub fn mark_file_open(&mut self, path: &PathBuf) -> Result<()> {
+    pub fn mark_file_open(&mut self, path: &Path) -> Result<()> {
         self.open_files.insert(path.canonicalize()?);
         Ok(())
     }
 
     /// Mark a file as closed in the editor.
-    pub fn mark_file_closed(&mut self, path: &PathBuf) -> Result<()> {
+    pub fn mark_file_closed(&mut self, path: &Path) -> Result<()> {
         self.open_files.remove(&path.canonicalize()?);
         Ok(())
     }
@@ -428,7 +428,7 @@ impl AtopileAnalyzer {
                 .get(path)
                 .unwrap_or(&vec![])
                 .iter()
-                .map(|d| d.clone()),
+                .cloned(),
         );
 
         Ok(diagnostics)
@@ -469,7 +469,7 @@ impl AtopileAnalyzer {
             // The definition is in this file, so just return it.
             Ok(Some(Located::from_spanned(
                 block.to_owned(),
-                &source,
+                source,
                 source.path(),
             )))
         } else {
@@ -535,13 +535,13 @@ impl AtopileAnalyzer {
     fn handle_goto_definition_path(
         &self,
         source: &AtopileSource,
-        source_path: &PathBuf,
+        source_path: &Path,
         path_token: &Spanned<String>,
     ) -> Result<Option<GotoDefinitionResult>> {
         let source_range_start = source.index_to_position(path_token.span().start);
         let source_range_end = source.index_to_position(path_token.span().end);
 
-        let resolved_path = resolve_import_path(source_path, &Path::new(path_token.deref()))
+        let resolved_path = resolve_import_path(source_path, Path::new(path_token.deref()))
             .context(format!(
                 "failed to resolve import path for {:?}",
                 path_token
@@ -569,7 +569,7 @@ impl AtopileAnalyzer {
         source: &AtopileSource,
         symbol: &Spanned<Symbol>,
     ) -> Result<Option<GotoDefinitionResult>> {
-        let def = self.find_definition(source, &symbol.deref())?;
+        let def = self.find_definition(source, symbol.deref())?;
 
         if let Some(def) = def {
             Ok(Some(GotoDefinitionResult {
@@ -578,8 +578,8 @@ impl AtopileAnalyzer {
                     start: source.index_to_position(symbol.span().start),
                     end: source.index_to_position(symbol.span().end),
                 },
-                target_range: def.location().range.clone(),
-                target_selection_range: def.location().range.clone(),
+                target_range: def.location().range,
+                target_selection_range: def.location().range,
             }))
         } else {
             Ok(None)
@@ -614,7 +614,7 @@ impl AtopileAnalyzer {
     fn analyze_module(&self, source: &AtopileSource, block: &BlockStmt) -> Result<Module> {
         let parent_block = if let Some(parent) = &block.parent {
             let parent_block_def =
-                self.find_definition(source, &parent.deref())
+                self.find_definition(source, parent.deref())
                     .context(format!(
                         "can't find definition for parent of {:?}",
                         block.name.deref()
@@ -678,7 +678,7 @@ impl AtopileAnalyzer {
                     let ident = port.to_string();
                     let module = self.analyze_module(
                         &self.files.get_or_load(&def_block.location().file)?.0,
-                        &def_block,
+                        def_block,
                     )?;
                     instantiations.insert(
                         ident.clone(),
@@ -729,9 +729,9 @@ impl AtopileAnalyzer {
 
         // Merge in parent information.
         if let Some(parent) = parent_block {
-            interfaces.extend(parent.interfaces.into_iter());
-            instantiations.extend(parent.instantiations.into_iter());
-            connections.extend(parent.connections.into_iter());
+            interfaces.extend(parent.interfaces);
+            instantiations.extend(parent.instantiations);
+            connections.extend(parent.connections);
         }
 
         Ok(Module {

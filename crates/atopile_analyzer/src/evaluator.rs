@@ -628,7 +628,7 @@ impl Evaluator {
             let mut path = to_ref.instance_path.clone();
             path.push(k.clone());
             let transposed_ref = InstanceRef::new(&to_ref.module, path);
-            self.clone_instance(&v, &transposed_ref)?;
+            self.clone_instance(v, &transposed_ref)?;
             to_instance.add_child(k, &transposed_ref);
         }
 
@@ -714,7 +714,7 @@ impl Evaluator {
                 if left_instance.type_ref != right_instance.type_ref {
                     return Err(EvaluatorError::new(
                         EvaluatorErrorKind::InvalidAssignment,
-                        &assignment.location(),
+                        assignment.location(),
                     )
                     .with_message(format!(
                         "Cannot connect interfaces of different type: `{}` and `{}`",
@@ -731,14 +731,14 @@ impl Evaluator {
 
                 left_sorted
                     .into_iter()
-                    .zip(right_sorted.into_iter())
+                    .zip(right_sorted)
                     .map(|((_, l), (_, r))| Connection::new(l.clone(), r.clone()))
                     .collect()
             }
             _ => {
                 return Err(EvaluatorError::new(
                     EvaluatorErrorKind::InvalidAssignment,
-                    &assignment.location(),
+                    assignment.location(),
                 )
                 .with_message(format!(
                     "Cannot connect instances of different kind: `{}` and `{}`",
@@ -754,7 +754,7 @@ impl Evaluator {
             if connection.left.module != connection.right.module {
                 return Err(EvaluatorError::new(
                     EvaluatorErrorKind::InvalidAssignment,
-                    &assignment.location(),
+                    assignment.location(),
                 )
                 .with_message(format!(
                     "Cannot connect interfaces across modules: `{}` and `{}`",
@@ -795,10 +795,10 @@ impl Evaluator {
     fn evaluate_import(
         &mut self,
         source: &AtopileSource,
-        import_stack: &Vec<PathBuf>,
+        import_stack: &[PathBuf],
         file_scope: &mut FileScope,
         import_path: &Spanned<String>,
-        import_symbols: &Vec<Spanned<Symbol>>,
+        import_symbols: &[Spanned<Symbol>],
     ) -> EvaluatorResult<()> {
         debug!(
             "Evaluating import: {} with {} symbols",
@@ -832,7 +832,7 @@ impl Evaluator {
             .with_context(
                 source,
                 |_| EvaluatorErrorKind::ImportPathNotFound,
-                &import_path,
+                import_path,
             )?;
 
         // Check for cycles.
@@ -847,13 +847,13 @@ impl Evaluator {
         let (imported_source, _) = self.file_cache.get_or_load(&path).with_context(
             source,
             |_| EvaluatorErrorKind::ImportLoadFailed,
-            &import_path,
+            import_path,
         )?;
 
-        let mut import_stack = import_stack.clone();
-        import_stack.push(path.clone());
+        let mut import_stack_vec = import_stack.to_vec();
+        import_stack_vec.push(path.clone());
 
-        self.evaluate_inner(&imported_source, import_stack);
+        self.evaluate_inner(&imported_source, import_stack_vec);
 
         // Define the imported symbols.
         for imported_symbol in import_symbols {
@@ -924,7 +924,7 @@ impl Evaluator {
                         })?;
 
                         // Cannot create a child that already exists.
-                        if let Some(_) = self.resolve_instance(&target_ref) {
+                        if self.resolve_instance(&target_ref).is_some() {
                             return Err(EvaluatorError::new(
                                 EvaluatorErrorKind::InvalidAssignment,
                                 &assign.target.span().into_location(source),
@@ -1029,16 +1029,13 @@ impl Evaluator {
                     Connectable::Pin(_) => None,
                 };
 
-                match (left_instance_ref, right_instance_ref) {
-                    (Some(left), Some(right)) => {
-                        self.connect(
-                            instance,
-                            &Located::new(left, connect.left.span().into_location(source)),
-                            &Located::new(right, connect.right.span().into_location(source)),
-                            &stmt.clone().into_located(source),
-                        )?;
-                    }
-                    _ => {}
+                if let (Some(left), Some(right)) = (left_instance_ref, right_instance_ref) {
+                    self.connect(
+                        instance,
+                        &Located::new(left, connect.left.span().into_location(source)),
+                        &Located::new(right, connect.right.span().into_location(source)),
+                        &stmt.clone().into_located(source),
+                    )?;
                 }
 
                 Ok(())
@@ -1116,7 +1113,7 @@ impl Evaluator {
     fn evaluate_top_stmt(
         &mut self,
         source: &AtopileSource,
-        import_stack: &Vec<PathBuf>,
+        import_stack: &[PathBuf],
         file_scope: &mut FileScope,
         stmt: &Spanned<Stmt>,
     ) -> EvaluatorResult<()> {
@@ -1145,7 +1142,7 @@ impl Evaluator {
                     import_stack,
                     file_scope,
                     &dep_import.from_path,
-                    &vec![dep_import.name.clone()],
+                    &[dep_import.name.clone()],
                 )
             }
             Stmt::Block(block) => {
