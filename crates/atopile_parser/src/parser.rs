@@ -994,7 +994,9 @@ fn test_assign() {
                         value: Spanned(
                             New(
                                 Spanned(
-                                    "Resistor",
+                                    Symbol(
+                                        "Resistor",
+                                    ),
                                     3..4,
                                 ),
                             ),
@@ -1042,7 +1044,9 @@ fn test_specialize() {
                             0..3,
                         ),
                         value: Spanned(
-                            "Resistor",
+                            Symbol(
+                                "Resistor",
+                            ),
                             4..5,
                         ),
                     },

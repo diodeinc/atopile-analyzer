@@ -8,7 +8,9 @@ expression: output
             DepImport(
                 DepImportStmt {
                     name: Spanned(
-                        "Power",
+                        Symbol(
+                            "Power",
+                        ),
                         1..2,
                     ),
                     from_path: Spanned(
@@ -23,7 +25,9 @@ expression: output
             DepImport(
                 DepImportStmt {
                     name: Spanned(
-                        "I2C",
+                        Symbol(
+                            "I2C",
+                        ),
                         6..7,
                     ),
                     from_path: Spanned(
@@ -42,7 +46,9 @@ expression: output
                         11..12,
                     ),
                     name: Spanned(
-                        "Resistor",
+                        Symbol(
+                            "Resistor",
+                        ),
                         12..13,
                     ),
                     parent: None,
@@ -185,11 +191,15 @@ expression: output
                             Attribute(
                                 AttributeStmt {
                                     name: Spanned(
-                                        "value",
+                                        Symbol(
+                                            "value",
+                                        ),
                                         40..41,
                                     ),
                                     type_info: Spanned(
-                                        "resistance",
+                                        Symbol(
+                                            "resistance",
+                                        ),
                                         42..43,
                                     ),
                                 },
@@ -242,7 +252,9 @@ expression: output
                         53..54,
                     ),
                     name: Spanned(
-                        "I2CPullup",
+                        Symbol(
+                            "I2CPullup",
+                        ),
                         54..55,
                     ),
                     parent: None,
@@ -265,7 +277,9 @@ expression: output
                                     value: Spanned(
                                         New(
                                             Spanned(
-                                                "Resistor",
+                                                Symbol(
+                                                    "Resistor",
+                                                ),
                                                 61..62,
                                             ),
                                         ),
@@ -293,7 +307,9 @@ expression: output
                                     value: Spanned(
                                         New(
                                             Spanned(
-                                                "Resistor",
+                                                Symbol(
+                                                    "Resistor",
+                                                ),
                                                 66..67,
                                             ),
                                         ),
@@ -321,7 +337,9 @@ expression: output
                                     value: Spanned(
                                         New(
                                             Spanned(
-                                                "Power",
+                                                Symbol(
+                                                    "Power",
+                                                ),
                                                 71..72,
                                             ),
                                         ),
@@ -349,7 +367,9 @@ expression: output
                                     value: Spanned(
                                         New(
                                             Spanned(
-                                                "I2C",
+                                                Symbol(
+                                                    "I2C",
+                                                ),
                                                 76..77,
                                             ),
                                         ),

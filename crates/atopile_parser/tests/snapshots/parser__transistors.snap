@@ -12,7 +12,9 @@ expression: output
                         0..1,
                     ),
                     name: Spanned(
-                        "NPN",
+                        Symbol(
+                            "NPN",
+                        ),
                         1..2,
                     ),
                     parent: None,
@@ -133,7 +135,9 @@ expression: output
                         29..30,
                     ),
                     name: Spanned(
-                        "PNP",
+                        Symbol(
+                            "PNP",
+                        ),
                         30..31,
                     ),
                     parent: None,
@@ -142,7 +146,9 @@ expression: output
                             Signal(
                                 SignalStmt {
                                     name: Spanned(
-                                        "base",
+                                        Symbol(
+                                            "base",
+                                        ),
                                         35..36,
                                     ),
                                 },
@@ -153,7 +159,9 @@ expression: output
                             Signal(
                                 SignalStmt {
                                     name: Spanned(
-                                        "collector",
+                                        Symbol(
+                                            "collector",
+                                        ),
                                         38..39,
                                     ),
                                 },
@@ -164,7 +172,9 @@ expression: output
                             Signal(
                                 SignalStmt {
                                     name: Spanned(
-                                        "emitter",
+                                        Symbol(
+                                            "emitter",
+                                        ),
                                         41..42,
                                     ),
                                 },
@@ -212,7 +222,9 @@ expression: output
                         49..50,
                     ),
                     name: Spanned(
-                        "Triac",
+                        Symbol(
+                            "Triac",
+                        ),
                         50..51,
                     ),
                     parent: None,
@@ -221,7 +233,9 @@ expression: output
                             Signal(
                                 SignalStmt {
                                     name: Spanned(
-                                        "MT1",
+                                        Symbol(
+                                            "MT1",
+                                        ),
                                         55..56,
                                     ),
                                 },
@@ -232,7 +246,9 @@ expression: output
                             Signal(
                                 SignalStmt {
                                     name: Spanned(
-                                        "MT2",
+                                        Symbol(
+                                            "MT2",
+                                        ),
                                         58..59,
                                     ),
                                 },
@@ -243,7 +259,9 @@ expression: output
                             Signal(
                                 SignalStmt {
                                     name: Spanned(
-                                        "gate",
+                                        Symbol(
+                                            "gate",
+                                        ),
                                         61..62,
                                     ),
                                 },

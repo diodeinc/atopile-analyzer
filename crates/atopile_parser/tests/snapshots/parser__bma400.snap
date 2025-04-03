@@ -13,19 +13,27 @@ expression: output
                     ),
                     imports: [
                         Spanned(
-                            "Power",
+                            Symbol(
+                                "Power",
+                            ),
                             3..4,
                         ),
                         Spanned(
-                            "I2C",
+                            Symbol(
+                                "I2C",
+                            ),
                             5..6,
                         ),
                         Spanned(
-                            "SPI",
+                            Symbol(
+                                "SPI",
+                            ),
                             7..8,
                         ),
                         Spanned(
-                            "GPIO",
+                            Symbol(
+                                "GPIO",
+                            ),
                             9..10,
                         ),
                     ],
@@ -42,7 +50,9 @@ expression: output
                     ),
                     imports: [
                         Spanned(
-                            "Capacitor",
+                            Symbol(
+                                "Capacitor",
+                            ),
                             14..15,
                         ),
                     ],
@@ -59,7 +69,9 @@ expression: output
                     ),
                     imports: [
                         Spanned(
-                            "BMA400",
+                            Symbol(
+                                "BMA400",
+                            ),
                             19..20,
                         ),
                     ],
@@ -75,7 +87,9 @@ expression: output
                         22..23,
                     ),
                     name: Spanned(
-                        "Bma400",
+                        Symbol(
+                            "Bma400",
+                        ),
                         23..24,
                     ),
                     parent: None,
@@ -447,7 +461,9 @@ expression: output
                             Signal(
                                 SignalStmt {
                                     name: Spanned(
-                                        "gnd",
+                                        Symbol(
+                                            "gnd",
+                                        ),
                                         102..103,
                                     ),
                                 },

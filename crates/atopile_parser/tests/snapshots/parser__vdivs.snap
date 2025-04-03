@@ -8,7 +8,9 @@ expression: output
             DepImport(
                 DepImportStmt {
                     name: Spanned(
-                        "Resistor",
+                        Symbol(
+                            "Resistor",
+                        ),
                         1..2,
                     ),
                     from_path: Spanned(
@@ -23,7 +25,9 @@ expression: output
             DepImport(
                 DepImportStmt {
                     name: Spanned(
-                        "Capacitor",
+                        Symbol(
+                            "Capacitor",
+                        ),
                         6..7,
                     ),
                     from_path: Spanned(
@@ -38,7 +42,9 @@ expression: output
             DepImport(
                 DepImportStmt {
                     name: Spanned(
-                        "Power",
+                        Symbol(
+                            "Power",
+                        ),
                         11..12,
                     ),
                     from_path: Spanned(
@@ -53,7 +59,9 @@ expression: output
             DepImport(
                 DepImportStmt {
                     name: Spanned(
-                        "Pair",
+                        Symbol(
+                            "Pair",
+                        ),
                         16..17,
                     ),
                     from_path: Spanned(
@@ -72,12 +80,16 @@ expression: output
                         21..22,
                     ),
                     name: Spanned(
-                        "VDiv",
+                        Symbol(
+                            "VDiv",
+                        ),
                         22..23,
                     ),
                     parent: Some(
                         Spanned(
-                            "_VDiv",
+                            Symbol(
+                                "_VDiv",
+                            ),
                             24..25,
                         ),
                     ),
@@ -86,11 +98,15 @@ expression: output
                             Attribute(
                                 AttributeStmt {
                                     name: Spanned(
-                                        "r_total",
+                                        Symbol(
+                                            "r_total",
+                                        ),
                                         28..29,
                                     ),
                                     type_info: Spanned(
-                                        "resistance",
+                                        Symbol(
+                                            "resistance",
+                                        ),
                                         30..31,
                                     ),
                                 },
@@ -112,11 +128,15 @@ expression: output
                             Attribute(
                                 AttributeStmt {
                                     name: Spanned(
-                                        "v_in",
+                                        Symbol(
+                                            "v_in",
+                                        ),
                                         34..35,
                                     ),
                                     type_info: Spanned(
-                                        "voltage",
+                                        Symbol(
+                                            "voltage",
+                                        ),
                                         36..37,
                                     ),
                                 },
@@ -127,11 +147,15 @@ expression: output
                             Attribute(
                                 AttributeStmt {
                                     name: Spanned(
-                                        "v_out",
+                                        Symbol(
+                                            "v_out",
+                                        ),
                                         38..39,
                                     ),
                                     type_info: Spanned(
-                                        "voltage",
+                                        Symbol(
+                                            "voltage",
+                                        ),
                                         40..41,
                                     ),
                                 },
@@ -142,11 +166,15 @@ expression: output
                             Attribute(
                                 AttributeStmt {
                                     name: Spanned(
-                                        "i_q",
+                                        Symbol(
+                                            "i_q",
+                                        ),
                                         42..43,
                                     ),
                                     type_info: Spanned(
-                                        "current",
+                                        Symbol(
+                                            "current",
+                                        ),
                                         44..45,
                                     ),
                                 },
@@ -518,7 +546,9 @@ expression: output
                         97..98,
                     ),
                     name: Spanned(
-                        "_VDiv",
+                        Symbol(
+                            "_VDiv",
+                        ),
                         98..99,
                     ),
                     parent: None,
@@ -527,7 +557,9 @@ expression: output
                             Signal(
                                 SignalStmt {
                                     name: Spanned(
-                                        "top",
+                                        Symbol(
+                                            "top",
+                                        ),
                                         103..104,
                                     ),
                                 },
@@ -538,7 +570,9 @@ expression: output
                             Signal(
                                 SignalStmt {
                                     name: Spanned(
-                                        "out",
+                                        Symbol(
+                                            "out",
+                                        ),
                                         106..107,
                                     ),
                                 },
@@ -549,7 +583,9 @@ expression: output
                             Signal(
                                 SignalStmt {
                                     name: Spanned(
-                                        "bottom",
+                                        Symbol(
+                                            "bottom",
+                                        ),
                                         109..110,
                                     ),
                                 },
@@ -574,7 +610,9 @@ expression: output
                                     value: Spanned(
                                         New(
                                             Spanned(
-                                                "Pair",
+                                                Symbol(
+                                                    "Pair",
+                                                ),
                                                 115..116,
                                             ),
                                         ),
@@ -688,7 +726,9 @@ expression: output
                                     value: Spanned(
                                         New(
                                             Spanned(
-                                                "Power",
+                                                Symbol(
+                                                    "Power",
+                                                ),
                                                 133..134,
                                             ),
                                         ),
@@ -727,7 +767,9 @@ expression: output
                                     value: Spanned(
                                         New(
                                             Spanned(
-                                                "Power",
+                                                Symbol(
+                                                    "Power",
+                                                ),
                                                 139..140,
                                             ),
                                         ),
@@ -880,7 +922,9 @@ expression: output
                                     value: Spanned(
                                         New(
                                             Spanned(
-                                                "Resistor",
+                                                Symbol(
+                                                    "Resistor",
+                                                ),
                                                 161..162,
                                             ),
                                         ),
@@ -908,7 +952,9 @@ expression: output
                                     value: Spanned(
                                         New(
                                             Spanned(
-                                                "Resistor",
+                                                Symbol(
+                                                    "Resistor",
+                                                ),
                                                 166..167,
                                             ),
                                         ),
@@ -1171,12 +1217,16 @@ expression: output
                         209..210,
                     ),
                     name: Spanned(
-                        "VDivLowPassFilter",
+                        Symbol(
+                            "VDivLowPassFilter",
+                        ),
                         210..211,
                     ),
                     parent: Some(
                         Spanned(
-                            "VDiv",
+                            Symbol(
+                                "VDiv",
+                            ),
                             212..213,
                         ),
                     ),
@@ -1199,7 +1249,9 @@ expression: output
                                     value: Spanned(
                                         New(
                                             Spanned(
-                                                "Capacitor",
+                                                Symbol(
+                                                    "Capacitor",
+                                                ),
                                                 219..220,
                                             ),
                                         ),
@@ -1245,11 +1297,15 @@ expression: output
                             Attribute(
                                 AttributeStmt {
                                     name: Spanned(
-                                        "cutoff_frequency",
+                                        Symbol(
+                                            "cutoff_frequency",
+                                        ),
                                         227..228,
                                     ),
                                     type_info: Spanned(
-                                        "frequency",
+                                        Symbol(
+                                            "frequency",
+                                        ),
                                         229..230,
                                     ),
                                 },
@@ -1401,11 +1457,15 @@ expression: output
                             Attribute(
                                 AttributeStmt {
                                     name: Spanned(
-                                        "cutoff_frequency",
+                                        Symbol(
+                                            "cutoff_frequency",
+                                        ),
                                         255..256,
                                     ),
                                     type_info: Spanned(
-                                        "frequency",
+                                        Symbol(
+                                            "frequency",
+                                        ),
                                         257..258,
                                     ),
                                 },

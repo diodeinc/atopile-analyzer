@@ -449,7 +449,9 @@ module M:
                     ),
                     imports: [
                         Spanned(
-                            "MyModule",
+                            Symbol(
+                                "MyModule",
+                            ),
                             23..31,
                         ),
                     ],
