@@ -44,4 +44,4 @@ jobs:
       uses: actions-rs/cargo@v1
       with:
         command: clippy
-        args: -p atopile_analyzer --all-targets -- -D warnings
+        args: --manifest-path=crates/atopile_analyzer/Cargo.toml --all-targets -- -D warnings
