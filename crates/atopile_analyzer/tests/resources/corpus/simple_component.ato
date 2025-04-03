@@ -1,0 +1,8 @@
+component SimpleComponent:
+    signal p1 ~ pin 1
+    signal p2 ~ pin 2
+    
+    designator_prefix = "C"
+    mpn = "simple_component"
+    type = "capacitor"
+    value: capacitance = 100nF

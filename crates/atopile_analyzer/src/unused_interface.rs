@@ -15,6 +15,7 @@ impl AtopileAnalyzer {
     /// 3. For each module assignment, look up the module and see which interfaces it defines.
     /// 4. Traverse the connections in `B` and look for a connection to each interface in `m`.
     /// 5. Report a diagnostic for any connections that were not found.
+    #[allow(dead_code)]
     pub(crate) fn analyze_unused_interfaces(
         &self,
         path: &PathBuf,
@@ -36,9 +37,12 @@ impl AtopileAnalyzer {
                     Connectable::Port(port) => Some(port),
                     _ => None,
                 })
-                .filter_map(|p| match (p.parts.get(0), p.parts.get(1)) {
-                    (Some(p1), Some(p2)) => Some((p1.to_string(), p2.to_string())),
-                    _ => None,
+                .filter_map(|p| {
+                    if p.parts.len() >= 2 {
+                        Some((p.parts[0].to_string(), p.parts[1].to_string()))
+                    } else {
+                        None
+                    }
                 })
                 .collect::<HashSet<_>>();
 

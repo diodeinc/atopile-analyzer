@@ -1,0 +1,8 @@
+module SimpleConnection:
+    signal input
+    signal output
+    signal middle
+    
+    # Simple connections
+    input ~ middle
+    middle ~ output

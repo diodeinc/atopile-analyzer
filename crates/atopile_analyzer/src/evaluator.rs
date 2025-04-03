@@ -141,7 +141,7 @@ impl EvaluatorState {
     }
 }
 
-pub(crate) struct Evaluator {
+pub struct Evaluator {
     state: EvaluatorState,
     reporter: AnalyzerReporter,
     file_cache: FileCache,
@@ -444,7 +444,7 @@ impl<T, E: std::fmt::Display, U> ResultExt<T, E, U> for Result<T, E> {
             let message = e.to_string();
             EvaluatorError {
                 kind: kind(e),
-                location: spanned.span().into_location(source),
+                location: spanned.span().to_location(source),
                 message: Some(message),
             }
         })
@@ -478,7 +478,7 @@ impl<T, U> ResultExt<T, (), U> for Option<T> {
         kind: impl FnOnce(()) -> EvaluatorErrorKind,
         spanned: &Spanned<U>,
     ) -> EvaluatorResult<T> {
-        self.ok_or_else(|| EvaluatorError::new(kind(()), &spanned.span().into_location(source)))
+        self.ok_or_else(|| EvaluatorError::new(kind(()), &spanned.span().to_location(source)))
     }
 }
 
@@ -510,7 +510,7 @@ pub(crate) fn resolve_import_path(ctx_path: &Path, import_path: &Path) -> Option
     // 2. If we're in a .ato folder, use its parent as project root
     let mut current_dir = ctx_path.parent();
     while let Some(dir) = current_dir {
-        if dir.file_name().map_or(false, |name| name == ".ato") {
+        if dir.file_name().is_some_and(|name| name == ".ato") {
             if let Some(project_root) = dir.parent() {
                 // Check relative to project root
                 let project_relative = project_root.join(import_path);
@@ -556,7 +556,7 @@ pub(crate) fn resolve_import_path(ctx_path: &Path, import_path: &Path) -> Option
 }
 
 impl Evaluator {
-    pub(crate) fn new() -> Self {
+    pub fn new() -> Self {
         debug!("Creating new Evaluator instance");
         Self {
             state: EvaluatorState::new(),
@@ -564,12 +564,20 @@ impl Evaluator {
             file_cache: FileCache::new(),
         }
     }
+}
 
-    pub(crate) fn reset(&mut self) {
+impl Default for Evaluator {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
+impl Evaluator {
+    pub fn reset(&mut self) {
         self.state = EvaluatorState::new();
     }
 
-    pub(crate) fn reporter(&self) -> &AnalyzerReporter {
+    pub fn reporter(&self) -> &AnalyzerReporter {
         &self.reporter
     }
 
@@ -628,7 +636,7 @@ impl Evaluator {
             let mut path = to_ref.instance_path.clone();
             path.push(k.clone());
             let transposed_ref = InstanceRef::new(&to_ref.module, path);
-            self.clone_instance(&v, &transposed_ref)?;
+            self.clone_instance(v, &transposed_ref)?;
             to_instance.add_child(k, &transposed_ref);
         }
 
@@ -714,7 +722,7 @@ impl Evaluator {
                 if left_instance.type_ref != right_instance.type_ref {
                     return Err(EvaluatorError::new(
                         EvaluatorErrorKind::InvalidAssignment,
-                        &assignment.location(),
+                        assignment.location(),
                     )
                     .with_message(format!(
                         "Cannot connect interfaces of different type: `{}` and `{}`",
@@ -731,14 +739,14 @@ impl Evaluator {
 
                 left_sorted
                     .into_iter()
-                    .zip(right_sorted.into_iter())
+                    .zip(right_sorted)
                     .map(|((_, l), (_, r))| Connection::new(l.clone(), r.clone()))
                     .collect()
             }
             _ => {
                 return Err(EvaluatorError::new(
                     EvaluatorErrorKind::InvalidAssignment,
-                    &assignment.location(),
+                    assignment.location(),
                 )
                 .with_message(format!(
                     "Cannot connect instances of different kind: `{}` and `{}`",
@@ -754,7 +762,7 @@ impl Evaluator {
             if connection.left.module != connection.right.module {
                 return Err(EvaluatorError::new(
                     EvaluatorErrorKind::InvalidAssignment,
-                    &assignment.location(),
+                    assignment.location(),
                 )
                 .with_message(format!(
                     "Cannot connect interfaces across modules: `{}` and `{}`",
@@ -795,10 +803,10 @@ impl Evaluator {
     fn evaluate_import(
         &mut self,
         source: &AtopileSource,
-        import_stack: &Vec<PathBuf>,
+        import_stack: &[PathBuf],
         file_scope: &mut FileScope,
         import_path: &Spanned<String>,
-        import_symbols: &Vec<Spanned<Symbol>>,
+        import_symbols: &[Spanned<Symbol>],
     ) -> EvaluatorResult<()> {
         debug!(
             "Evaluating import: {} with {} symbols",
@@ -832,14 +840,14 @@ impl Evaluator {
             .with_context(
                 source,
                 |_| EvaluatorErrorKind::ImportPathNotFound,
-                &import_path,
+                import_path,
             )?;
 
         // Check for cycles.
         if import_stack.iter().any(|p| p == &path) {
             return Err(EvaluatorError::new(
                 EvaluatorErrorKind::ImportCycle,
-                &import_path.span().into_location(source),
+                &import_path.span().to_location(source),
             ));
         }
 
@@ -847,13 +855,13 @@ impl Evaluator {
         let (imported_source, _) = self.file_cache.get_or_load(&path).with_context(
             source,
             |_| EvaluatorErrorKind::ImportLoadFailed,
-            &import_path,
+            import_path,
         )?;
 
-        let mut import_stack = import_stack.clone();
-        import_stack.push(path.clone());
+        let mut import_stack_vec = import_stack.to_vec();
+        import_stack_vec.push(path.clone());
 
-        self.evaluate_inner(&imported_source, import_stack);
+        self.evaluate_inner(&imported_source, import_stack_vec);
 
         // Define the imported symbols.
         for imported_symbol in import_symbols {
@@ -865,7 +873,7 @@ impl Evaluator {
                 self.reporter.report(
                     EvaluatorError::new(
                         EvaluatorErrorKind::ImportNotFound,
-                        &imported_symbol.span().into_location(source),
+                        &imported_symbol.span().to_location(source),
                     )
                     .into(),
                 );
@@ -909,7 +917,7 @@ impl Evaluator {
                         if assign.target.deref().parts.len() != 1 {
                             return Err(EvaluatorError::new(
                                 EvaluatorErrorKind::InvalidAssignment,
-                                &assign.target.span().into_location(source),
+                                &assign.target.span().to_location(source),
                             )
                             .with_message("Cannot create new module in sub-module".to_string()));
                         }
@@ -919,15 +927,15 @@ impl Evaluator {
                         let type_module_ref = file_scope.resolve(type_name).ok_or_else(|| {
                             EvaluatorError::new(
                                 EvaluatorErrorKind::TypeNotFound,
-                                &type_name.span().into_location(source),
+                                &type_name.span().to_location(source),
                             )
                         })?;
 
                         // Cannot create a child that already exists.
-                        if let Some(_) = self.resolve_instance(&target_ref) {
+                        if self.resolve_instance(&target_ref).is_some() {
                             return Err(EvaluatorError::new(
                                 EvaluatorErrorKind::InvalidAssignment,
-                                &assign.target.span().into_location(source),
+                                &assign.target.span().to_location(source),
                             )
                             .with_message(format!("`{}` already exists", child_name.deref())));
                         }
@@ -936,7 +944,7 @@ impl Evaluator {
                         self.clone_instance(&type_module_ref.into(), &target_ref)
                             .map_err(|e| {
                                 EvaluatorError::internal(
-                                    &assign.target.span().into_location(source),
+                                    &assign.target.span().to_location(source),
                                     format!(
                                         "Failed to clone instance `{}`: {}",
                                         type_module_ref, e
@@ -951,7 +959,7 @@ impl Evaluator {
                         let attr_name = target_ref.pop().ok_or_else(|| {
                             EvaluatorError::new(
                                 EvaluatorErrorKind::InvalidAssignment,
-                                &assign.value.span().into_location(source),
+                                &assign.value.span().to_location(source),
                             )
                             .with_message("Cannot assign attribute to top-level module".to_string())
                         })?;
@@ -965,7 +973,7 @@ impl Evaluator {
                                 self.resolve_instance_mut(&target_ref).ok_or_else(|| {
                                     EvaluatorError::new(
                                         EvaluatorErrorKind::InvalidAssignment,
-                                        &assign.value.span().into_location(source),
+                                        &assign.value.span().to_location(source),
                                     )
                                 })?;
 
@@ -1029,16 +1037,13 @@ impl Evaluator {
                     Connectable::Pin(_) => None,
                 };
 
-                match (left_instance_ref, right_instance_ref) {
-                    (Some(left), Some(right)) => {
-                        self.connect(
-                            instance,
-                            &Located::new(left, connect.left.span().into_location(source)),
-                            &Located::new(right, connect.right.span().into_location(source)),
-                            &stmt.clone().into_located(source),
-                        )?;
-                    }
-                    _ => {}
+                if let (Some(left), Some(right)) = (left_instance_ref, right_instance_ref) {
+                    self.connect(
+                        instance,
+                        &Located::new(left, connect.left.span().to_location(source)),
+                        &Located::new(right, connect.right.span().to_location(source)),
+                        &stmt.clone().into_located(source),
+                    )?;
                 }
 
                 Ok(())
@@ -1072,14 +1077,14 @@ impl Evaluator {
             let parent_module_ref = file_scope.resolve(parent).ok_or_else(|| {
                 EvaluatorError::new(
                     EvaluatorErrorKind::TypeNotFound,
-                    &parent.span().into_location(source),
+                    &parent.span().to_location(source),
                 )
             })?;
 
             self.clone_instance(&parent_module_ref.into(), &module_ref.clone().into())
                 .map_err(|_| {
                     EvaluatorError::internal(
-                        &parent.span().into_location(source),
+                        &parent.span().to_location(source),
                         "Failed to clone parent module".to_string(),
                     )
                 })?;
@@ -1093,7 +1098,7 @@ impl Evaluator {
         let mut instance = self.remove_instance(&instance_ref).ok_or_else(|| {
             EvaluatorError::new(
                 EvaluatorErrorKind::Internal,
-                &block.name.span().into_location(source),
+                &block.name.span().to_location(source),
             )
         })?;
 
@@ -1116,7 +1121,7 @@ impl Evaluator {
     fn evaluate_top_stmt(
         &mut self,
         source: &AtopileSource,
-        import_stack: &Vec<PathBuf>,
+        import_stack: &[PathBuf],
         file_scope: &mut FileScope,
         stmt: &Spanned<Stmt>,
     ) -> EvaluatorResult<()> {
@@ -1145,7 +1150,7 @@ impl Evaluator {
                     import_stack,
                     file_scope,
                     &dep_import.from_path,
-                    &vec![dep_import.name.clone()],
+                    &[dep_import.name.clone()],
                 )
             }
             Stmt::Block(block) => {
@@ -1155,11 +1160,11 @@ impl Evaluator {
             Stmt::Comment(_) => Ok(()),
             Stmt::Unparsable(_) => Err(EvaluatorError::new(
                 EvaluatorErrorKind::UnparsableStmt,
-                &stmt.span().into_location(source),
+                &stmt.span().to_location(source),
             )),
             _ => Err(EvaluatorError::new(
                 EvaluatorErrorKind::UnexpectedStmt,
-                &stmt.span().into_location(source),
+                &stmt.span().to_location(source),
             )),
         }
     }
@@ -1177,7 +1182,7 @@ impl Evaluator {
         }
     }
 
-    pub(crate) fn evaluate(&mut self, source: &AtopileSource) -> EvaluatorState {
+    pub fn evaluate(&mut self, source: &AtopileSource) -> EvaluatorState {
         debug!("Starting evaluation of source: {:?}", source.path());
         let start = Instant::now();
         self.evaluate_inner(source, vec![]);

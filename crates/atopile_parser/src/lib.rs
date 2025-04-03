@@ -76,11 +76,8 @@ impl<T: Hash + Eq + Debug + Clone> From<chumsky::error::Simple<T>> for AtopileEr
         Self {
             span: err.span(),
             reason: format!("{:?}", err.reason()),
-            expected: err
-                .expected()
-                .map(|t| t.clone().map(|t| t.clone()))
-                .collect(),
-            found: err.found().map(|t| t.clone()),
+            expected: err.expected().cloned().collect(),
+            found: err.found().cloned(),
         }
     }
 }
@@ -141,7 +138,7 @@ impl AtopileSource {
         )
     }
 
-    fn rewrite_span<T>(tokens: &Vec<Spanned<lexer::Token>>, spanned: &mut Spanned<T>) {
+    fn rewrite_span<T>(tokens: &[Spanned<lexer::Token>], spanned: &mut Spanned<T>) {
         let start = tokens
             .get(spanned.span().start)
             .map(|t| t.1.start)
@@ -151,10 +148,10 @@ impl AtopileSource {
             .map(|t| t.1.end)
             .unwrap_or(0);
 
-        (*spanned).1 = start..end;
+        spanned.1 = start..end;
     }
 
-    fn rewrite_stmt(tokens: &Vec<Spanned<lexer::Token>>, stmt: &mut Spanned<parser::Stmt>) {
+    fn rewrite_stmt(tokens: &[Spanned<lexer::Token>], stmt: &mut Spanned<parser::Stmt>) {
         match &mut stmt.0 {
             parser::Stmt::Import(stmt) => {
                 Self::rewrite_span(tokens, &mut stmt.from_path);
@@ -219,7 +216,7 @@ impl AtopileSource {
         }
     }
 
-    fn rewrite_expr(tokens: &Vec<Spanned<lexer::Token>>, expr: &mut parser::Expr) {
+    fn rewrite_expr(tokens: &[Spanned<lexer::Token>], expr: &mut parser::Expr) {
         match expr {
             parser::Expr::String(s) => Self::rewrite_span(tokens, s),
             parser::Expr::Number(n) => Self::rewrite_span(tokens, n),
@@ -265,14 +262,14 @@ impl AtopileSource {
         }
     }
 
-    fn rewrite_port_ref(tokens: &Vec<Spanned<lexer::Token>>, port_ref: &mut parser::PortRef) {
+    fn rewrite_port_ref(tokens: &[Spanned<lexer::Token>], port_ref: &mut parser::PortRef) {
         for part in &mut port_ref.parts {
             Self::rewrite_span(tokens, part);
         }
     }
 
     fn rewrite_connectable(
-        tokens: &Vec<Spanned<lexer::Token>>,
+        tokens: &[Spanned<lexer::Token>],
         connectable: &mut parser::Connectable,
     ) {
         match connectable {
@@ -338,18 +335,20 @@ impl AtopileSource {
     }
 }
 
+type StmtIterWithParent<'a> = (
+    std::slice::Iter<'a, Spanned<parser::Stmt>>,
+    Option<&'a Spanned<parser::Stmt>>,
+);
+
 pub struct StmtTraverser<'a> {
     // Stack of iterators for nested blocks
-    stack: Vec<(
-        std::slice::Iter<'a, Spanned<parser::Stmt>>,
-        Option<&'a Spanned<parser::Stmt>>,
-    )>,
+    stack: Vec<StmtIterWithParent<'a>>,
     // Current path of parent statements leading to current position
     current_path: Vec<&'a Spanned<parser::Stmt>>,
 }
 
 impl<'a> StmtTraverser<'a> {
-    fn new(stmts: &'a Vec<Spanned<parser::Stmt>>) -> Self {
+    fn new(stmts: &'a [Spanned<parser::Stmt>]) -> Self {
         Self {
             stack: vec![(stmts.iter(), None)],
             current_path: Vec::new(),

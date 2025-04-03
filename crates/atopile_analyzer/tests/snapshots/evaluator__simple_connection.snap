@@ -1,0 +1,50 @@
+---
+source: crates/atopile_analyzer/tests/evaluator.rs
+expression: result
+---
+state:
+  instances:
+    "tests/resources/corpus/simple_connection.ato:SimpleConnection":
+      type_ref:
+        source_path: tests/resources/corpus/simple_connection.ato
+        module_name: SimpleConnection
+      kind: Module
+      attributes: {}
+      children:
+        input: "tests/resources/corpus/simple_connection.ato:SimpleConnection.input"
+        middle: "tests/resources/corpus/simple_connection.ato:SimpleConnection.middle"
+        output: "tests/resources/corpus/simple_connection.ato:SimpleConnection.output"
+      connections:
+        - left: "tests/resources/corpus/simple_connection.ato:SimpleConnection.input"
+          right: "tests/resources/corpus/simple_connection.ato:SimpleConnection.middle"
+        - left: "tests/resources/corpus/simple_connection.ato:SimpleConnection.middle"
+          right: "tests/resources/corpus/simple_connection.ato:SimpleConnection.output"
+      reference_designator: ~
+    "tests/resources/corpus/simple_connection.ato:SimpleConnection.input":
+      type_ref:
+        source_path: ""
+        module_name: ""
+      kind: Port
+      attributes: {}
+      children: {}
+      connections: []
+      reference_designator: ~
+    "tests/resources/corpus/simple_connection.ato:SimpleConnection.middle":
+      type_ref:
+        source_path: ""
+        module_name: ""
+      kind: Port
+      attributes: {}
+      children: {}
+      connections: []
+      reference_designator: ~
+    "tests/resources/corpus/simple_connection.ato:SimpleConnection.output":
+      type_ref:
+        source_path: ""
+        module_name: ""
+      kind: Port
+      attributes: {}
+      children: {}
+      connections: []
+      reference_designator: ~
+diagnostics: []

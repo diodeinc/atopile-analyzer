@@ -46,7 +46,15 @@ impl AnalyzerReporter {
             diagnostics: RefCell::new(HashMap::new()),
         }
     }
+}
 
+impl Default for AnalyzerReporter {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
+impl AnalyzerReporter {
     pub fn reset(&self) {
         self.diagnostics.borrow_mut().clear();
     }
