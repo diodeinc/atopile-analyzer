@@ -418,7 +418,7 @@ export class SchematicRenderer {
 
       // Check if this port is part of a Power interface
       if (instance.kind === InstanceKind.INTERFACE) {
-        const interfaceType = instance.module.module_name;
+        const interfaceType = instance.type_ref.module_name;
         if (interfaceType === "Power") {
           // Found a power interface that's not on a capacitor
           return true;
@@ -2368,12 +2368,12 @@ export class SchematicRenderer {
     if (!instance || instance.kind !== InstanceKind.INTERFACE) return null;
 
     // Check if this is a Power interface
-    if (instance.module.module_name !== "Power") return null;
+    if (instance.type_ref.module_name !== "Power") return null;
 
     // Get the parent instance (the component that owns this interface)
     const parentRef = instance_ref.split(".").slice(0, -1).join(".");
     const parentInstance = this.netlist.instances[parentRef];
-    if (!parentInstance || parentInstance.module.module_name === "Capacitor")
+    if (!parentInstance || parentInstance.type_ref.module_name === "Capacitor")
       return null;
 
     return instance_ref.split(":").pop()?.split(".").pop() || null;

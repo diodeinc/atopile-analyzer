@@ -44,7 +44,7 @@ export interface AttributeValue {
  * An instance in the netlist
  */
 export interface Instance {
-  module: ModuleRef;
+  type_ref: ModuleRef;
   kind: InstanceKind;
   attributes: Record<string, AttributeValue | string>; // Support both new AttributeValue and legacy string format
   children: Record<string, string>;
