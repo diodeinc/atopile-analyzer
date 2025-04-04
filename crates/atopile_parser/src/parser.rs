@@ -788,7 +788,7 @@ impl AtopileParser {
                     self.skip_newlines();
                 }
                 Err(err) => {
-                    self.errors.push(err);
+                    self.errors.push(*err);
                     self.recover();
                 }
             }
@@ -822,7 +822,7 @@ impl AtopileParser {
         &mut self,
         token_type: Token,
         message: &str,
-    ) -> Result<&Spanned<Token>, Simple<Token>> {
+    ) -> Result<&Spanned<Token>, Box<Simple<Token>>> {
         if let Some(token) = self.peek() {
             if std::mem::discriminant(&token.0) == std::mem::discriminant(&token_type) {
                 return Ok(self.advance().unwrap());
@@ -831,7 +831,7 @@ impl AtopileParser {
         Err(self.error(message))
     }
 
-    fn error(&self, message: &str) -> Simple<Token> {
+    fn error(&self, message: &str) -> Box<Simple<Token>> {
         let span = if let Some(token) = self.peek() {
             token.span().clone()
         } else if !self.tokens.is_empty() {
@@ -840,7 +840,7 @@ impl AtopileParser {
             0..0
         };
 
-        Simple::custom(span, message)
+        Box::new(Simple::custom(span, message))
     }
 
     fn skip_newlines(&mut self) {
@@ -896,7 +896,7 @@ impl AtopileParser {
         start..end
     }
 
-    fn parse_top_level(&mut self) -> Result<Spanned<Stmt>, Simple<Token>> {
+    fn parse_top_level(&mut self) -> Result<Spanned<Stmt>, Box<Simple<Token>>> {
         if let Some(token) = self.peek() {
             match token.0 {
                 Token::From => self.parse_import_statement(),
@@ -926,7 +926,7 @@ impl AtopileParser {
         }
     }
 
-    fn parse_import_statement(&mut self) -> Result<Spanned<Stmt>, Simple<Token>> {
+    fn parse_import_statement(&mut self) -> Result<Spanned<Stmt>, Box<Simple<Token>>> {
         let start_pos = self.position;
 
         self.consume(Token::From, "Expected 'from'")?;
@@ -978,7 +978,7 @@ impl AtopileParser {
         Ok((Stmt::Import(ImportStmt { from_path, imports }), span).into())
     }
 
-    fn parse_dep_import_statement(&mut self) -> Result<Spanned<Stmt>, Simple<Token>> {
+    fn parse_dep_import_statement(&mut self) -> Result<Spanned<Stmt>, Box<Simple<Token>>> {
         let start_pos = self.position;
 
         // import Module from "file.ato"
@@ -1016,7 +1016,7 @@ impl AtopileParser {
         Ok((Stmt::DepImport(DepImportStmt { name, from_path }), span).into())
     }
 
-    fn parse_comment_statement(&mut self) -> Result<Spanned<Stmt>, Simple<Token>> {
+    fn parse_comment_statement(&mut self) -> Result<Spanned<Stmt>, Box<Simple<Token>>> {
         if let Some(token) = self.peek() {
             if let Token::Comment(comment) = &token.0 {
                 let span = token.span().clone();
@@ -1030,7 +1030,7 @@ impl AtopileParser {
         Err(self.error("Expected comment"))
     }
 
-    fn parse_block_statement(&mut self) -> Result<Spanned<Stmt>, Simple<Token>> {
+    fn parse_block_statement(&mut self) -> Result<Spanned<Stmt>, Box<Simple<Token>>> {
         let start_pos = self.position;
 
         let kind_token = self
@@ -1091,7 +1091,7 @@ impl AtopileParser {
                             self.skip_newlines();
                         }
                         Err(err) => {
-                            self.errors.push(err);
+                            self.errors.push(*err);
                             self.recover();
                         }
                     }
@@ -1102,7 +1102,7 @@ impl AtopileParser {
                         body.push(stmt);
                     }
                     Err(err) => {
-                        self.errors.push(err);
+                        self.errors.push(*err);
                         self.recover();
                     }
                 }
@@ -1122,7 +1122,7 @@ impl AtopileParser {
         Ok((Stmt::Block(block_stmt), span).into())
     }
 
-    fn parse_statement(&mut self) -> Result<Spanned<Stmt>, Simple<Token>> {
+    fn parse_statement(&mut self) -> Result<Spanned<Stmt>, Box<Simple<Token>>> {
         if let Some(token) = self.peek() {
             if let Token::Comment(_) = token.0 {
                 return self.parse_comment_statement();
@@ -1336,7 +1336,7 @@ impl AtopileParser {
         }
     }
 
-    fn parse_pin_statement(&mut self) -> Result<Spanned<Stmt>, Simple<Token>> {
+    fn parse_pin_statement(&mut self) -> Result<Spanned<Stmt>, Box<Simple<Token>>> {
         let start_pos = self.position;
 
         // pin A1
@@ -1356,7 +1356,7 @@ impl AtopileParser {
             .into())
     }
 
-    fn parse_signal_statement(&mut self) -> Result<Spanned<Stmt>, Simple<Token>> {
+    fn parse_signal_statement(&mut self) -> Result<Spanned<Stmt>, Box<Simple<Token>>> {
         let start_pos = self.position;
 
         self.consume(Token::Signal, "Expected 'signal'")?;
@@ -1375,7 +1375,7 @@ impl AtopileParser {
             .into())
     }
 
-    fn parse_expression(&mut self) -> Result<Spanned<Expr>, Simple<Token>> {
+    fn parse_expression(&mut self) -> Result<Spanned<Expr>, Box<Simple<Token>>> {
         if self.check_physical_value() {
             return self.parse_physical_value();
         }
@@ -1431,7 +1431,7 @@ impl AtopileParser {
         result
     }
 
-    fn parse_physical_value(&mut self) -> Result<Spanned<Expr>, Simple<Token>> {
+    fn parse_physical_value(&mut self) -> Result<Spanned<Expr>, Box<Simple<Token>>> {
         let start_pos = self.position;
 
         let token_opt = self.peek().cloned();
@@ -1476,7 +1476,7 @@ impl AtopileParser {
         Ok((Expr::Physical(physical_value_spanned), span).into())
     }
 
-    fn parse_assert_statement(&mut self) -> Result<Spanned<Stmt>, Simple<Token>> {
+    fn parse_assert_statement(&mut self) -> Result<Spanned<Stmt>, Box<Simple<Token>>> {
         let start_pos = self.position;
 
         self.consume(Token::Assert, "Expected 'assert'")?;
@@ -1489,7 +1489,7 @@ impl AtopileParser {
         Ok((Stmt::Assert(AssertStmt { expr }), span).into())
     }
 
-    fn parse_attribute_statement(&mut self) -> Result<Spanned<Stmt>, Simple<Token>> {
+    fn parse_attribute_statement(&mut self) -> Result<Spanned<Stmt>, Box<Simple<Token>>> {
         let start_pos = self.position;
 
         let name = self.parse_name_token("Expected attribute name")?;
@@ -1538,7 +1538,7 @@ impl AtopileParser {
             .into())
     }
 
-    fn parse_assign_statement(&mut self) -> Result<Spanned<Stmt>, Simple<Token>> {
+    fn parse_assign_statement(&mut self) -> Result<Spanned<Stmt>, Box<Simple<Token>>> {
         let start_pos = self.position;
 
         let (target, type_info) = if let Some(token) = self.peek() {
@@ -1628,7 +1628,7 @@ impl AtopileParser {
             .into())
     }
 
-    fn parse_connect_statement(&mut self) -> Result<Spanned<Stmt>, Simple<Token>> {
+    fn parse_connect_statement(&mut self) -> Result<Spanned<Stmt>, Box<Simple<Token>>> {
         let start_pos = self.position;
 
         let left = self.parse_connectable()?;
@@ -1641,7 +1641,7 @@ impl AtopileParser {
         Ok((Stmt::Connect(ConnectStmt { left, right }), span).into())
     }
 
-    fn parse_specialize_statement(&mut self) -> Result<Spanned<Stmt>, Simple<Token>> {
+    fn parse_specialize_statement(&mut self) -> Result<Spanned<Stmt>, Box<Simple<Token>>> {
         let start_pos = self.position;
 
         let port = self.parse_port_ref()?;
@@ -1661,7 +1661,7 @@ impl AtopileParser {
             .into())
     }
 
-    fn parse_name_token(&mut self, error_message: &str) -> Result<Spanned<String>, Simple<Token>> {
+    fn parse_name_token(&mut self, error_message: &str) -> Result<Spanned<String>, Box<Simple<Token>>> {
         if let Some(token) = self.peek() {
             if let Token::Name(name) = &token.0 {
                 let spanned_name = (name.clone(), token.span().clone()).into();
@@ -1678,7 +1678,7 @@ impl AtopileParser {
     fn parse_name_or_number_or_string_token(
         &mut self,
         error_message: &str,
-    ) -> Result<Spanned<String>, Simple<Token>> {
+    ) -> Result<Spanned<String>, Box<Simple<Token>>> {
         if let Some(token) = self.peek() {
             match &token.0 {
                 Token::Name(name) => {
@@ -1703,7 +1703,7 @@ impl AtopileParser {
         }
     }
 
-    fn parse_port_ref(&mut self) -> Result<Spanned<PortRef>, Simple<Token>> {
+    fn parse_port_ref(&mut self) -> Result<Spanned<PortRef>, Box<Simple<Token>>> {
         let start_pos = self.position;
         let mut parts = Vec::new();
 
@@ -1753,7 +1753,7 @@ impl AtopileParser {
         Ok((PortRef { parts }, span).into())
     }
 
-    fn parse_connectable(&mut self) -> Result<Spanned<Connectable>, Simple<Token>> {
+    fn parse_connectable(&mut self) -> Result<Spanned<Connectable>, Box<Simple<Token>>> {
         let start_pos = self.position;
 
         if let Some(token) = self.peek() {
@@ -1880,7 +1880,7 @@ pub fn parse_raw(tokens: Vec<Token>) -> (Vec<Spanned<Stmt>>, Vec<Simple<Token>>)
                     parser.skip_newlines();
                 }
                 Err(err) => {
-                    parser.errors.push(err);
+                    parser.errors.push(*err);
                     parser.recover();
                 }
             }
