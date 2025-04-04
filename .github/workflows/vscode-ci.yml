@@ -44,5 +44,5 @@ jobs:
         working-directory: vscode/preview
 
       - name: Run ESLint
-        run: npm run lint .
+        run: npm run lint
         working-directory: vscode
