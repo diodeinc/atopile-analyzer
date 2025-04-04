@@ -1,0 +1,48 @@
+name: VSCode Extension CI
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  build:
+    name: Build VSCode Extension
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Install system dependencies for canvas
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y pkg-config libcairo2-dev libjpeg-dev libpango1.0-dev libgif-dev build-essential g++
+
+      - name: Install dependencies
+        run: npm ci
+        working-directory: vscode
+
+      - name: Install client dependencies
+        run: npm ci
+        working-directory: vscode/client
+
+      - name: Install preview dependencies
+        run: npm ci
+        working-directory: vscode/preview
+
+      - name: Build VSCode extension
+        run: npm run compile
+        working-directory: vscode
+
+      - name: Build preview app
+        run: npm run build
+        working-directory: vscode/preview
+
+      - name: Run ESLint
+        run: npm run lint .
+        working-directory: vscode
