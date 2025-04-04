@@ -1,0 +1,12 @@
+from "middle_importer.ato" import BaseComponent
+
+module TransitiveImport:
+    # Use the transitively imported component
+    r1 = new BaseComponent
+    
+    signal input
+    signal output
+    
+    # Connect
+    input ~ r1.p1
+    r1.p2 ~ output

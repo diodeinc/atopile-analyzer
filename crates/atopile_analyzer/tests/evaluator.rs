@@ -87,3 +87,5 @@ macro_rules! create_evaluator_test {
 create_evaluator_test!(simple_module);
 create_evaluator_test!(simple_component);
 create_evaluator_test!(simple_connection);
+create_evaluator_test!(hoisted_declaration);
+create_evaluator_test!(transitive_import);

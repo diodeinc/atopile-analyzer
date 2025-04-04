@@ -1,0 +1,92 @@
+---
+source: crates/atopile_analyzer/tests/evaluator.rs
+assertion_line: 91
+expression: result
+---
+state:
+  instances:
+    "/home/ubuntu/repos/atopile-analyzer/crates/atopile_analyzer/tests/resources/corpus/base_component.ato:BaseComponent":
+      type_ref:
+        source_path: /home/ubuntu/repos/atopile-analyzer/crates/atopile_analyzer/tests/resources/corpus/base_component.ato
+        module_name: BaseComponent
+      kind: Component
+      attributes:
+        designator_prefix:
+          String: R
+        mpn:
+          String: base_component
+        type:
+          String: resistor
+        value:
+          Physical: "10kohm "
+      children:
+        p1: "/home/ubuntu/repos/atopile-analyzer/crates/atopile_analyzer/tests/resources/corpus/base_component.ato:BaseComponent.p1"
+        p2: "/home/ubuntu/repos/atopile-analyzer/crates/atopile_analyzer/tests/resources/corpus/base_component.ato:BaseComponent.p2"
+      connections: []
+      reference_designator: ~
+    "/home/ubuntu/repos/atopile-analyzer/crates/atopile_analyzer/tests/resources/corpus/base_component.ato:BaseComponent.p1":
+      type_ref:
+        source_path: ""
+        module_name: ""
+      kind: Port
+      attributes: {}
+      children: {}
+      connections: []
+      reference_designator: ~
+    "/home/ubuntu/repos/atopile-analyzer/crates/atopile_analyzer/tests/resources/corpus/base_component.ato:BaseComponent.p2":
+      type_ref:
+        source_path: ""
+        module_name: ""
+      kind: Port
+      attributes: {}
+      children: {}
+      connections: []
+      reference_designator: ~
+    "/home/ubuntu/repos/atopile-analyzer/crates/atopile_analyzer/tests/resources/corpus/middle_importer.ato:MiddleImporter":
+      type_ref:
+        source_path: /home/ubuntu/repos/atopile-analyzer/crates/atopile_analyzer/tests/resources/corpus/middle_importer.ato
+        module_name: MiddleImporter
+      kind: Module
+      attributes: {}
+      children: {}
+      connections: []
+      reference_designator: ~
+    "tests/resources/corpus/transitive_import.ato:TransitiveImport":
+      type_ref:
+        source_path: tests/resources/corpus/transitive_import.ato
+        module_name: TransitiveImport
+      kind: Module
+      attributes: {}
+      children:
+        input: "tests/resources/corpus/transitive_import.ato:TransitiveImport.input"
+        output: "tests/resources/corpus/transitive_import.ato:TransitiveImport.output"
+      connections: []
+      reference_designator: ~
+    "tests/resources/corpus/transitive_import.ato:TransitiveImport.input":
+      type_ref:
+        source_path: ""
+        module_name: ""
+      kind: Port
+      attributes: {}
+      children: {}
+      connections: []
+      reference_designator: ~
+    "tests/resources/corpus/transitive_import.ato:TransitiveImport.output":
+      type_ref:
+        source_path: ""
+        module_name: ""
+      kind: Port
+      attributes: {}
+      children: {}
+      connections: []
+      reference_designator: ~
+diagnostics:
+  - severity: Error
+    kind: Evaluator
+    file: tests/resources/corpus/transitive_import.ato
+  - severity: Error
+    kind: Evaluator
+    file: tests/resources/corpus/transitive_import.ato
+  - severity: Error
+    kind: Evaluator
+    file: tests/resources/corpus/transitive_import.ato
