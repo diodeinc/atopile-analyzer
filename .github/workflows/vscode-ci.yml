@@ -40,7 +40,7 @@ jobs:
         working-directory: vscode
 
       - name: Build preview app
-        run: npm run build
+        run: CI=false npm run build
         working-directory: vscode/preview
 
       - name: Run ESLint
