@@ -2,37 +2,6 @@
 source: crates/atopile_analyzer/tests/evaluator.rs
 expression: result
 ---
-state:
-  instances:
-    "tests/resources/corpus/hoisted_declaration.ato:HoistedDeclaration":
-      type_ref:
-        source_path: tests/resources/corpus/hoisted_declaration.ato
-        module_name: HoistedDeclaration
-      kind: Module
-      attributes: {}
-      children:
-        input: "tests/resources/corpus/hoisted_declaration.ato:HoistedDeclaration.input"
-        output: "tests/resources/corpus/hoisted_declaration.ato:HoistedDeclaration.output"
-      connections: []
-      reference_designator: ~
-    "tests/resources/corpus/hoisted_declaration.ato:HoistedDeclaration.input":
-      type_ref:
-        source_path: ""
-        module_name: ""
-      kind: Port
-      attributes: {}
-      children: {}
-      connections: []
-      reference_designator: ~
-    "tests/resources/corpus/hoisted_declaration.ato:HoistedDeclaration.output":
-      type_ref:
-        source_path: ""
-        module_name: ""
-      kind: Port
-      attributes: {}
-      children: {}
-      connections: []
-      reference_designator: ~
 diagnostics:
   - severity: Error
     kind: Evaluator

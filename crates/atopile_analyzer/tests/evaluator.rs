@@ -39,7 +39,6 @@ impl From<&AnalyzerDiagnostic> for DiagnosticInfo {
 
 #[derive(Debug, Serialize)]
 struct EvaluatorTestResult {
-    state: atopile_analyzer::evaluator::EvaluatorState,
     diagnostics: Vec<DiagnosticInfo>,
 }
 
@@ -73,8 +72,9 @@ macro_rules! create_evaluator_test {
                     diags.iter().map(DiagnosticInfo::from).collect()
                 });
 
+            let _state = state; // Use the state but don't include in snapshots
+            
             let result = EvaluatorTestResult {
-                state,
                 diagnostics,
             };
 
