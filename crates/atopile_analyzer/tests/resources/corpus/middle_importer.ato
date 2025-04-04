@@ -1,0 +1,5 @@
+from "base_component.ato" import BaseComponent
+
+# Just re-exporting BaseComponent
+module MiddleImporter:
+    pass

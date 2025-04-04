@@ -1,0 +1,20 @@
+module HoistedDeclaration:
+    # Use the component before it's declared
+    c = new MyComponent
+    
+    # Connect signals
+    c.p1 ~ output
+    input ~ c.p2
+    
+    signal input
+    signal output
+    
+    # Declare the component after it's used
+    component MyComponent:
+        signal p1 ~ pin 1
+        signal p2 ~ pin 2
+        
+        designator_prefix = "C"
+        mpn = "my_component"
+        type = "capacitor"
+        value: capacitance = 100nF

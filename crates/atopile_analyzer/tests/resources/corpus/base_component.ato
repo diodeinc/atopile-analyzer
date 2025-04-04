@@ -1,0 +1,8 @@
+component BaseComponent:
+    signal p1 ~ pin 1
+    signal p2 ~ pin 2
+    
+    designator_prefix = "R"
+    mpn = "base_component"
+    type = "resistor"
+    value: resistance = 10kohm

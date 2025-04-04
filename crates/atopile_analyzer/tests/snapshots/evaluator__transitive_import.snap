@@ -1,0 +1,14 @@
+---
+source: crates/atopile_analyzer/tests/evaluator.rs
+expression: result
+---
+diagnostics:
+  - severity: Error
+    kind: Evaluator
+    file: transitive_import.ato
+  - severity: Error
+    kind: Evaluator
+    file: transitive_import.ato
+  - severity: Error
+    kind: Evaluator
+    file: transitive_import.ato

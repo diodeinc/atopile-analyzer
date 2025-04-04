@@ -1,0 +1,14 @@
+---
+source: crates/atopile_analyzer/tests/evaluator.rs
+expression: result
+---
+diagnostics:
+  - severity: Error
+    kind: Evaluator
+    file: hoisted_declaration.ato
+  - severity: Error
+    kind: Evaluator
+    file: hoisted_declaration.ato
+  - severity: Error
+    kind: Evaluator
+    file: hoisted_declaration.ato

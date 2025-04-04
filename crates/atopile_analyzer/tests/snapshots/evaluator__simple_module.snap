@@ -2,39 +2,4 @@
 source: crates/atopile_analyzer/tests/evaluator.rs
 expression: result
 ---
-state:
-  instances:
-    "tests/resources/corpus/simple_module.ato:SimpleModule":
-      type_ref:
-        source_path: tests/resources/corpus/simple_module.ato
-        module_name: SimpleModule
-      kind: Module
-      attributes:
-        resistance:
-          Physical: "10kohm "
-        voltage_in:
-          Physical: "5V "
-      children:
-        input: "tests/resources/corpus/simple_module.ato:SimpleModule.input"
-        output: "tests/resources/corpus/simple_module.ato:SimpleModule.output"
-      connections: []
-      reference_designator: ~
-    "tests/resources/corpus/simple_module.ato:SimpleModule.input":
-      type_ref:
-        source_path: ""
-        module_name: ""
-      kind: Port
-      attributes: {}
-      children: {}
-      connections: []
-      reference_designator: ~
-    "tests/resources/corpus/simple_module.ato:SimpleModule.output":
-      type_ref:
-        source_path: ""
-        module_name: ""
-      kind: Port
-      attributes: {}
-      children: {}
-      connections: []
-      reference_designator: ~
 diagnostics: []

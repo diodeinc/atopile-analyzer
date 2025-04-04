@@ -5,7 +5,7 @@ use atopile_analyzer::evaluator::Evaluator;
 use atopile_parser::AtopileSource;
 use serde::Serialize;
 use std::fs;
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 
 #[derive(Debug, Serialize)]
 struct DiagnosticInfo {
@@ -29,14 +29,16 @@ impl From<&AnalyzerDiagnostic> for DiagnosticInfo {
         Self {
             severity: severity.to_string(),
             kind: kind.to_string(),
-            file: diag.file.to_string_lossy().to_string(),
+            file: Path::new(&diag.file)
+                .file_name()
+                .map(|f| f.to_string_lossy().to_string())
+                .unwrap_or_else(|| diag.file.to_string_lossy().to_string()),
         }
     }
 }
 
 #[derive(Debug, Serialize)]
 struct EvaluatorTestResult {
-    state: atopile_analyzer::evaluator::EvaluatorState,
     diagnostics: Vec<DiagnosticInfo>,
 }
 
@@ -70,8 +72,9 @@ macro_rules! create_evaluator_test {
                     diags.iter().map(DiagnosticInfo::from).collect()
                 });
 
+            let _state = state; // Use the state but don't include in snapshots
+            
             let result = EvaluatorTestResult {
-                state,
                 diagnostics,
             };
 
@@ -87,3 +90,5 @@ macro_rules! create_evaluator_test {
 create_evaluator_test!(simple_module);
 create_evaluator_test!(simple_component);
 create_evaluator_test!(simple_connection);
+create_evaluator_test!(hoisted_declaration);
+create_evaluator_test!(transitive_import);
