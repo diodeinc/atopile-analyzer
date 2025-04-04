@@ -109,7 +109,6 @@ impl AtopileSource {
                 .map(|e| AtopileError::Parser(e.into())),
         );
 
-
         let line_to_index = vec![0]
             .into_iter()
             .chain(
@@ -131,7 +130,6 @@ impl AtopileSource {
             errors,
         )
     }
-
 
     /// Returns the deepest parser::Stmt that is present at the given index into the source file,
     /// if there is one.
@@ -200,7 +198,10 @@ pub struct StmtTraverser<'a> {
 
 impl<'a> StmtTraverser<'a> {
     fn new(stmts: &'a [Spanned<parser::Stmt>]) -> Self {
-        println!("Creating StmtTraverser with {} top-level statements", stmts.len());
+        println!(
+            "Creating StmtTraverser with {} top-level statements",
+            stmts.len()
+        );
         for (i, stmt) in stmts.iter().enumerate() {
             println!("Top-level statement {}: {:?}", i, stmt.0);
             if let parser::Stmt::Block(block) = &stmt.0 {
@@ -210,7 +211,7 @@ impl<'a> StmtTraverser<'a> {
                 }
             }
         }
-        
+
         Self {
             stack: vec![(stmts.iter(), None)],
             current_path: Vec::new(),
@@ -225,7 +226,7 @@ impl<'a> StmtTraverser<'a> {
                     println!("  Body item {}: {:?}", i, body_stmt.0);
                 }
                 Some(&block_stmt.body)
-            },
+            }
             _ => None,
         }
     }
@@ -236,29 +237,32 @@ impl<'a> Iterator for StmtTraverser<'a> {
 
     fn next(&mut self) -> Option<Self::Item> {
         println!("StmtTraverser::next() - Stack size: {}", self.stack.len());
-        
+
         while let Some((iter, parent)) = self.stack.last_mut() {
             println!("Checking iterator with parent: {:?}", parent.map(|p| &p.0));
-            
+
             if let Some(stmt) = iter.next() {
                 println!("Found statement: {:?}", stmt.0);
-                
+
                 if let Some(parent) = parent {
                     if self.current_path.is_empty() || self.current_path.last() != Some(parent) {
                         println!("Pushing parent to path: {:?}", parent.0);
                         self.current_path.push(parent);
                     }
                 }
-                
+
                 let result = (stmt, self.current_path.clone());
-                
+
                 if let parser::Stmt::Block(block_stmt) = &stmt.0 {
-                    println!("Pushing block body with {} items to stack", block_stmt.body.len());
+                    println!(
+                        "Pushing block body with {} items to stack",
+                        block_stmt.body.len()
+                    );
                     if !block_stmt.body.is_empty() {
                         self.stack.push((block_stmt.body.iter(), Some(stmt)));
                     }
                 }
-                
+
                 return Some(result);
             } else {
                 println!("Iterator exhausted, popping from stack");
@@ -269,7 +273,7 @@ impl<'a> Iterator for StmtTraverser<'a> {
                 }
             }
         }
-        
+
         println!("No more statements to traverse");
         None
     }
@@ -418,16 +422,20 @@ module M:
     assert_eq!(errors.len(), 0);
 
     println!("AST: {:#?}", source.ast());
-    
+
     for stmt in source.ast() {
         if let parser::Stmt::Block(block) = &stmt.0 {
-            println!("Found block: {:?} with {} body items", block.name, block.body.len());
+            println!(
+                "Found block: {:?} with {} body items",
+                block.name,
+                block.body.len()
+            );
             for body_stmt in &block.body {
                 println!("  Body item: {:?}", body_stmt.0);
             }
         }
     }
-    
+
     let mut statements = Vec::new();
     let mut debug_traversal = source.traverse_all_stmts();
     println!("Traversal results:");
@@ -435,11 +443,14 @@ module M:
         println!("  Statement: {:?}, Path length: {}", stmt.0, path.len());
         statements.push(stmt);
     }
-    
-    println!("Collected {} statements during traversal:", statements.len());
+
+    println!(
+        "Collected {} statements during traversal:",
+        statements.len()
+    );
     for (i, stmt) in statements.iter().enumerate() {
         println!("  Statement {}: {:?}", i, stmt.0);
     }
-    
+
     assert_eq!(statements.len(), 5);
 }

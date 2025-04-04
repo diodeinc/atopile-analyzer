@@ -809,7 +809,6 @@ impl AtopileParser {
         }
     }
 
-
     fn advance(&mut self) -> Option<&Spanned<Token>> {
         if !self.is_at_end() {
             self.position += 1;
@@ -819,7 +818,11 @@ impl AtopileParser {
         }
     }
 
-    fn consume(&mut self, token_type: Token, message: &str) -> Result<&Spanned<Token>, Simple<Token>> {
+    fn consume(
+        &mut self,
+        token_type: Token,
+        message: &str,
+    ) -> Result<&Spanned<Token>, Simple<Token>> {
         if let Some(token) = self.peek() {
             if std::mem::discriminant(&token.0) == std::mem::discriminant(&token_type) {
                 return Ok(self.advance().unwrap());
@@ -836,7 +839,7 @@ impl AtopileParser {
         } else {
             0..0
         };
-        
+
         Simple::custom(span, message)
     }
 
@@ -853,7 +856,7 @@ impl AtopileParser {
     fn recover(&mut self) {
         let mut unparsable_tokens = Vec::new();
         let _start_position = self.position;
-        
+
         while let Some(token) = self.peek() {
             if matches!(token.0, Token::Newline | Token::Semicolon) {
                 break;
@@ -861,7 +864,7 @@ impl AtopileParser {
             unparsable_tokens.push(token.clone());
             self.advance();
         }
-        
+
         if let Some(token) = self.peek() {
             if matches!(token.0, Token::Newline | Token::Semicolon) {
                 self.advance();
@@ -873,7 +876,7 @@ impl AtopileParser {
         if self.tokens.is_empty() {
             return 0..0;
         }
-        
+
         let start = if start_pos < self.tokens.len() {
             self.tokens[start_pos].span().start
         } else if !self.tokens.is_empty() {
@@ -881,7 +884,7 @@ impl AtopileParser {
         } else {
             0
         };
-        
+
         let end = if end_pos < self.tokens.len() {
             self.tokens[end_pos].span().end
         } else if !self.tokens.is_empty() {
@@ -889,7 +892,7 @@ impl AtopileParser {
         } else {
             0
         };
-        
+
         start..end
     }
 
@@ -915,7 +918,7 @@ impl AtopileParser {
                         self.position = saved_pos;
                         Err(self.error("Unexpected end of input"))
                     }
-                },
+                }
                 _ => Err(self.error("Expected import or block definition")),
             }
         } else {
@@ -925,9 +928,9 @@ impl AtopileParser {
 
     fn parse_import_statement(&mut self) -> Result<Spanned<Stmt>, Simple<Token>> {
         let start_pos = self.position;
-        
+
         self.consume(Token::From, "Expected 'from'")?;
-        
+
         let from_path = if let Some(token) = self.peek() {
             if let Token::String(path) = &token.0 {
                 let spanned_path = (path.clone(), token.span().clone()).into();
@@ -939,9 +942,9 @@ impl AtopileParser {
         } else {
             return Err(self.error("Unexpected end of input"));
         };
-        
+
         self.consume(Token::Import, "Expected 'import'")?;
-        
+
         let mut imports = Vec::new();
         loop {
             if let Some(token) = self.peek() {
@@ -949,7 +952,7 @@ impl AtopileParser {
                     let symbol = (Symbol::from(name.clone()), token.span().clone()).into();
                     imports.push(symbol);
                     self.advance();
-                    
+
                     if let Some(next) = self.peek() {
                         if matches!(next.0, Token::Comma) {
                             self.advance();
@@ -964,23 +967,23 @@ impl AtopileParser {
                 break;
             }
         }
-        
+
         if imports.is_empty() {
             return Err(self.error("Expected at least one import"));
         }
-        
+
         let end_pos = self.position.saturating_sub(1);
         let span = self.span_from_to(start_pos, end_pos);
-        
+
         Ok((Stmt::Import(ImportStmt { from_path, imports }), span).into())
     }
 
     fn parse_dep_import_statement(&mut self) -> Result<Spanned<Stmt>, Simple<Token>> {
         let start_pos = self.position;
-        
+
         // import Module from "file.ato"
         self.consume(Token::Import, "Expected 'import'")?;
-        
+
         let name = if let Some(token) = self.peek() {
             if let Token::Name(name) = &token.0 {
                 let symbol = (Symbol::from(name.clone()), token.span().clone()).into();
@@ -992,9 +995,9 @@ impl AtopileParser {
         } else {
             return Err(self.error("Unexpected end of input"));
         };
-        
+
         self.consume(Token::From, "Expected 'from'")?;
-        
+
         let from_path = if let Some(token) = self.peek() {
             if let Token::String(path) = &token.0 {
                 let spanned_path = (path.clone(), token.span().clone()).into();
@@ -1006,10 +1009,10 @@ impl AtopileParser {
         } else {
             return Err(self.error("Unexpected end of input"));
         };
-        
+
         let end_pos = self.position.saturating_sub(1);
         let span = self.span_from_to(start_pos, end_pos);
-        
+
         Ok((Stmt::DepImport(DepImportStmt { name, from_path }), span).into())
     }
 
@@ -1017,8 +1020,8 @@ impl AtopileParser {
         if let Some(token) = self.peek() {
             if let Token::Comment(comment) = &token.0 {
                 let span = token.span().clone();
-                let comment_stmt = Stmt::Comment(CommentStmt { 
-                    comment: (comment.clone(), span.clone()).into() 
+                let comment_stmt = Stmt::Comment(CommentStmt {
+                    comment: (comment.clone(), span.clone()).into(),
                 });
                 self.advance();
                 return Ok((comment_stmt, span).into());
@@ -1029,28 +1032,30 @@ impl AtopileParser {
 
     fn parse_block_statement(&mut self) -> Result<Spanned<Stmt>, Simple<Token>> {
         let start_pos = self.position;
-        
-        let kind_token = self.peek().ok_or_else(|| self.error("Unexpected end of input"))?;
+
+        let kind_token = self
+            .peek()
+            .ok_or_else(|| self.error("Unexpected end of input"))?;
         let kind_span = kind_token.span().clone();
-        
+
         let kind = match kind_token.0 {
             Token::Component => {
                 self.advance();
                 (BlockKind::Component, kind_span).into()
-            },
+            }
             Token::Module => {
                 self.advance();
                 (BlockKind::Module, kind_span).into()
-            },
+            }
             Token::Interface => {
                 self.advance();
                 (BlockKind::Interface, kind_span).into()
-            },
+            }
             _ => return Err(self.error("Expected 'component', 'module', or 'interface'")),
         };
-        
+
         let name = self.parse_name_token("Expected block name")?;
-        
+
         let parent = if let Some(token) = self.peek() {
             if matches!(token.0, Token::From) {
                 self.advance();
@@ -1061,17 +1066,17 @@ impl AtopileParser {
         } else {
             None
         };
-        
+
         self.consume(Token::Colon, "Expected ':' after block header")?;
         self.consume(Token::Newline, "Expected newline after block header")?;
-        
+
         let mut body = Vec::new();
-        
+
         // Multi-line indented block
         if let Some(token) = self.peek() {
             if matches!(token.0, Token::Indent) {
                 self.advance();
-                
+
                 while !self.is_at_end() {
                     if let Some(token) = self.peek() {
                         if matches!(token.0, Token::Dedent) {
@@ -1079,7 +1084,7 @@ impl AtopileParser {
                             break;
                         }
                     }
-                    
+
                     match self.parse_statement() {
                         Ok(stmt) => {
                             body.push(stmt);
@@ -1103,17 +1108,17 @@ impl AtopileParser {
                 }
             }
         }
-        
+
         let body_end_pos = self.position.saturating_sub(1);
         let span = self.span_from_to(start_pos, body_end_pos);
-        
+
         let block_stmt = BlockStmt {
             kind,
             name: name.map(Symbol::from),
             parent: parent.map(|p| p.map(Symbol::from)),
             body,
         };
-        
+
         Ok((Stmt::Block(block_stmt), span).into())
     }
 
@@ -1134,7 +1139,7 @@ impl AtopileParser {
                     let span = token.span().clone();
                     self.advance();
                     Ok((Stmt::Pass, span).into())
-                },
+                }
                 _ => {
                     if self.check_specialize() {
                         self.parse_specialize_statement()
@@ -1197,7 +1202,7 @@ impl AtopileParser {
         if let Some(token) = self.peek() {
             if let Token::Name(_) = token.0 {
                 self.advance();
-                
+
                 if let Some(token) = self.peek() {
                     if matches!(token.0, Token::Colon) {
                         self.advance();
@@ -1211,7 +1216,7 @@ impl AtopileParser {
                         }
                     }
                 }
-                
+
                 if let Some(token) = self.peek() {
                     if matches!(token.0, Token::Equals) {
                         result = true;
@@ -1219,13 +1224,13 @@ impl AtopileParser {
                 }
             }
         }
-        
+
         if !result {
             self.position = saved_pos;
-            
+
             if self.check_port_ref() {
                 self.skip_port_ref();
-                
+
                 if let Some(token) = self.peek() {
                     if matches!(token.0, Token::Colon) {
                         self.advance();
@@ -1239,7 +1244,7 @@ impl AtopileParser {
                         }
                     }
                 }
-                
+
                 if let Some(token) = self.peek() {
                     if matches!(token.0, Token::Equals) {
                         result = true;
@@ -1289,7 +1294,7 @@ impl AtopileParser {
         if let Some(token) = self.peek() {
             if matches!(token.0, Token::Name(_) | Token::Number(_)) {
                 self.advance();
-                
+
                 while let Some(token) = self.peek() {
                     if matches!(token.0, Token::Dot) {
                         self.advance();
@@ -1321,7 +1326,7 @@ impl AtopileParser {
                             self.advance();
                         }
                     }
-                },
+                }
                 _ => {
                     if self.check_port_ref() {
                         self.skip_port_ref();
@@ -1333,36 +1338,48 @@ impl AtopileParser {
 
     fn parse_pin_statement(&mut self) -> Result<Spanned<Stmt>, Simple<Token>> {
         let start_pos = self.position;
-        
+
         // pin A1
         self.consume(Token::Pin, "Expected 'pin'")?;
-        
+
         let name = self.parse_name_or_number_or_string_token("Expected pin name")?;
-        
+
         let end_pos = self.position.saturating_sub(1);
         let span = self.span_from_to(start_pos, end_pos);
-        
-        Ok((Stmt::Pin(PinStmt { name: name.map(Symbol::from) }), span).into())
+
+        Ok((
+            Stmt::Pin(PinStmt {
+                name: name.map(Symbol::from),
+            }),
+            span,
+        )
+            .into())
     }
 
     fn parse_signal_statement(&mut self) -> Result<Spanned<Stmt>, Simple<Token>> {
         let start_pos = self.position;
-        
+
         self.consume(Token::Signal, "Expected 'signal'")?;
-        
+
         let name = self.parse_name_token("Expected signal name")?;
-        
+
         let end_pos = self.position.saturating_sub(1);
         let span = self.span_from_to(start_pos, end_pos);
-        
-        Ok((Stmt::Signal(SignalStmt { name: name.map(Symbol::from) }), span).into())
+
+        Ok((
+            Stmt::Signal(SignalStmt {
+                name: name.map(Symbol::from),
+            }),
+            span,
+        )
+            .into())
     }
 
     fn parse_expression(&mut self) -> Result<Spanned<Expr>, Simple<Token>> {
         if self.check_physical_value() {
             return self.parse_physical_value();
         }
-        
+
         let token_opt = self.peek().cloned();
         if let Some(token) = token_opt {
             if let Token::String(s) = &token.0 {
@@ -1372,36 +1389,36 @@ impl AtopileParser {
                 return Ok((Expr::String((string_val, span.clone()).into()), span).into());
             }
         }
-        
+
         let (expr_tokens, _, _) = self.collect_expr_tokens();
-        
+
         if expr_tokens.is_empty() {
             return Err(self.error("Expected expression"));
         }
-        
+
         let token_values: Vec<Token> = expr_tokens.iter().map(|t| t.0.clone()).collect();
-        
+
         let (expr_result, _) = expr().parse_recovery(token_values);
-        
+
         if let Some(mut expr) = expr_result {
             let expr_start = expr_tokens.first().unwrap().span().start;
             let expr_end = expr_tokens.last().unwrap().span().end;
             expr = (expr.0, expr_start..expr_end).into();
-            
+
             Ok(expr)
         } else {
             Err(self.error("Failed to parse expression"))
         }
     }
-    
+
     fn check_physical_value(&mut self) -> bool {
         let saved_pos = self.position;
         let mut result = false;
-        
+
         if let Some(token) = self.peek() {
             if let Token::Number(_) = token.0 {
                 self.advance();
-                
+
                 if let Some(next_token) = self.peek() {
                     if let Token::Name(_) = next_token.0 {
                         result = true;
@@ -1409,14 +1426,14 @@ impl AtopileParser {
                 }
             }
         }
-        
+
         self.position = saved_pos;
         result
     }
-    
+
     fn parse_physical_value(&mut self) -> Result<Spanned<Expr>, Simple<Token>> {
         let start_pos = self.position;
-        
+
         let token_opt = self.peek().cloned();
         let number = if let Some(token) = token_opt {
             if let Token::Number(n) = &token.0 {
@@ -1430,7 +1447,7 @@ impl AtopileParser {
         } else {
             return Err(self.error("Unexpected end of input"));
         };
-        
+
         let token_opt = self.peek().cloned();
         let unit = if let Some(token) = token_opt {
             if let Token::Name(u) = &token.0 {
@@ -1444,56 +1461,57 @@ impl AtopileParser {
         } else {
             return Err(self.error("Unexpected end of input"));
         };
-        
+
         let end_pos = self.position.saturating_sub(1);
         let span = self.span_from_to(start_pos, end_pos);
-        
+
         let formatted_value = format!("{}{} ", number.0, unit.0);
         let physical_value = PhysicalValue {
             value: (formatted_value, number.1.clone()).into(),
             unit: None, // Include unit in the value string instead
             tolerance: None,
         };
-        
+
         let physical_value_spanned = (physical_value, span.clone()).into();
         Ok((Expr::Physical(physical_value_spanned), span).into())
     }
 
     fn parse_assert_statement(&mut self) -> Result<Spanned<Stmt>, Simple<Token>> {
         let start_pos = self.position;
-        
+
         self.consume(Token::Assert, "Expected 'assert'")?;
-        
+
         let expr = self.parse_expression()?;
-        
+
         let end_pos = self.position.saturating_sub(1);
         let span = self.span_from_to(start_pos, end_pos);
-        
+
         Ok((Stmt::Assert(AssertStmt { expr }), span).into())
     }
 
     fn parse_attribute_statement(&mut self) -> Result<Spanned<Stmt>, Simple<Token>> {
         let start_pos = self.position;
-        
+
         let name = self.parse_name_token("Expected attribute name")?;
         self.consume(Token::Colon, "Expected ':' after attribute name")?;
         let type_info = self.parse_name_token("Expected type name")?;
-        
+
         if let Some(token) = self.peek() {
             if matches!(token.0, Token::Equals) {
                 self.advance();
                 let value = self.parse_expression()?;
-                
+
                 let end_pos = self.position.saturating_sub(1);
                 let span = self.span_from_to(start_pos, end_pos);
-                
+
                 let target = (
-                    PortRef { 
-                        parts: vec![name.clone()] 
-                    }, 
-                    name.span().clone()
-                ).into();
-                
+                    PortRef {
+                        parts: vec![name.clone()],
+                    },
+                    name.span().clone(),
+                )
+                    .into();
+
                 return Ok((
                     Stmt::Assign(AssignStmt {
                         target,
@@ -1501,13 +1519,14 @@ impl AtopileParser {
                         value,
                     }),
                     span,
-                ).into());
+                )
+                    .into());
             }
         }
-        
+
         let end_pos = self.position.saturating_sub(1);
         let span = self.span_from_to(start_pos, end_pos);
-        
+
         Ok((
             Stmt::Attribute(AttributeStmt {
                 name: name.map(Symbol::from),
@@ -1515,47 +1534,56 @@ impl AtopileParser {
                 value: None,
             }),
             span,
-        ).into())
+        )
+            .into())
     }
 
     fn parse_assign_statement(&mut self) -> Result<Spanned<Stmt>, Simple<Token>> {
         let start_pos = self.position;
-        
+
         let (target, type_info) = if let Some(token) = self.peek() {
             if let Token::Name(_) = token.0 {
                 let saved_pos = self.position;
                 let name = self.parse_name_token("Expected name")?;
-                
+
                 let type_info = if let Some(token) = self.peek() {
                     if matches!(token.0, Token::Colon) {
                         self.advance();
-                        Some(self.parse_name_token("Expected type after ':'")?).map(|t| t.map(String::from))
+                        Some(self.parse_name_token("Expected type after ':'")?)
+                            .map(|t| t.map(String::from))
                     } else {
                         None
                     }
                 } else {
                     None
                 };
-                
+
                 if let Some(token) = self.peek() {
                     if matches!(token.0, Token::Equals) {
-                        let port_ref = (PortRef { parts: vec![name.clone()] }, name.span().clone()).into();
+                        let port_ref = (
+                            PortRef {
+                                parts: vec![name.clone()],
+                            },
+                            name.span().clone(),
+                        )
+                            .into();
                         (port_ref, type_info)
                     } else {
                         self.position = saved_pos;
                         let target = self.parse_port_ref()?;
-                        
+
                         let type_info = if let Some(token) = self.peek() {
                             if matches!(token.0, Token::Colon) {
                                 self.advance();
-                                Some(self.parse_name_token("Expected type after ':'")?).map(|t| t.map(String::from))
+                                Some(self.parse_name_token("Expected type after ':'")?)
+                                    .map(|t| t.map(String::from))
                             } else {
                                 None
                             }
                         } else {
                             None
                         };
-                        
+
                         (target, type_info)
                     }
                 } else {
@@ -1563,31 +1591,32 @@ impl AtopileParser {
                 }
             } else {
                 let target = self.parse_port_ref()?;
-                
+
                 let type_info = if let Some(token) = self.peek() {
                     if matches!(token.0, Token::Colon) {
                         self.advance();
-                        Some(self.parse_name_token("Expected type after ':'")?).map(|t| t.map(String::from))
+                        Some(self.parse_name_token("Expected type after ':'")?)
+                            .map(|t| t.map(String::from))
                     } else {
                         None
                     }
                 } else {
                     None
                 };
-                
+
                 (target, type_info)
             }
         } else {
             return Err(self.error("Unexpected end of input"));
         };
-        
+
         self.consume(Token::Equals, "Expected '=' after target")?;
-        
+
         let value = self.parse_expression()?;
-        
+
         let end_pos = self.position.saturating_sub(1);
         let span = self.span_from_to(start_pos, end_pos);
-        
+
         Ok((
             Stmt::Assign(AssignStmt {
                 target,
@@ -1595,39 +1624,41 @@ impl AtopileParser {
                 value,
             }),
             span,
-        ).into())
+        )
+            .into())
     }
 
     fn parse_connect_statement(&mut self) -> Result<Spanned<Stmt>, Simple<Token>> {
         let start_pos = self.position;
-        
+
         let left = self.parse_connectable()?;
         self.consume(Token::Tilde, "Expected '~'")?;
         let right = self.parse_connectable()?;
-        
+
         let end_pos = self.position.saturating_sub(1);
         let span = self.span_from_to(start_pos, end_pos);
-        
+
         Ok((Stmt::Connect(ConnectStmt { left, right }), span).into())
     }
 
     fn parse_specialize_statement(&mut self) -> Result<Spanned<Stmt>, Simple<Token>> {
         let start_pos = self.position;
-        
+
         let port = self.parse_port_ref()?;
         self.consume(Token::Arrow, "Expected '->' after port")?;
         let value = self.parse_name_token("Expected specialization value")?;
-        
+
         let end_pos = self.position.saturating_sub(1);
         let span = self.span_from_to(start_pos, end_pos);
-        
+
         Ok((
             Stmt::Specialize(SpecializeStmt {
                 port,
                 value: value.map(Symbol::from),
             }),
             span,
-        ).into())
+        )
+            .into())
     }
 
     fn parse_name_token(&mut self, error_message: &str) -> Result<Spanned<String>, Simple<Token>> {
@@ -1644,24 +1675,27 @@ impl AtopileParser {
         }
     }
 
-    fn parse_name_or_number_or_string_token(&mut self, error_message: &str) -> Result<Spanned<String>, Simple<Token>> {
+    fn parse_name_or_number_or_string_token(
+        &mut self,
+        error_message: &str,
+    ) -> Result<Spanned<String>, Simple<Token>> {
         if let Some(token) = self.peek() {
             match &token.0 {
                 Token::Name(name) => {
                     let spanned_name = (name.clone(), token.span().clone()).into();
                     self.advance();
                     Ok(spanned_name)
-                },
+                }
                 Token::Number(num) => {
                     let spanned_num = (num.clone(), token.span().clone()).into();
                     self.advance();
                     Ok(spanned_num)
-                },
+                }
                 Token::String(s) => {
                     let spanned_str = (s.clone(), token.span().clone()).into();
                     self.advance();
                     Ok(spanned_str)
-                },
+                }
                 _ => Err(self.error(error_message)),
             }
         } else {
@@ -1672,37 +1706,37 @@ impl AtopileParser {
     fn parse_port_ref(&mut self) -> Result<Spanned<PortRef>, Simple<Token>> {
         let start_pos = self.position;
         let mut parts = Vec::new();
-        
+
         if let Some(token) = self.peek() {
             match &token.0 {
                 Token::Name(name) => {
                     parts.push((name.clone(), token.span().clone()).into());
                     self.advance();
-                },
+                }
                 Token::Number(num) => {
                     parts.push((num.clone(), token.span().clone()).into());
                     self.advance();
-                },
+                }
                 _ => return Err(self.error("Expected name or number for port reference")),
             }
         } else {
             return Err(self.error("Unexpected end of input"));
         }
-        
+
         while let Some(token) = self.peek() {
             if matches!(token.0, Token::Dot) {
                 self.advance();
-                
+
                 if let Some(next) = self.peek() {
                     match &next.0 {
                         Token::Name(name) => {
                             parts.push((name.clone(), next.span().clone()).into());
                             self.advance();
-                        },
+                        }
                         Token::Number(num) => {
                             parts.push((num.clone(), next.span().clone()).into());
                             self.advance();
-                        },
+                        }
                         _ => return Err(self.error("Expected name or number after dot")),
                     }
                 } else {
@@ -1712,16 +1746,16 @@ impl AtopileParser {
                 break;
             }
         }
-        
+
         let end_pos = self.position.saturating_sub(1);
         let span = self.span_from_to(start_pos, end_pos);
-        
+
         Ok((PortRef { parts }, span).into())
     }
 
     fn parse_connectable(&mut self) -> Result<Spanned<Connectable>, Simple<Token>> {
         let start_pos = self.position;
-        
+
         if let Some(token) = self.peek() {
             match token.0 {
                 Token::Pin => {
@@ -1730,14 +1764,14 @@ impl AtopileParser {
                     let end_pos = self.position.saturating_sub(1);
                     let span = self.span_from_to(start_pos, end_pos);
                     Ok((Connectable::Pin(name), span).into())
-                },
+                }
                 Token::Signal => {
                     self.advance();
                     let name = self.parse_name_or_number_or_string_token("Expected signal name")?;
                     let end_pos = self.position.saturating_sub(1);
                     let span = self.span_from_to(start_pos, end_pos);
                     Ok((Connectable::Signal(name), span).into())
-                },
+                }
                 _ => {
                     let port_ref = self.parse_port_ref()?;
                     let span = port_ref.span().clone();
@@ -1752,7 +1786,7 @@ impl AtopileParser {
     fn collect_expr_tokens(&mut self) -> (Vec<Spanned<Token>>, usize, usize) {
         let mut tokens = Vec::new();
         let start_pos = self.position;
-        
+
         while !self.is_at_end() {
             if let Some(token) = self.peek() {
                 if matches!(token.0, Token::Newline | Token::Semicolon) {
@@ -1764,7 +1798,7 @@ impl AtopileParser {
                 break;
             }
         }
-        
+
         let end_pos = self.position.saturating_sub(1);
         (tokens, start_pos, end_pos)
     }
@@ -1796,42 +1830,49 @@ pub fn parse_raw(tokens: Vec<Token>) -> (Vec<Spanned<Stmt>>, Vec<Simple<Token>>)
         .into_iter()
         .map(|t| {
             let start_pos = char_pos;
-            
+
             let token_len = match &t {
                 Token::Newline => 1,
                 Token::Indent => 4, // Assuming 4 spaces per indent
                 Token::Dedent => 0, // Dedent doesn't consume characters
                 Token::Name(s) | Token::Number(s) | Token::String(s) => s.len(),
                 Token::Comment(s) => s.len() + 1, // +1 for the '#'
-                _ => 1, // Most tokens are 1 character
+                _ => 1,                           // Most tokens are 1 character
             };
-            
+
             char_pos += token_len;
             let span = start_pos..char_pos;
             (t, span).into()
         })
         .collect();
-    
-    let has_block_tokens = spanned_tokens.iter().any(|t| 
-        matches!(t.0, Token::Module | Token::Component | Token::Interface)
-    );
-    
-    let has_statement_tokens = spanned_tokens.iter().any(|t| 
-        matches!(t.0, Token::Assert | Token::Pin | Token::Signal | 
-                     Token::Equals | Token::Tilde | Token::Arrow)
-    );
-    
+
+    let has_block_tokens = spanned_tokens
+        .iter()
+        .any(|t| matches!(t.0, Token::Module | Token::Component | Token::Interface));
+
+    let has_statement_tokens = spanned_tokens.iter().any(|t| {
+        matches!(
+            t.0,
+            Token::Assert
+                | Token::Pin
+                | Token::Signal
+                | Token::Equals
+                | Token::Tilde
+                | Token::Arrow
+        )
+    });
+
     let is_test_case = !has_block_tokens && has_statement_tokens;
-    
+
     println!("Is test case: {}", is_test_case);
-    
+
     let mut parser = AtopileParser::new(&spanned_tokens);
-    
+
     let (statements, errors) = if is_test_case {
         let mut statements = Vec::new();
-        
+
         parser.skip_newlines();
-        
+
         while !parser.is_at_end() {
             match parser.parse_statement() {
                 Ok(stmt) => {
@@ -1844,16 +1885,16 @@ pub fn parse_raw(tokens: Vec<Token>) -> (Vec<Spanned<Stmt>>, Vec<Simple<Token>>)
                 }
             }
         }
-        
+
         (statements, parser.errors.clone())
     } else {
         parser.parse()
     };
-    
+
     println!("Parse result: {} statements", statements.len());
     for (i, stmt) in statements.iter().enumerate() {
         println!("Statement {}: {:?}", i, stmt.0);
-        
+
         if let Stmt::Block(block) = &stmt.0 {
             println!("  Block body has {} items", block.body.len());
             for (j, body_stmt) in block.body.iter().enumerate() {
@@ -1861,7 +1902,7 @@ pub fn parse_raw(tokens: Vec<Token>) -> (Vec<Spanned<Stmt>>, Vec<Simple<Token>>)
             }
         }
     }
-    
+
     (statements, errors)
 }
 
