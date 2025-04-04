@@ -438,7 +438,7 @@ export class SchematicRenderer {
     };
 
     // Check each net for connections to our ports
-    for (const [_netName, net] of Array.from(this.nets.entries())) {
+    for (const [, net] of Array.from(this.nets.entries())) {
       const p1Port = `${instance_ref}.p1`;
       const p2Port = `${instance_ref}.p2`;
 
@@ -904,7 +904,7 @@ export class SchematicRenderer {
 
     // Helper function to check if a port is connected to a ground net
     const isGroundConnected = (port_ref: string): boolean => {
-      for (const [_netName, net] of Array.from(this.nets.entries())) {
+      for (const [, net] of Array.from(this.nets.entries())) {
         if (!net.has(port_ref)) continue;
 
         // Check if this net is a ground net
@@ -951,7 +951,7 @@ export class SchematicRenderer {
           mainLabelDimensions.height + portLabelDimensions.height * 2 + 40
         );
       } else if (child_instance.kind === InstanceKind.INTERFACE) {
-        for (let [port_name, _port_ref] of Object.entries(
+        for (let [port_name, ] of Object.entries(
           child_instance.children
         )) {
           const full_port_ref = `${instance_ref}.${child_name}.${port_name}`;
@@ -1235,7 +1235,7 @@ export class SchematicRenderer {
     let components: ElkNode[] = [];
 
     // Process all children
-    for (const [_child_name, child_ref] of Object.entries(instance.children)) {
+    for (const [, child_ref] of Object.entries(instance.children)) {
       const child_instance = this.netlist.instances[child_ref];
       if (!child_instance) continue;
 
@@ -2433,7 +2433,7 @@ export class SchematicRenderer {
     }
 
     // Process each module's nets separately
-    for (const [moduleName, moduleNets] of Array.from(netsByModule.entries())) {
+    for (const [, moduleNets] of Array.from(netsByModule.entries())) {
       const usedNames = new Set<string>();
 
       // Collect all nets and their possible names for this module
