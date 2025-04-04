@@ -1,10 +1,11 @@
 use std::{
-    fmt::Debug,
+    fmt::{Debug, Display},
     hash::Hash,
     ops::{Deref, Range},
     path::{Path, PathBuf},
 };
 
+use chumsky::span::SimpleSpan;
 #[cfg(test)]
 use insta::assert_debug_snapshot;
 use serde::Serialize;
@@ -25,9 +26,15 @@ impl<T> Deref for Spanned<T> {
     }
 }
 
-impl<T> From<(T, Span)> for Spanned<T> {
-    fn from((item, span): (T, Span)) -> Self {
-        Self(item, span)
+impl<T> From<(T, SimpleSpan)> for Spanned<T> {
+    fn from((item, span): (T, SimpleSpan)) -> Self {
+        Self(item, span.into())
+    }
+}
+
+impl<T> From<(T, Range<usize>)> for Spanned<T> {
+    fn from((item, span): (T, Range<usize>)) -> Self {
+        Self(item, span.into())
     }
 }
 
@@ -59,43 +66,45 @@ pub struct Position {
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct AtopileErrorReport<T> {
-    span: Span,
+    span: SimpleSpan,
     reason: String,
-    expected: Vec<Option<T>>,
+    expected: Vec<String>,
     found: Option<T>,
 }
 
 #[derive(Debug, Clone, PartialEq)]
-pub enum AtopileError {
+pub enum AtopileError<'a> {
     Lexer(AtopileErrorReport<char>),
-    Parser(AtopileErrorReport<lexer::Token>),
+    Parser(AtopileErrorReport<lexer::Token<'a>>),
 }
 
-impl<T: Hash + Eq + Debug + Clone> From<chumsky::error::Simple<T>> for AtopileErrorReport<T> {
-    fn from(err: chumsky::error::Simple<T>) -> Self {
+impl<'src, T: Hash + Eq + Debug + Clone + Display> From<chumsky::error::Rich<'src, T>>
+    for AtopileErrorReport<T>
+{
+    fn from(err: chumsky::error::Rich<'src, T>) -> Self {
         Self {
-            span: err.span(),
+            span: err.span().clone(),
             reason: format!("{:?}", err.reason()),
-            expected: err.expected().cloned().collect(),
+            expected: err.expected().map(|e| e.to_string()).collect(),
             found: err.found().cloned(),
         }
     }
 }
 
 #[derive(Debug, Clone, PartialEq)]
-pub struct AtopileSource {
+pub struct AtopileSource<'a> {
     raw: String,
     path: PathBuf,
-    tokens: Vec<Spanned<lexer::Token>>,
+    tokens: Vec<Spanned<lexer::Token<'a>>>,
     ast: Vec<Spanned<parser::Stmt>>,
     line_to_index: Vec<usize>,
 }
 
-impl AtopileSource {
-    pub fn new(raw: String, path: PathBuf) -> (Self, Vec<AtopileError>) {
+impl<'a> AtopileSource<'a> {
+    pub fn new(raw: String, path: PathBuf) -> (Self, Vec<AtopileError<'a>>) {
         let mut errors: Vec<AtopileError> = Vec::new();
 
-        let (tokens, lexer_errors) = lexer::lex(&raw);
+        let (tokens, lexer_errors) = lexer::Lexer::lex(&raw);
         errors.extend(
             lexer_errors
                 .into_iter()
@@ -507,7 +516,7 @@ fn test_traverse_all_stmts() {
 module M:
     r1 = new Resistor
     r2 = new Resistor
-    
+
     component Sub:
         x = new Thing
 "#
