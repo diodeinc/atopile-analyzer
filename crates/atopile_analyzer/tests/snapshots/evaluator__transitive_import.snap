@@ -1,6 +1,5 @@
 ---
 source: crates/atopile_analyzer/tests/evaluator.rs
-assertion_line: 91
 expression: result
 ---
 state:
@@ -83,10 +82,10 @@ state:
 diagnostics:
   - severity: Error
     kind: Evaluator
-    file: tests/resources/corpus/transitive_import.ato
+    file: transitive_import.ato
   - severity: Error
     kind: Evaluator
-    file: tests/resources/corpus/transitive_import.ato
+    file: transitive_import.ato
   - severity: Error
     kind: Evaluator
-    file: tests/resources/corpus/transitive_import.ato
+    file: transitive_import.ato

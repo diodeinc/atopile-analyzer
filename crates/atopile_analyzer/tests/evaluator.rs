@@ -5,7 +5,7 @@ use atopile_analyzer::evaluator::Evaluator;
 use atopile_parser::AtopileSource;
 use serde::Serialize;
 use std::fs;
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 
 #[derive(Debug, Serialize)]
 struct DiagnosticInfo {
@@ -29,7 +29,10 @@ impl From<&AnalyzerDiagnostic> for DiagnosticInfo {
         Self {
             severity: severity.to_string(),
             kind: kind.to_string(),
-            file: diag.file.to_string_lossy().to_string(),
+            file: Path::new(&diag.file)
+                .file_name()
+                .map(|f| f.to_string_lossy().to_string())
+                .unwrap_or_else(|| diag.file.to_string_lossy().to_string()),
         }
     }
 }

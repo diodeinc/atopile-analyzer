@@ -1,6 +1,5 @@
 ---
 source: crates/atopile_analyzer/tests/evaluator.rs
-assertion_line: 90
 expression: result
 ---
 state:
@@ -37,10 +36,10 @@ state:
 diagnostics:
   - severity: Error
     kind: Evaluator
-    file: tests/resources/corpus/hoisted_declaration.ato
+    file: hoisted_declaration.ato
   - severity: Error
     kind: Evaluator
-    file: tests/resources/corpus/hoisted_declaration.ato
+    file: hoisted_declaration.ato
   - severity: Error
     kind: Evaluator
-    file: tests/resources/corpus/hoisted_declaration.ato
+    file: hoisted_declaration.ato
