@@ -469,11 +469,14 @@ impl FileScope {
     }
 
     fn resolve(&self, symbol: &Symbol) -> Option<&ModuleRef> {
-        self.symbols.get(symbol).or_else(|| self.reexported_symbols.get(symbol))
+        self.symbols
+            .get(symbol)
+            .or_else(|| self.reexported_symbols.get(symbol))
     }
-    
+
     fn reexport(&mut self, symbol: &Symbol, module_ref: &ModuleRef) {
-        self.reexported_symbols.insert(symbol.clone(), module_ref.clone());
+        self.reexported_symbols
+            .insert(symbol.clone(), module_ref.clone());
     }
 }
 
@@ -876,9 +879,11 @@ impl Evaluator {
             if let Some(instance) = self.resolve_instance(&instance_ref) {
                 file_scope.define(imported_symbol.deref(), &instance.type_ref);
             } else {
-                let (imported_source, _) = self.file_cache.get_or_load(&path)
+                let (imported_source, _) = self
+                    .file_cache
+                    .get_or_load(&path)
                     .expect("Should be in cache after evaluating");
-                
+
                 let mut temp_file_scope = FileScope::new();
                 for stmt in imported_source.ast() {
                     if let Stmt::Import(import) = stmt.deref() {
@@ -889,8 +894,14 @@ impl Evaluator {
                             &import.from_path,
                             &import.imports,
                         ) {
-                            if import.imports.iter().any(|s| s.deref() == imported_symbol.deref()) {
-                                if let Some(module_ref) = temp_file_scope.resolve(imported_symbol.deref()) {
+                            if import
+                                .imports
+                                .iter()
+                                .any(|s| s.deref() == imported_symbol.deref())
+                            {
+                                if let Some(module_ref) =
+                                    temp_file_scope.resolve(imported_symbol.deref())
+                                {
                                     file_scope.reexport(imported_symbol.deref(), module_ref);
                                     continue;
                                 }
@@ -898,7 +909,7 @@ impl Evaluator {
                         }
                     }
                 }
-                
+
                 if file_scope.resolve(imported_symbol.deref()).is_none() {
                     self.reporter.report(
                         EvaluatorError::new(
@@ -1206,10 +1217,10 @@ impl Evaluator {
         self.reporter.clear(source.path());
 
         let mut file_scope = FileScope::new();
-        
+
         let mut blocks = Vec::new();
         let mut other_stmts = Vec::new();
-        
+
         for stmt in source.ast() {
             if let Stmt::Block(_) = stmt.deref() {
                 blocks.push(stmt);
@@ -1217,13 +1228,13 @@ impl Evaluator {
                 other_stmts.push(stmt);
             }
         }
-        
+
         for stmt in &blocks {
             if let Err(e) = self.evaluate_top_stmt(source, &import_stack, &mut file_scope, stmt) {
                 self.reporter.report(e.into());
             }
         }
-        
+
         for stmt in &other_stmts {
             if let Err(e) = self.evaluate_top_stmt(source, &import_stack, &mut file_scope, stmt) {
                 self.reporter.report(e.into());
