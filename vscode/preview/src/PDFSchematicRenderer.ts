@@ -3,7 +3,6 @@ import { Netlist } from "./types/NetlistTypes";
 import {
   SchematicRenderer,
   SchematicConfig,
-  DEFAULT_CONFIG,
   ElkNode,
   ElkEdge,
   NodeType,
@@ -874,7 +873,7 @@ export class PDFSchematicRenderer {
       submodules.push(instance_ref);
 
       // Recursively check all children
-      for (const [_, child_ref] of Object.entries(instance.children)) {
+      for (const [, child_ref] of Object.entries(instance.children)) {
         const child = this.layoutRenderer.netlist.instances[child_ref];
         if (child?.kind === "Module") {
           // Recursively get submodules of this child
