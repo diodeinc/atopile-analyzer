@@ -9,88 +9,88 @@ expression: output
                 ImportStmt {
                     from_path: Spanned(
                         "generics/interfaces.ato",
-                        1..2,
+                        5..30,
                     ),
                     imports: [
                         Spanned(
                             Symbol(
                                 "Power",
                             ),
-                            3..4,
+                            38..43,
                         ),
                         Spanned(
                             Symbol(
                                 "I2C",
                             ),
-                            5..6,
+                            45..48,
                         ),
                         Spanned(
                             Symbol(
                                 "SPI",
                             ),
-                            7..8,
+                            50..53,
                         ),
                         Spanned(
                             Symbol(
                                 "GPIO",
                             ),
-                            9..10,
+                            55..59,
                         ),
                     ],
                 },
             ),
-            0..10,
+            0..59,
         ),
         Spanned(
             Import(
                 ImportStmt {
                     from_path: Spanned(
                         "generics/capacitors.ato",
-                        12..13,
+                        65..90,
                     ),
                     imports: [
                         Spanned(
                             Symbol(
                                 "Capacitor",
                             ),
-                            14..15,
+                            98..107,
                         ),
                     ],
                 },
             ),
-            11..15,
+            60..107,
         ),
         Spanned(
             Import(
                 ImportStmt {
                     from_path: Spanned(
                         "_BMA400/BMA400.ato",
-                        17..18,
+                        113..133,
                     ),
                     imports: [
                         Spanned(
                             Symbol(
                                 "BMA400",
                             ),
-                            19..20,
+                            141..147,
                         ),
                     ],
                 },
             ),
-            16..20,
+            108..147,
         ),
         Spanned(
             Block(
                 BlockStmt {
                     kind: Spanned(
                         Module,
-                        22..23,
+                        149..155,
                     ),
                     name: Spanned(
                         Symbol(
                             "Bma400",
                         ),
-                        23..24,
+                        156..162,
                     ),
                     parent: None,
                     body: [
@@ -99,363 +99,363 @@ expression: output
                                 CommentStmt {
                                     comment: Spanned(
                                         "Ultra-low power triaxial accelerometer driver module based on the BMA400 from Bosch.",
-                                        27..28,
+                                        171..255,
                                     ),
                                 },
                             ),
-                            27..28,
+                            171..255,
                         ),
                         Spanned(
                             Comment(
                                 CommentStmt {
                                     comment: Spanned(
                                         "Features:",
-                                        30..31,
+                                        265..274,
                                     ),
                                 },
                             ),
-                            30..31,
+                            265..274,
                         ),
                         Spanned(
                             Comment(
                                 CommentStmt {
                                     comment: Spanned(
                                         "- Ultra-low power consumption (14.5μA in normal mode, 850nA in low-power mode)",
-                                        32..33,
+                                        279..357,
                                     ),
                                 },
                             ),
-                            32..33,
+                            279..357,
                         ),
                         Spanned(
                             Comment(
                                 CommentStmt {
                                     comment: Spanned(
                                         "- 12-bit digital resolution",
-                                        34..35,
+                                        362..389,
                                     ),
                                 },
                             ),
-                            34..35,
+                            362..389,
                         ),
                         Spanned(
                             Comment(
                                 CommentStmt {
                                     comment: Spanned(
                                         "- Programmable measurement ranges: ±2g, ±4g, ±8g, ±16g",
-                                        36..37,
+                                        394..448,
                                     ),
                                 },
                             ),
-                            36..37,
+                            394..448,
                         ),
                         Spanned(
                             Comment(
                                 CommentStmt {
                                     comment: Spanned(
                                         "- Built-in power management with auto wake-up/sleep capability",
-                                        38..39,
+                                        453..515,
                                     ),
                                 },
                             ),
-                            38..39,
+                            453..515,
                         ),
                         Spanned(
                             Comment(
                                 CommentStmt {
                                     comment: Spanned(
                                         "- Integrated FIFO (1KB)",
-                                        40..41,
+                                        520..543,
                                     ),
                                 },
                             ),
-                            40..41,
+                            520..543,
                         ),
                         Spanned(
                             Comment(
                                 CommentStmt {
                                     comment: Spanned(
                                         "- Smart interrupts including:",
-                                        42..43,
+                                        548..577,
                                     ),
                                 },
                             ),
-                            42..43,
+                            548..577,
                         ),
                         Spanned(
                             Comment(
                                 CommentStmt {
                                     comment: Spanned(
                                         "- Activity/inactivity detection",
-                                        44..45,
+                                        584..615,
                                     ),
                                 },
                             ),
-                            44..45,
+                            584..615,
                         ),
                         Spanned(
                             Comment(
                                 CommentStmt {
                                     comment: Spanned(
                                         "- Step counting with low power consumption (4μA)",
-                                        46..47,
+                                        622..670,
                                     ),
                                 },
                             ),
-                            46..47,
+                            622..670,
                         ),
                         Spanned(
                             Comment(
                                 CommentStmt {
                                     comment: Spanned(
                                         "- Orientation detection",
-                                        48..49,
+                                        677..700,
                                     ),
                                 },
                             ),
-                            48..49,
+                            677..700,
                         ),
                         Spanned(
                             Comment(
                                 CommentStmt {
                                     comment: Spanned(
                                         "- Tap/double-tap sensing",
-                                        50..51,
+                                        707..731,
                                     ),
                                 },
                             ),
-                            50..51,
+                            707..731,
                         ),
                         Spanned(
                             Comment(
                                 CommentStmt {
                                     comment: Spanned(
                                         "- Digital interfaces: I2C or SPI",
-                                        52..53,
+                                        736..768,
                                     ),
                                 },
                             ),
-                            52..53,
+                            736..768,
                         ),
                         Spanned(
                             Comment(
                                 CommentStmt {
                                     comment: Spanned(
                                         "- VDDIO voltage range: 1.2V to 3.6V",
-                                        54..55,
+                                        773..808,
                                     ),
                                 },
                             ),
-                            54..55,
+                            773..808,
                         ),
                         Spanned(
                             Comment(
                                 CommentStmt {
                                     comment: Spanned(
                                         "- VDD voltage range: 1.7V to 3.6V",
-                                        56..57,
+                                        813..846,
                                     ),
                                 },
                             ),
-                            56..57,
+                            813..846,
                         ),
                         Spanned(
                             Comment(
                                 CommentStmt {
                                     comment: Spanned(
                                         "Example Usage:",
-                                        59..60,
+                                        856..870,
                                     ),
                                 },
                             ),
-                            59..60,
+                            856..870,
                         ),
                         Spanned(
                             Comment(
                                 CommentStmt {
                                     comment: Spanned(
                                         "```",
-                                        61..62,
+                                        875..878,
                                     ),
                                 },
                             ),
-                            61..62,
+                            875..878,
                         ),
                         Spanned(
                             Comment(
                                 CommentStmt {
                                     comment: Spanned(
                                         "from 'generics/interfaces.ato' import Power, I2C, GPIO",
-                                        63..64,
+                                        883..937,
                                     ),
                                 },
                             ),
-                            63..64,
+                            883..937,
                         ),
                         Spanned(
                             Comment(
                                 CommentStmt {
                                     comment: Spanned(
                                         "from 'bma400/bma400.ato' import Bma400, Bma400_I2C",
-                                        65..66,
+                                        942..992,
                                     ),
                                 },
                             ),
-                            65..66,
+                            942..992,
                         ),
                         Spanned(
                             Comment(
                                 CommentStmt {
                                     comment: Spanned(
                                         "module UserBoard:",
-                                        68..69,
+                                        1002..1019,
                                     ),
                                 },
                             ),
-                            68..69,
+                            1002..1019,
                         ),
                         Spanned(
                             Comment(
                                 CommentStmt {
                                     comment: Spanned(
                                         "'''User board with BMA400 accelerometer'''",
-                                        70..71,
+                                        1028..1070,
                                     ),
                                 },
                             ),
-                            70..71,
+                            1028..1070,
                         ),
                         Spanned(
                             Comment(
                                 CommentStmt {
                                     comment: Spanned(
                                         "# Interfaces",
-                                        73..74,
+                                        1088..1100,
                                     ),
                                 },
                             ),
-                            73..74,
+                            1088..1100,
                         ),
                         Spanned(
                             Comment(
                                 CommentStmt {
                                     comment: Spanned(
                                         "power_1v8 = new Power  # 1.8V power supply",
-                                        75..76,
+                                        1109..1151,
                                     ),
                                 },
                             ),
-                            75..76,
+                            1109..1151,
                         ),
                         Spanned(
                             Comment(
                                 CommentStmt {
                                     comment: Spanned(
                                         "i2c = new I2C          # I2C bus",
-                                        77..78,
+                                        1160..1192,
                                     ),
                                 },
                             ),
-                            77..78,
+                            1160..1192,
                         ),
                         Spanned(
                             Comment(
                                 CommentStmt {
                                     comment: Spanned(
                                         "int1 = new GPIO        # Interrupt 1 input",
-                                        79..80,
+                                        1201..1243,
                                     ),
                                 },
                             ),
-                            79..80,
+                            1201..1243,
                         ),
                         Spanned(
                             Comment(
                                 CommentStmt {
                                     comment: Spanned(
                                         "# Accelerometer",
-                                        82..83,
+                                        1261..1276,
                                     ),
                                 },
                             ),
-                            82..83,
+                            1261..1276,
                         ),
                         Spanned(
                             Comment(
                                 CommentStmt {
                                     comment: Spanned(
                                         "accel = new Bma400",
-                                        84..85,
+                                        1285..1303,
                                     ),
                                 },
                             ),
-                            84..85,
+                            1285..1303,
                         ),
                         Spanned(
                             Comment(
                                 CommentStmt {
                                     comment: Spanned(
                                         "accel.ic -> Bma400_I2C  # Use I2C interface",
-                                        86..87,
+                                        1312..1355,
                                     ),
                                 },
                             ),
-                            86..87,
+                            1312..1355,
                         ),
                         Spanned(
                             Comment(
                                 CommentStmt {
                                     comment: Spanned(
                                         "# Connections",
-                                        89..90,
+                                        1373..1386,
                                     ),
                                 },
                             ),
-                            89..90,
+                            1373..1386,
                         ),
                         Spanned(
                             Comment(
                                 CommentStmt {
                                     comment: Spanned(
                                         "accel.power ~ power_1v8",
-                                        91..92,
+                                        1395..1418,
                                     ),
                                 },
                             ),
-                            91..92,
+                            1395..1418,
                         ),
                         Spanned(
                             Comment(
                                 CommentStmt {
                                     comment: Spanned(
                                         "accel.i2c ~ i2c",
-                                        93..94,
+                                        1427..1442,
                                     ),
                                 },
                             ),
-                            93..94,
+                            1427..1442,
                         ),
                         Spanned(
                             Comment(
                                 CommentStmt {
                                     comment: Spanned(
                                         "accel.int1 ~ int1",
-                                        95..96,
+                                        1451..1468,
                                     ),
                                 },
                             ),
-                            95..96,
+                            1451..1468,
                         ),
                         Spanned(
                             Comment(
                                 CommentStmt {
                                     comment: Spanned(
                                         "```",
-                                        97..98,
+                                        1473..1476,
                                     ),
                                 },
                             ),
-                            97..98,
+                            1473..1476,
                         ),
                         Spanned(
                             Signal(
@@ -464,16 +464,16 @@ expression: output
                                         Symbol(
                                             "gnd",
                                         ),
-                                        102..103,
+                                        1501..1504,
                                     ),
                                 },
                             ),
-                            101..103,
+                            1494..1504,
                         ),
                     ],
                 },
             ),
-            22..106,
+            149..1515,
         ),
     ],
     [],

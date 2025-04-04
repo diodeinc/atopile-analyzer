@@ -11,15 +11,15 @@ expression: output
                         Symbol(
                             "Resistor",
                         ),
-                        1..2,
+                        7..15,
                     ),
                     from_path: Spanned(
                         "resistors.ato",
-                        3..4,
+                        21..36,
                     ),
                 },
             ),
-            0..4,
+            0..36,
         ),
         Spanned(
             DepImport(
@@ -28,15 +28,15 @@ expression: output
                         Symbol(
                             "Capacitor",
                         ),
-                        6..7,
+                        44..53,
                     ),
                     from_path: Spanned(
                         "capacitors.ato",
-                        8..9,
+                        59..75,
                     ),
                 },
             ),
-            5..9,
+            37..75,
         ),
         Spanned(
             DepImport(
@@ -45,15 +45,15 @@ expression: output
                         Symbol(
                             "Power",
                         ),
-                        11..12,
+                        83..88,
                     ),
                     from_path: Spanned(
                         "interfaces.ato",
-                        13..14,
+                        94..110,
                     ),
                 },
             ),
-            10..14,
+            76..110,
         ),
         Spanned(
             DepImport(
@@ -62,35 +62,35 @@ expression: output
                         Symbol(
                             "Pair",
                         ),
-                        16..17,
+                        118..122,
                     ),
                     from_path: Spanned(
                         "interfaces.ato",
-                        18..19,
+                        128..144,
                     ),
                 },
             ),
-            15..19,
+            111..144,
         ),
         Spanned(
             Block(
                 BlockStmt {
                     kind: Spanned(
                         Module,
-                        21..22,
+                        146..152,
                     ),
                     name: Spanned(
                         Symbol(
                             "VDiv",
                         ),
-                        22..23,
+                        153..157,
                     ),
                     parent: Some(
                         Spanned(
                             Symbol(
                                 "_VDiv",
                             ),
-                            24..25,
+                            163..168,
                         ),
                     ),
                     body: [
@@ -101,28 +101,29 @@ expression: output
                                         Symbol(
                                             "r_total",
                                         ),
-                                        28..29,
+                                        174..181,
                                     ),
                                     type_info: Spanned(
                                         Symbol(
                                             "resistance",
                                         ),
-                                        30..31,
+                                        183..193,
                                     ),
+                                    value: None,
                                 },
                             ),
-                            28..31,
+                            174..193,
                         ),
                         Spanned(
                             Comment(
                                 CommentStmt {
                                     comment: Spanned(
                                         " ratio: None",
-                                        32..33,
+                                        198..211,
                                     ),
                                 },
                             ),
-                            32..33,
+                            198..211,
                         ),
                         Spanned(
                             Attribute(
@@ -131,17 +132,18 @@ expression: output
                                         Symbol(
                                             "v_in",
                                         ),
-                                        34..35,
+                                        216..220,
                                     ),
                                     type_info: Spanned(
                                         Symbol(
                                             "voltage",
                                         ),
-                                        36..37,
+                                        222..229,
                                     ),
+                                    value: None,
                                 },
                             ),
-                            34..37,
+                            216..229,
                         ),
                         Spanned(
                             Attribute(
@@ -150,17 +152,18 @@ expression: output
                                         Symbol(
                                             "v_out",
                                         ),
-                                        38..39,
+                                        234..239,
                                     ),
                                     type_info: Spanned(
                                         Symbol(
                                             "voltage",
                                         ),
-                                        40..41,
+                                        241..248,
                                     ),
+                                    value: None,
                                 },
                             ),
-                            38..41,
+                            234..248,
                         ),
                         Spanned(
                             Attribute(
@@ -169,17 +172,18 @@ expression: output
                                         Symbol(
                                             "i_q",
                                         ),
-                                        42..43,
+                                        253..256,
                                     ),
                                     type_info: Spanned(
                                         Symbol(
                                             "current",
                                         ),
-                                        44..45,
+                                        258..265,
                                     ),
+                                    value: None,
                                 },
                             ),
-                            42..45,
+                            253..265,
                         ),
                         Spanned(
                             Assign(
@@ -189,11 +193,11 @@ expression: output
                                             parts: [
                                                 Spanned(
                                                     "i_q",
-                                                    47..48,
+                                                    271..274,
                                                 ),
                                             ],
                                         },
-                                        47..48,
+                                        271..274,
                                     ),
                                     type_info: None,
                                     value: Spanned(
@@ -201,61 +205,42 @@ expression: output
                                             Spanned(
                                                 PhysicalValue {
                                                     value: Spanned(
-                                                        "100",
-                                                        49..50,
+                                                        "100uA ",
+                                                        277..280,
                                                     ),
-                                                    unit: Some(
-                                                        Spanned(
-                                                            "uA",
-                                                            50..51,
-                                                        ),
-                                                    ),
-                                                    tolerance: Some(
-                                                        Spanned(
-                                                            Bound {
-                                                                min: Spanned(
-                                                                    "0",
-                                                                    0..0,
-                                                                ),
-                                                                max: Spanned(
-                                                                    "10",
-                                                                    52..53,
-                                                                ),
-                                                            },
-                                                            51..54,
-                                                        ),
-                                                    ),
+                                                    unit: None,
+                                                    tolerance: None,
                                                 },
-                                                49..54,
+                                                277..282,
                                             ),
                                         ),
-                                        49..54,
+                                        277..282,
                                     ),
                                 },
                             ),
-                            47..54,
+                            271..282,
                         ),
                         Spanned(
                             Comment(
                                 CommentStmt {
                                     comment: Spanned(
                                         " assert r_top.value / r_bottom.value within ratio",
-                                        56..57,
+                                        296..346,
                                     ),
                                 },
                             ),
-                            56..57,
+                            296..346,
                         ),
                         Spanned(
                             Comment(
                                 CommentStmt {
                                     comment: Spanned(
                                         " assert r_top.value + r_bottom.value within r_total",
-                                        58..59,
+                                        351..403,
                                     ),
                                 },
                             ),
-                            58..59,
+                            351..403,
                         ),
                         Spanned(
                             Assert(
@@ -279,18 +264,18 @@ expression: output
                                                                                                     parts: [
                                                                                                         Spanned(
                                                                                                             "v_in",
-                                                                                                            61..62,
+                                                                                                            0..1,
                                                                                                         ),
                                                                                                     ],
                                                                                                 },
-                                                                                                61..62,
+                                                                                                0..1,
                                                                                             ),
                                                                                         ),
-                                                                                        61..62,
+                                                                                        0..1,
                                                                                     ),
                                                                                     op: Spanned(
                                                                                         Mul,
-                                                                                        62..63,
+                                                                                        1..2,
                                                                                     ),
                                                                                     right: Spanned(
                                                                                         Port(
@@ -299,28 +284,28 @@ expression: output
                                                                                                     parts: [
                                                                                                         Spanned(
                                                                                                             "r_bottom",
-                                                                                                            63..64,
+                                                                                                            2..3,
                                                                                                         ),
                                                                                                         Spanned(
                                                                                                             "value",
-                                                                                                            65..66,
+                                                                                                            4..5,
                                                                                                         ),
                                                                                                     ],
                                                                                                 },
-                                                                                                63..66,
+                                                                                                2..5,
                                                                                             ),
                                                                                         ),
-                                                                                        63..66,
+                                                                                        2..5,
                                                                                     ),
                                                                                 },
-                                                                                61..66,
+                                                                                0..5,
                                                                             ),
                                                                         ),
-                                                                        61..66,
+                                                                        0..5,
                                                                     ),
                                                                     op: Spanned(
                                                                         Div,
-                                                                        66..67,
+                                                                        5..6,
                                                                     ),
                                                                     right: Spanned(
                                                                         BinaryOp(
@@ -333,22 +318,22 @@ expression: output
                                                                                                     parts: [
                                                                                                         Spanned(
                                                                                                             "r_top",
-                                                                                                            68..69,
+                                                                                                            7..8,
                                                                                                         ),
                                                                                                         Spanned(
                                                                                                             "value",
-                                                                                                            70..71,
+                                                                                                            9..10,
                                                                                                         ),
                                                                                                     ],
                                                                                                 },
-                                                                                                68..71,
+                                                                                                7..10,
                                                                                             ),
                                                                                         ),
-                                                                                        68..71,
+                                                                                        7..10,
                                                                                     ),
                                                                                     op: Spanned(
                                                                                         Add,
-                                                                                        71..72,
+                                                                                        10..11,
                                                                                     ),
                                                                                     right: Spanned(
                                                                                         Port(
@@ -357,34 +342,34 @@ expression: output
                                                                                                     parts: [
                                                                                                         Spanned(
                                                                                                             "r_bottom",
-                                                                                                            72..73,
+                                                                                                            11..12,
                                                                                                         ),
                                                                                                         Spanned(
                                                                                                             "value",
-                                                                                                            74..75,
+                                                                                                            13..14,
                                                                                                         ),
                                                                                                     ],
                                                                                                 },
-                                                                                                72..75,
+                                                                                                11..14,
                                                                                             ),
                                                                                         ),
-                                                                                        72..75,
+                                                                                        11..14,
                                                                                     ),
                                                                                 },
-                                                                                68..75,
+                                                                                7..14,
                                                                             ),
                                                                         ),
-                                                                        68..75,
+                                                                        7..14,
                                                                     ),
                                                                 },
-                                                                61..75,
+                                                                0..14,
                                                             ),
                                                         ),
-                                                        61..75,
+                                                        0..14,
                                                     ),
                                                     op: Spanned(
                                                         Within,
-                                                        76..77,
+                                                        15..16,
                                                     ),
                                                     right: Spanned(
                                                         Port(
@@ -393,24 +378,24 @@ expression: output
                                                                     parts: [
                                                                         Spanned(
                                                                             "v_out",
-                                                                            77..78,
+                                                                            16..17,
                                                                         ),
                                                                     ],
                                                                 },
-                                                                77..78,
+                                                                16..17,
                                                             ),
                                                         ),
-                                                        77..78,
+                                                        16..17,
                                                     ),
                                                 },
-                                                61..78,
+                                                0..17,
                                             ),
                                         ),
-                                        61..78,
+                                        415..482,
                                     ),
                                 },
                             ),
-                            60..78,
+                            408..482,
                         ),
                         Spanned(
                             Assert(
@@ -430,18 +415,18 @@ expression: output
                                                                                     parts: [
                                                                                         Spanned(
                                                                                             "v_in",
-                                                                                            80..81,
+                                                                                            0..1,
                                                                                         ),
                                                                                     ],
                                                                                 },
-                                                                                80..81,
+                                                                                0..1,
                                                                             ),
                                                                         ),
-                                                                        80..81,
+                                                                        0..1,
                                                                     ),
                                                                     op: Spanned(
                                                                         Div,
-                                                                        81..82,
+                                                                        1..2,
                                                                     ),
                                                                     right: Spanned(
                                                                         BinaryOp(
@@ -454,22 +439,22 @@ expression: output
                                                                                                     parts: [
                                                                                                         Spanned(
                                                                                                             "r_bottom",
-                                                                                                            83..84,
+                                                                                                            3..4,
                                                                                                         ),
                                                                                                         Spanned(
                                                                                                             "value",
-                                                                                                            85..86,
+                                                                                                            5..6,
                                                                                                         ),
                                                                                                     ],
                                                                                                 },
-                                                                                                83..86,
+                                                                                                3..6,
                                                                                             ),
                                                                                         ),
-                                                                                        83..86,
+                                                                                        3..6,
                                                                                     ),
                                                                                     op: Spanned(
                                                                                         Add,
-                                                                                        86..87,
+                                                                                        6..7,
                                                                                     ),
                                                                                     right: Spanned(
                                                                                         Port(
@@ -478,34 +463,34 @@ expression: output
                                                                                                     parts: [
                                                                                                         Spanned(
                                                                                                             "r_top",
-                                                                                                            87..88,
+                                                                                                            7..8,
                                                                                                         ),
                                                                                                         Spanned(
                                                                                                             "value",
-                                                                                                            89..90,
+                                                                                                            9..10,
                                                                                                         ),
                                                                                                     ],
                                                                                                 },
-                                                                                                87..90,
+                                                                                                7..10,
                                                                                             ),
                                                                                         ),
-                                                                                        87..90,
+                                                                                        7..10,
                                                                                     ),
                                                                                 },
-                                                                                83..90,
+                                                                                3..10,
                                                                             ),
                                                                         ),
-                                                                        83..90,
+                                                                        3..10,
                                                                     ),
                                                                 },
-                                                                80..90,
+                                                                0..10,
                                                             ),
                                                         ),
-                                                        80..90,
+                                                        0..10,
                                                     ),
                                                     op: Spanned(
                                                         Within,
-                                                        91..92,
+                                                        11..12,
                                                     ),
                                                     right: Spanned(
                                                         Port(
@@ -514,42 +499,42 @@ expression: output
                                                                     parts: [
                                                                         Spanned(
                                                                             "i_q",
-                                                                            92..93,
+                                                                            12..13,
                                                                         ),
                                                                     ],
                                                                 },
-                                                                92..93,
+                                                                12..13,
                                                             ),
                                                         ),
-                                                        92..93,
+                                                        12..13,
                                                     ),
                                                 },
-                                                80..93,
+                                                0..13,
                                             ),
                                         ),
-                                        80..93,
+                                        494..542,
                                     ),
                                 },
                             ),
-                            79..93,
+                            487..542,
                         ),
                     ],
                 },
             ),
-            21..97,
+            146..545,
         ),
         Spanned(
             Block(
                 BlockStmt {
                     kind: Spanned(
                         Module,
-                        97..98,
+                        545..551,
                     ),
                     name: Spanned(
                         Symbol(
                             "_VDiv",
                         ),
-                        98..99,
+                        552..557,
                     ),
                     parent: None,
                     body: [
@@ -560,11 +545,11 @@ expression: output
                                         Symbol(
                                             "top",
                                         ),
-                                        103..104,
+                                        570..573,
                                     ),
                                 },
                             ),
-                            102..104,
+                            563..573,
                         ),
                         Spanned(
                             Signal(
@@ -573,11 +558,11 @@ expression: output
                                         Symbol(
                                             "out",
                                         ),
-                                        106..107,
+                                        585..588,
                                     ),
                                 },
                             ),
-                            105..107,
+                            578..588,
                         ),
                         Spanned(
                             Signal(
@@ -586,11 +571,11 @@ expression: output
                                         Symbol(
                                             "bottom",
                                         ),
-                                        109..110,
+                                        600..606,
                                     ),
                                 },
                             ),
-                            108..110,
+                            593..606,
                         ),
                         Spanned(
                             Assign(
@@ -600,11 +585,11 @@ expression: output
                                             parts: [
                                                 Spanned(
                                                     "output",
-                                                    112..113,
+                                                    612..618,
                                                 ),
                                             ],
                                         },
-                                        112..113,
+                                        612..618,
                                     ),
                                     type_info: None,
                                     value: Spanned(
@@ -613,14 +598,14 @@ expression: output
                                                 Symbol(
                                                     "Pair",
                                                 ),
-                                                115..116,
+                                                1..2,
                                             ),
                                         ),
-                                        114..116,
+                                        621..629,
                                     ),
                                 },
                             ),
-                            112..116,
+                            612..629,
                         ),
                         Spanned(
                             Connect(
@@ -632,18 +617,18 @@ expression: output
                                                     parts: [
                                                         Spanned(
                                                             "output",
-                                                            117..118,
+                                                            634..640,
                                                         ),
                                                         Spanned(
                                                             "io",
-                                                            119..120,
+                                                            641..643,
                                                         ),
                                                     ],
                                                 },
-                                                117..120,
+                                                634..643,
                                             ),
                                         ),
-                                        117..120,
+                                        634..643,
                                     ),
                                     right: Spanned(
                                         Port(
@@ -652,18 +637,18 @@ expression: output
                                                     parts: [
                                                         Spanned(
                                                             "out",
-                                                            121..122,
+                                                            646..649,
                                                         ),
                                                     ],
                                                 },
-                                                121..122,
+                                                646..649,
                                             ),
                                         ),
-                                        121..122,
+                                        646..649,
                                     ),
                                 },
                             ),
-                            117..122,
+                            634..649,
                         ),
                         Spanned(
                             Connect(
@@ -675,18 +660,18 @@ expression: output
                                                     parts: [
                                                         Spanned(
                                                             "output",
-                                                            123..124,
+                                                            654..660,
                                                         ),
                                                         Spanned(
                                                             "gnd",
-                                                            125..126,
+                                                            661..664,
                                                         ),
                                                     ],
                                                 },
-                                                123..126,
+                                                654..664,
                                             ),
                                         ),
-                                        123..126,
+                                        654..664,
                                     ),
                                     right: Spanned(
                                         Port(
@@ -695,18 +680,18 @@ expression: output
                                                     parts: [
                                                         Spanned(
                                                             "bottom",
-                                                            127..128,
+                                                            667..673,
                                                         ),
                                                     ],
                                                 },
-                                                127..128,
+                                                667..673,
                                             ),
                                         ),
-                                        127..128,
+                                        667..673,
                                     ),
                                 },
                             ),
-                            123..128,
+                            654..673,
                         ),
                         Spanned(
                             Assign(
@@ -716,11 +701,11 @@ expression: output
                                             parts: [
                                                 Spanned(
                                                     "in",
-                                                    130..131,
+                                                    679..681,
                                                 ),
                                             ],
                                         },
-                                        130..131,
+                                        679..681,
                                     ),
                                     type_info: None,
                                     value: Spanned(
@@ -729,25 +714,14 @@ expression: output
                                                 Symbol(
                                                     "Power",
                                                 ),
-                                                133..134,
+                                                1..2,
                                             ),
                                         ),
-                                        132..134,
+                                        684..702,
                                     ),
                                 },
                             ),
-                            130..134,
-                        ),
-                        Spanned(
-                            Comment(
-                                CommentStmt {
-                                    comment: Spanned(
-                                        " legacy",
-                                        134..135,
-                                    ),
-                                },
-                            ),
-                            134..135,
+                            679..702,
                         ),
                         Spanned(
                             Assign(
@@ -757,11 +731,11 @@ expression: output
                                             parts: [
                                                 Spanned(
                                                     "power",
-                                                    136..137,
+                                                    707..712,
                                                 ),
                                             ],
                                         },
-                                        136..137,
+                                        707..712,
                                     ),
                                     type_info: None,
                                     value: Spanned(
@@ -770,14 +744,14 @@ expression: output
                                                 Symbol(
                                                     "Power",
                                                 ),
-                                                139..140,
+                                                1..2,
                                             ),
                                         ),
-                                        138..140,
+                                        715..724,
                                     ),
                                 },
                             ),
-                            136..140,
+                            707..724,
                         ),
                         Spanned(
                             Connect(
@@ -789,14 +763,14 @@ expression: output
                                                     parts: [
                                                         Spanned(
                                                             "in",
-                                                            141..142,
+                                                            729..731,
                                                         ),
                                                     ],
                                                 },
-                                                141..142,
+                                                729..731,
                                             ),
                                         ),
-                                        141..142,
+                                        729..731,
                                     ),
                                     right: Spanned(
                                         Port(
@@ -805,18 +779,18 @@ expression: output
                                                     parts: [
                                                         Spanned(
                                                             "power",
-                                                            143..144,
+                                                            734..739,
                                                         ),
                                                     ],
                                                 },
-                                                143..144,
+                                                734..739,
                                             ),
                                         ),
-                                        143..144,
+                                        734..739,
                                     ),
                                 },
                             ),
-                            141..144,
+                            729..739,
                         ),
                         Spanned(
                             Connect(
@@ -828,18 +802,18 @@ expression: output
                                                     parts: [
                                                         Spanned(
                                                             "power",
-                                                            145..146,
+                                                            744..749,
                                                         ),
                                                         Spanned(
                                                             "vcc",
-                                                            147..148,
+                                                            750..753,
                                                         ),
                                                     ],
                                                 },
-                                                145..148,
+                                                744..753,
                                             ),
                                         ),
-                                        145..148,
+                                        744..753,
                                     ),
                                     right: Spanned(
                                         Port(
@@ -848,18 +822,18 @@ expression: output
                                                     parts: [
                                                         Spanned(
                                                             "top",
-                                                            149..150,
+                                                            756..759,
                                                         ),
                                                     ],
                                                 },
-                                                149..150,
+                                                756..759,
                                             ),
                                         ),
-                                        149..150,
+                                        756..759,
                                     ),
                                 },
                             ),
-                            145..150,
+                            744..759,
                         ),
                         Spanned(
                             Connect(
@@ -871,18 +845,18 @@ expression: output
                                                     parts: [
                                                         Spanned(
                                                             "power",
-                                                            151..152,
+                                                            764..769,
                                                         ),
                                                         Spanned(
                                                             "gnd",
-                                                            153..154,
+                                                            770..773,
                                                         ),
                                                     ],
                                                 },
-                                                151..154,
+                                                764..773,
                                             ),
                                         ),
-                                        151..154,
+                                        764..773,
                                     ),
                                     right: Spanned(
                                         Port(
@@ -891,18 +865,18 @@ expression: output
                                                     parts: [
                                                         Spanned(
                                                             "bottom",
-                                                            155..156,
+                                                            776..782,
                                                         ),
                                                     ],
                                                 },
-                                                155..156,
+                                                776..782,
                                             ),
                                         ),
-                                        155..156,
+                                        776..782,
                                     ),
                                 },
                             ),
-                            151..156,
+                            764..782,
                         ),
                         Spanned(
                             Assign(
@@ -912,11 +886,11 @@ expression: output
                                             parts: [
                                                 Spanned(
                                                     "r_top",
-                                                    158..159,
+                                                    788..793,
                                                 ),
                                             ],
                                         },
-                                        158..159,
+                                        788..793,
                                     ),
                                     type_info: None,
                                     value: Spanned(
@@ -925,14 +899,14 @@ expression: output
                                                 Symbol(
                                                     "Resistor",
                                                 ),
-                                                161..162,
+                                                1..2,
                                             ),
                                         ),
-                                        160..162,
+                                        796..808,
                                     ),
                                 },
                             ),
-                            158..162,
+                            788..808,
                         ),
                         Spanned(
                             Assign(
@@ -942,11 +916,11 @@ expression: output
                                             parts: [
                                                 Spanned(
                                                     "r_bottom",
-                                                    163..164,
+                                                    813..821,
                                                 ),
                                             ],
                                         },
-                                        163..164,
+                                        813..821,
                                     ),
                                     type_info: None,
                                     value: Spanned(
@@ -955,14 +929,14 @@ expression: output
                                                 Symbol(
                                                     "Resistor",
                                                 ),
-                                                166..167,
+                                                1..2,
                                             ),
                                         ),
-                                        165..167,
+                                        824..836,
                                     ),
                                 },
                             ),
-                            163..167,
+                            813..836,
                         ),
                         Spanned(
                             Assign(
@@ -972,29 +946,29 @@ expression: output
                                             parts: [
                                                 Spanned(
                                                     "r_top",
-                                                    168..169,
+                                                    841..846,
                                                 ),
                                                 Spanned(
                                                     "package",
-                                                    170..171,
+                                                    847..854,
                                                 ),
                                             ],
                                         },
-                                        168..171,
+                                        841..854,
                                     ),
                                     type_info: None,
                                     value: Spanned(
                                         String(
                                             Spanned(
                                                 "0402",
-                                                172..173,
+                                                857..863,
                                             ),
                                         ),
-                                        172..173,
+                                        857..863,
                                     ),
                                 },
                             ),
-                            168..173,
+                            841..863,
                         ),
                         Spanned(
                             Assign(
@@ -1004,29 +978,29 @@ expression: output
                                             parts: [
                                                 Spanned(
                                                     "r_bottom",
-                                                    174..175,
+                                                    868..876,
                                                 ),
                                                 Spanned(
                                                     "package",
-                                                    176..177,
+                                                    877..884,
                                                 ),
                                             ],
                                         },
-                                        174..177,
+                                        868..884,
                                     ),
                                     type_info: None,
                                     value: Spanned(
                                         String(
                                             Spanned(
                                                 "0402",
-                                                178..179,
+                                                887..893,
                                             ),
                                         ),
-                                        178..179,
+                                        887..893,
                                     ),
                                 },
                             ),
-                            174..179,
+                            868..893,
                         ),
                         Spanned(
                             Connect(
@@ -1038,14 +1012,14 @@ expression: output
                                                     parts: [
                                                         Spanned(
                                                             "top",
-                                                            181..182,
+                                                            899..902,
                                                         ),
                                                     ],
                                                 },
-                                                181..182,
+                                                899..902,
                                             ),
                                         ),
-                                        181..182,
+                                        899..902,
                                     ),
                                     right: Spanned(
                                         Port(
@@ -1054,22 +1028,22 @@ expression: output
                                                     parts: [
                                                         Spanned(
                                                             "r_top",
-                                                            183..184,
+                                                            905..910,
                                                         ),
                                                         Spanned(
                                                             "1",
-                                                            185..186,
+                                                            911..912,
                                                         ),
                                                     ],
                                                 },
-                                                183..186,
+                                                905..912,
                                             ),
                                         ),
-                                        183..186,
+                                        905..912,
                                     ),
                                 },
                             ),
-                            181..186,
+                            899..912,
                         ),
                         Spanned(
                             Connect(
@@ -1081,18 +1055,18 @@ expression: output
                                                     parts: [
                                                         Spanned(
                                                             "r_top",
-                                                            187..188,
+                                                            914..919,
                                                         ),
                                                         Spanned(
                                                             "2",
-                                                            189..190,
+                                                            920..921,
                                                         ),
                                                     ],
                                                 },
-                                                187..190,
+                                                914..921,
                                             ),
                                         ),
-                                        187..190,
+                                        914..921,
                                     ),
                                     right: Spanned(
                                         Port(
@@ -1101,22 +1075,22 @@ expression: output
                                                     parts: [
                                                         Spanned(
                                                             "r_bottom",
-                                                            191..192,
+                                                            924..932,
                                                         ),
                                                         Spanned(
                                                             "1",
-                                                            193..194,
+                                                            933..934,
                                                         ),
                                                     ],
                                                 },
-                                                191..194,
+                                                924..934,
                                             ),
                                         ),
-                                        191..194,
+                                        924..934,
                                     ),
                                 },
                             ),
-                            187..194,
+                            914..934,
                         ),
                         Spanned(
                             Connect(
@@ -1128,18 +1102,18 @@ expression: output
                                                     parts: [
                                                         Spanned(
                                                             "r_bottom",
-                                                            195..196,
+                                                            936..944,
                                                         ),
                                                         Spanned(
                                                             "2",
-                                                            197..198,
+                                                            945..946,
                                                         ),
                                                     ],
                                                 },
-                                                195..198,
+                                                936..946,
                                             ),
                                         ),
-                                        195..198,
+                                        936..946,
                                     ),
                                     right: Spanned(
                                         Port(
@@ -1148,18 +1122,18 @@ expression: output
                                                     parts: [
                                                         Spanned(
                                                             "bottom",
-                                                            199..200,
+                                                            949..955,
                                                         ),
                                                     ],
                                                 },
-                                                199..200,
+                                                949..955,
                                             ),
                                         ),
-                                        199..200,
+                                        949..955,
                                     ),
                                 },
                             ),
-                            195..200,
+                            936..955,
                         ),
                         Spanned(
                             Connect(
@@ -1171,18 +1145,18 @@ expression: output
                                                     parts: [
                                                         Spanned(
                                                             "r_top",
-                                                            201..202,
+                                                            960..965,
                                                         ),
                                                         Spanned(
                                                             "2",
-                                                            203..204,
+                                                            966..967,
                                                         ),
                                                     ],
                                                 },
-                                                201..204,
+                                                960..967,
                                             ),
                                         ),
-                                        201..204,
+                                        960..967,
                                     ),
                                     right: Spanned(
                                         Port(
@@ -1191,43 +1165,43 @@ expression: output
                                                     parts: [
                                                         Spanned(
                                                             "out",
-                                                            205..206,
+                                                            970..973,
                                                         ),
                                                     ],
                                                 },
-                                                205..206,
+                                                970..973,
                                             ),
                                         ),
-                                        205..206,
+                                        970..973,
                                     ),
                                 },
                             ),
-                            201..206,
+                            960..973,
                         ),
                     ],
                 },
             ),
-            97..209,
+            545..975,
         ),
         Spanned(
             Block(
                 BlockStmt {
                     kind: Spanned(
                         Module,
-                        209..210,
+                        975..981,
                     ),
                     name: Spanned(
                         Symbol(
                             "VDivLowPassFilter",
                         ),
-                        210..211,
+                        982..999,
                     ),
                     parent: Some(
                         Spanned(
                             Symbol(
                                 "VDiv",
                             ),
-                            212..213,
+                            1005..1009,
                         ),
                     ),
                     body: [
@@ -1239,11 +1213,11 @@ expression: output
                                             parts: [
                                                 Spanned(
                                                     "cap",
-                                                    216..217,
+                                                    1015..1018,
                                                 ),
                                             ],
                                         },
-                                        216..217,
+                                        1015..1018,
                                     ),
                                     type_info: None,
                                     value: Spanned(
@@ -1252,14 +1226,14 @@ expression: output
                                                 Symbol(
                                                     "Capacitor",
                                                 ),
-                                                219..220,
+                                                1..2,
                                             ),
                                         ),
-                                        218..220,
+                                        1021..1034,
                                     ),
                                 },
                             ),
-                            216..220,
+                            1015..1034,
                         ),
                         Spanned(
                             Assign(
@@ -1269,29 +1243,29 @@ expression: output
                                             parts: [
                                                 Spanned(
                                                     "cap",
-                                                    221..222,
+                                                    1039..1042,
                                                 ),
                                                 Spanned(
                                                     "package",
-                                                    223..224,
+                                                    1043..1050,
                                                 ),
                                             ],
                                         },
-                                        221..224,
+                                        1039..1050,
                                     ),
                                     type_info: None,
                                     value: Spanned(
                                         String(
                                             Spanned(
                                                 "0402",
-                                                225..226,
+                                                1053..1059,
                                             ),
                                         ),
-                                        225..226,
+                                        1053..1059,
                                     ),
                                 },
                             ),
-                            221..226,
+                            1039..1059,
                         ),
                         Spanned(
                             Attribute(
@@ -1300,17 +1274,18 @@ expression: output
                                         Symbol(
                                             "cutoff_frequency",
                                         ),
-                                        227..228,
+                                        1064..1080,
                                     ),
                                     type_info: Spanned(
                                         Symbol(
                                             "frequency",
                                         ),
-                                        229..230,
+                                        1082..1091,
                                     ),
+                                    value: None,
                                 },
                             ),
-                            227..230,
+                            1064..1091,
                         ),
                         Spanned(
                             Connect(
@@ -1322,14 +1297,14 @@ expression: output
                                                     parts: [
                                                         Spanned(
                                                             "out",
-                                                            232..233,
+                                                            1097..1100,
                                                         ),
                                                     ],
                                                 },
-                                                232..233,
+                                                1097..1100,
                                             ),
                                         ),
-                                        232..233,
+                                        1097..1100,
                                     ),
                                     right: Spanned(
                                         Port(
@@ -1338,22 +1313,22 @@ expression: output
                                                     parts: [
                                                         Spanned(
                                                             "cap",
-                                                            234..235,
+                                                            1103..1106,
                                                         ),
                                                         Spanned(
                                                             "1",
-                                                            236..237,
+                                                            1107..1108,
                                                         ),
                                                     ],
                                                 },
-                                                234..237,
+                                                1103..1108,
                                             ),
                                         ),
-                                        234..237,
+                                        1103..1108,
                                     ),
                                 },
                             ),
-                            232..237,
+                            1097..1108,
                         ),
                         Spanned(
                             Connect(
@@ -1365,18 +1340,18 @@ expression: output
                                                     parts: [
                                                         Spanned(
                                                             "cap",
-                                                            238..239,
+                                                            1110..1113,
                                                         ),
                                                         Spanned(
                                                             "2",
-                                                            240..241,
+                                                            1114..1115,
                                                         ),
                                                     ],
                                                 },
-                                                238..241,
+                                                1110..1115,
                                             ),
                                         ),
-                                        238..241,
+                                        1110..1115,
                                     ),
                                     right: Spanned(
                                         Port(
@@ -1385,18 +1360,18 @@ expression: output
                                                     parts: [
                                                         Spanned(
                                                             "bottom",
-                                                            242..243,
+                                                            1118..1124,
                                                         ),
                                                     ],
                                                 },
-                                                242..243,
+                                                1118..1124,
                                             ),
                                         ),
-                                        242..243,
+                                        1118..1124,
                                     ),
                                 },
                             ),
-                            238..243,
+                            1110..1124,
                         ),
                         Spanned(
                             Assign(
@@ -1406,15 +1381,15 @@ expression: output
                                             parts: [
                                                 Spanned(
                                                     "cap",
-                                                    244..245,
+                                                    1129..1132,
                                                 ),
                                                 Spanned(
                                                     "value",
-                                                    246..247,
+                                                    1133..1138,
                                                 ),
                                             ],
                                         },
-                                        244..247,
+                                        1129..1138,
                                     ),
                                     type_info: None,
                                     value: Spanned(
@@ -1422,36 +1397,20 @@ expression: output
                                             Spanned(
                                                 PhysicalValue {
                                                     value: Spanned(
-                                                        "100",
-                                                        248..249,
+                                                        "100nF ",
+                                                        1141..1144,
                                                     ),
-                                                    unit: Some(
-                                                        Spanned(
-                                                            "nF",
-                                                            249..250,
-                                                        ),
-                                                    ),
-                                                    tolerance: Some(
-                                                        Spanned(
-                                                            Bilateral {
-                                                                value: Spanned(
-                                                                    "10",
-                                                                    251..252,
-                                                                ),
-                                                                unit: None,
-                                                            },
-                                                            250..253,
-                                                        ),
-                                                    ),
+                                                    unit: None,
+                                                    tolerance: None,
                                                 },
-                                                248..253,
+                                                1141..1146,
                                             ),
                                         ),
-                                        248..253,
+                                        1141..1146,
                                     ),
                                 },
                             ),
-                            244..253,
+                            1129..1146,
                         ),
                         Spanned(
                             Attribute(
@@ -1460,17 +1419,18 @@ expression: output
                                         Symbol(
                                             "cutoff_frequency",
                                         ),
-                                        255..256,
+                                        1160..1176,
                                     ),
                                     type_info: Spanned(
                                         Symbol(
                                             "frequency",
                                         ),
-                                        257..258,
+                                        1178..1187,
                                     ),
+                                    value: None,
                                 },
                             ),
-                            255..258,
+                            1160..1187,
                         ),
                         Spanned(
                             Assert(
@@ -1489,19 +1449,19 @@ expression: output
                                                                                 PhysicalValue {
                                                                                     value: Spanned(
                                                                                         "1",
-                                                                                        261..262,
+                                                                                        0..1,
                                                                                     ),
                                                                                     unit: None,
                                                                                     tolerance: None,
                                                                                 },
-                                                                                261..262,
+                                                                                0..1,
                                                                             ),
                                                                         ),
-                                                                        261..262,
+                                                                        0..1,
                                                                     ),
                                                                     op: Spanned(
                                                                         Div,
-                                                                        262..263,
+                                                                        1..2,
                                                                     ),
                                                                     right: Spanned(
                                                                         BinaryOp(
@@ -1521,19 +1481,19 @@ expression: output
                                                                                                                                 PhysicalValue {
                                                                                                                                     value: Spanned(
                                                                                                                                         "2",
-                                                                                                                                        264..265,
+                                                                                                                                        3..4,
                                                                                                                                     ),
                                                                                                                                     unit: None,
                                                                                                                                     tolerance: None,
                                                                                                                                 },
-                                                                                                                                264..265,
+                                                                                                                                3..4,
                                                                                                                             ),
                                                                                                                         ),
-                                                                                                                        264..265,
+                                                                                                                        3..4,
                                                                                                                     ),
                                                                                                                     op: Spanned(
                                                                                                                         Mul,
-                                                                                                                        265..266,
+                                                                                                                        4..5,
                                                                                                                     ),
                                                                                                                     right: Spanned(
                                                                                                                         Physical(
@@ -1541,25 +1501,25 @@ expression: output
                                                                                                                                 PhysicalValue {
                                                                                                                                     value: Spanned(
                                                                                                                                         "3.14",
-                                                                                                                                        266..267,
+                                                                                                                                        5..6,
                                                                                                                                     ),
                                                                                                                                     unit: None,
                                                                                                                                     tolerance: None,
                                                                                                                                 },
-                                                                                                                                266..267,
+                                                                                                                                5..6,
                                                                                                                             ),
                                                                                                                         ),
-                                                                                                                        266..267,
+                                                                                                                        5..6,
                                                                                                                     ),
                                                                                                                 },
-                                                                                                                264..267,
+                                                                                                                3..6,
                                                                                                             ),
                                                                                                         ),
-                                                                                                        264..267,
+                                                                                                        3..6,
                                                                                                     ),
                                                                                                     op: Spanned(
                                                                                                         Mul,
-                                                                                                        267..268,
+                                                                                                        6..7,
                                                                                                     ),
                                                                                                     right: Spanned(
                                                                                                         Port(
@@ -1568,28 +1528,28 @@ expression: output
                                                                                                                     parts: [
                                                                                                                         Spanned(
                                                                                                                             "r_top",
-                                                                                                                            268..269,
+                                                                                                                            7..8,
                                                                                                                         ),
                                                                                                                         Spanned(
                                                                                                                             "value",
-                                                                                                                            270..271,
+                                                                                                                            9..10,
                                                                                                                         ),
                                                                                                                     ],
                                                                                                                 },
-                                                                                                                268..271,
+                                                                                                                7..10,
                                                                                                             ),
                                                                                                         ),
-                                                                                                        268..271,
+                                                                                                        7..10,
                                                                                                     ),
                                                                                                 },
-                                                                                                264..271,
+                                                                                                3..10,
                                                                                             ),
                                                                                         ),
-                                                                                        264..271,
+                                                                                        3..10,
                                                                                     ),
                                                                                     op: Spanned(
                                                                                         Mul,
-                                                                                        271..272,
+                                                                                        10..11,
                                                                                     ),
                                                                                     right: Spanned(
                                                                                         Port(
@@ -1598,34 +1558,34 @@ expression: output
                                                                                                     parts: [
                                                                                                         Spanned(
                                                                                                             "cap",
-                                                                                                            272..273,
+                                                                                                            11..12,
                                                                                                         ),
                                                                                                         Spanned(
                                                                                                             "value",
-                                                                                                            274..275,
+                                                                                                            13..14,
                                                                                                         ),
                                                                                                     ],
                                                                                                 },
-                                                                                                272..275,
+                                                                                                11..14,
                                                                                             ),
                                                                                         ),
-                                                                                        272..275,
+                                                                                        11..14,
                                                                                     ),
                                                                                 },
-                                                                                264..275,
+                                                                                3..14,
                                                                             ),
                                                                         ),
-                                                                        264..275,
+                                                                        3..14,
                                                                     ),
                                                                 },
-                                                                261..275,
+                                                                0..14,
                                                             ),
                                                         ),
-                                                        261..275,
+                                                        0..14,
                                                     ),
                                                     op: Spanned(
                                                         Within,
-                                                        276..277,
+                                                        15..16,
                                                     ),
                                                     right: Spanned(
                                                         Port(
@@ -1634,30 +1594,94 @@ expression: output
                                                                     parts: [
                                                                         Spanned(
                                                                             "cutoff_frequency",
-                                                                            277..278,
+                                                                            16..17,
                                                                         ),
                                                                     ],
                                                                 },
-                                                                277..278,
+                                                                16..17,
                                                             ),
                                                         ),
-                                                        277..278,
+                                                        16..17,
                                                     ),
                                                 },
-                                                261..278,
+                                                0..17,
                                             ),
                                         ),
-                                        261..278,
+                                        1200..1264,
                                     ),
                                 },
                             ),
-                            260..278,
+                            1193..1264,
                         ),
                     ],
                 },
             ),
-            209..280,
+            975..1265,
         ),
     ],
-    [],
+    [
+        Simple {
+            span: 283..285,
+            reason: Custom(
+                "Expected statement",
+            ),
+            expected: {},
+            found: None,
+            label: None,
+        },
+        Simple {
+            span: 291..292,
+            reason: Custom(
+                "Expected statement",
+            ),
+            expected: {},
+            found: None,
+            label: None,
+        },
+        Simple {
+            span: 912..913,
+            reason: Custom(
+                "Expected statement",
+            ),
+            expected: {},
+            found: None,
+            label: None,
+        },
+        Simple {
+            span: 934..935,
+            reason: Custom(
+                "Expected statement",
+            ),
+            expected: {},
+            found: None,
+            label: None,
+        },
+        Simple {
+            span: 1108..1109,
+            reason: Custom(
+                "Expected statement",
+            ),
+            expected: {},
+            found: None,
+            label: None,
+        },
+        Simple {
+            span: 1147..1150,
+            reason: Custom(
+                "Expected statement",
+            ),
+            expected: {},
+            found: None,
+            label: None,
+        },
+        Simple {
+            span: 1155..1156,
+            reason: Custom(
+                "Expected statement",
+            ),
+            expected: {},
+            found: None,
+            label: None,
+        },
+    ],
 )

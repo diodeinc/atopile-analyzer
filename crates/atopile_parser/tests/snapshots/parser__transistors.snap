@@ -9,136 +9,13 @@ expression: output
                 BlockStmt {
                     kind: Spanned(
                         Component,
-                        0..1,
+                        0..9,
                     ),
                     name: Spanned(
                         Symbol(
                             "NPN",
                         ),
-                        1..2,
-                    ),
-                    parent: None,
-                    body: [
-                        Spanned(
-                            Connect(
-                                ConnectStmt {
-                                    left: Spanned(
-                                        Signal(
-                                            Spanned(
-                                                "base",
-                                                6..7,
-                                            ),
-                                        ),
-                                        5..7,
-                                    ),
-                                    right: Spanned(
-                                        Pin(
-                                            Spanned(
-                                                "1",
-                                                9..10,
-                                            ),
-                                        ),
-                                        8..10,
-                                    ),
-                                },
-                            ),
-                            5..10,
-                        ),
-                        Spanned(
-                            Connect(
-                                ConnectStmt {
-                                    left: Spanned(
-                                        Signal(
-                                            Spanned(
-                                                "collector",
-                                                12..13,
-                                            ),
-                                        ),
-                                        11..13,
-                                    ),
-                                    right: Spanned(
-                                        Pin(
-                                            Spanned(
-                                                "2",
-                                                15..16,
-                                            ),
-                                        ),
-                                        14..16,
-                                    ),
-                                },
-                            ),
-                            11..16,
-                        ),
-                        Spanned(
-                            Connect(
-                                ConnectStmt {
-                                    left: Spanned(
-                                        Signal(
-                                            Spanned(
-                                                "emitter",
-                                                18..19,
-                                            ),
-                                        ),
-                                        17..19,
-                                    ),
-                                    right: Spanned(
-                                        Pin(
-                                            Spanned(
-                                                "3",
-                                                21..22,
-                                            ),
-                                        ),
-                                        20..22,
-                                    ),
-                                },
-                            ),
-                            17..22,
-                        ),
-                        Spanned(
-                            Assign(
-                                AssignStmt {
-                                    target: Spanned(
-                                        PortRef {
-                                            parts: [
-                                                Spanned(
-                                                    "designator_prefix",
-                                                    23..24,
-                                                ),
-                                            ],
-                                        },
-                                        23..24,
-                                    ),
-                                    type_info: None,
-                                    value: Spanned(
-                                        String(
-                                            Spanned(
-                                                "Q",
-                                                25..26,
-                                            ),
-                                        ),
-                                        25..26,
-                                    ),
-                                },
-                            ),
-                            23..26,
-                        ),
-                    ],
-                },
-            ),
-            0..29,
-        ),
-        Spanned(
-            Block(
-                BlockStmt {
-                    kind: Spanned(
-                        Component,
-                        29..30,
-                    ),
-                    name: Spanned(
-                        Symbol(
-                            "PNP",
-                        ),
-                        30..31,
+                        10..13,
                     ),
                     parent: None,
                     body: [
@@ -149,11 +26,11 @@ expression: output
                                         Symbol(
                                             "base",
                                         ),
-                                        35..36,
+                                        26..30,
                                     ),
                                 },
                             ),
-                            34..36,
+                            19..30,
                         ),
                         Spanned(
                             Signal(
@@ -162,11 +39,11 @@ expression: output
                                         Symbol(
                                             "collector",
                                         ),
-                                        38..39,
+                                        50..59,
                                     ),
                                 },
                             ),
-                            37..39,
+                            43..59,
                         ),
                         Spanned(
                             Signal(
@@ -175,11 +52,11 @@ expression: output
                                         Symbol(
                                             "emitter",
                                         ),
-                                        41..42,
+                                        79..86,
                                     ),
                                 },
                             ),
-                            40..42,
+                            72..86,
                         ),
                         Spanned(
                             Assign(
@@ -189,43 +66,130 @@ expression: output
                                             parts: [
                                                 Spanned(
                                                     "designator_prefix",
-                                                    43..44,
+                                                    99..116,
                                                 ),
                                             ],
                                         },
-                                        43..44,
+                                        99..116,
                                     ),
                                     type_info: None,
                                     value: Spanned(
                                         String(
                                             Spanned(
                                                 "Q",
-                                                45..46,
+                                                119..122,
                                             ),
                                         ),
-                                        45..46,
+                                        119..122,
                                     ),
                                 },
                             ),
-                            43..46,
+                            99..122,
                         ),
                     ],
                 },
             ),
-            29..49,
+            0..124,
         ),
         Spanned(
             Block(
                 BlockStmt {
                     kind: Spanned(
                         Component,
-                        49..50,
+                        124..133,
+                    ),
+                    name: Spanned(
+                        Symbol(
+                            "PNP",
+                        ),
+                        134..137,
+                    ),
+                    parent: None,
+                    body: [
+                        Spanned(
+                            Signal(
+                                SignalStmt {
+                                    name: Spanned(
+                                        Symbol(
+                                            "base",
+                                        ),
+                                        150..154,
+                                    ),
+                                },
+                            ),
+                            143..154,
+                        ),
+                        Spanned(
+                            Signal(
+                                SignalStmt {
+                                    name: Spanned(
+                                        Symbol(
+                                            "collector",
+                                        ),
+                                        166..175,
+                                    ),
+                                },
+                            ),
+                            159..175,
+                        ),
+                        Spanned(
+                            Signal(
+                                SignalStmt {
+                                    name: Spanned(
+                                        Symbol(
+                                            "emitter",
+                                        ),
+                                        187..194,
+                                    ),
+                                },
+                            ),
+                            180..194,
+                        ),
+                        Spanned(
+                            Assign(
+                                AssignStmt {
+                                    target: Spanned(
+                                        PortRef {
+                                            parts: [
+                                                Spanned(
+                                                    "designator_prefix",
+                                                    199..216,
+                                                ),
+                                            ],
+                                        },
+                                        199..216,
+                                    ),
+                                    type_info: None,
+                                    value: Spanned(
+                                        String(
+                                            Spanned(
+                                                "Q",
+                                                219..222,
+                                            ),
+                                        ),
+                                        219..222,
+                                    ),
+                                },
+                            ),
+                            199..222,
+                        ),
+                    ],
+                },
+            ),
+            124..224,
+        ),
+        Spanned(
+            Block(
+                BlockStmt {
+                    kind: Spanned(
+                        Component,
+                        224..233,
                     ),
                     name: Spanned(
                         Symbol(
                             "Triac",
                         ),
-                        50..51,
+                        234..239,
                     ),
                     parent: None,
                     body: [
@@ -236,11 +200,11 @@ expression: output
                                         Symbol(
                                             "MT1",
                                         ),
-                                        55..56,
+                                        252..255,
                                     ),
                                 },
                             ),
-                            54..56,
+                            245..255,
                         ),
                         Spanned(
                             Signal(
@@ -249,11 +213,11 @@ expression: output
                                         Symbol(
                                             "MT2",
                                         ),
-                                        58..59,
+                                        267..270,
                                     ),
                                 },
                             ),
-                            57..59,
+                            260..270,
                         ),
                         Spanned(
                             Signal(
@@ -262,11 +226,11 @@ expression: output
                                         Symbol(
                                             "gate",
                                         ),
-                                        61..62,
+                                        282..286,
                                     ),
                                 },
                             ),
-                            60..62,
+                            275..286,
                         ),
                         Spanned(
                             Assign(
@@ -276,31 +240,59 @@ expression: output
                                             parts: [
                                                 Spanned(
                                                     "designator_prefix",
-                                                    63..64,
+                                                    291..308,
                                                 ),
                                             ],
                                         },
-                                        63..64,
+                                        291..308,
                                     ),
                                     type_info: None,
                                     value: Spanned(
                                         String(
                                             Spanned(
                                                 "TR",
-                                                65..66,
+                                                311..315,
                                             ),
                                         ),
-                                        65..66,
+                                        311..315,
                                     ),
                                 },
                             ),
-                            63..66,
+                            291..315,
                         ),
                     ],
                 },
             ),
-            49..67,
+            224..315,
         ),
     ],
-    [],
+    [
+        Simple {
+            span: 31..32,
+            reason: Custom(
+                "Expected statement",
+            ),
+            expected: {},
+            found: None,
+            label: None,
+        },
+        Simple {
+            span: 60..61,
+            reason: Custom(
+                "Expected statement",
+            ),
+            expected: {},
+            found: None,
+            label: None,
+        },
+        Simple {
+            span: 87..88,
+            reason: Custom(
+                "Expected statement",
+            ),
+            expected: {},
+            found: None,
+            label: None,
+        },
+    ],
 )
