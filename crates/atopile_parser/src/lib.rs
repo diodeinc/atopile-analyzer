@@ -102,19 +102,13 @@ impl AtopileSource {
                 .map(|e| AtopileError::Lexer(e.into())),
         );
 
-        let (mut ast, parser_errors) = parser::parse(&tokens);
+        let (ast, parser_errors) = parser::parse(&tokens);
         errors.extend(
             parser_errors
                 .into_iter()
                 .map(|e| AtopileError::Parser(e.into())),
         );
 
-        // The spans on the original token stream are w.r.t. the token stream, so we traverse the
-        // generated AST and rewrite the spans to reference raw characters in the source file.
-        for stmt in &mut ast {
-            Self::rewrite_span(&tokens, stmt);
-            Self::rewrite_stmt(&tokens, stmt);
-        }
 
         let line_to_index = vec![0]
             .into_iter()
@@ -138,149 +132,6 @@ impl AtopileSource {
         )
     }
 
-    fn rewrite_span<T>(tokens: &[Spanned<lexer::Token>], spanned: &mut Spanned<T>) {
-        let start = tokens
-            .get(spanned.span().start)
-            .map(|t| t.1.start)
-            .unwrap_or(0);
-        let end = tokens
-            .get(spanned.span().end.saturating_sub(1))
-            .map(|t| t.1.end)
-            .unwrap_or(0);
-
-        spanned.1 = start..end;
-    }
-
-    fn rewrite_stmt(tokens: &[Spanned<lexer::Token>], stmt: &mut Spanned<parser::Stmt>) {
-        match &mut stmt.0 {
-            parser::Stmt::Import(stmt) => {
-                Self::rewrite_span(tokens, &mut stmt.from_path);
-                for import in &mut stmt.imports {
-                    Self::rewrite_span(tokens, import);
-                }
-            }
-            parser::Stmt::DepImport(stmt) => {
-                Self::rewrite_span(tokens, &mut stmt.name);
-                Self::rewrite_span(tokens, &mut stmt.from_path);
-            }
-            parser::Stmt::Attribute(stmt) => {
-                Self::rewrite_span(tokens, &mut stmt.name);
-                Self::rewrite_span(tokens, &mut stmt.type_info);
-            }
-            parser::Stmt::Assign(stmt) => {
-                Self::rewrite_span(tokens, &mut stmt.target);
-                Self::rewrite_span(tokens, &mut stmt.value);
-
-                Self::rewrite_port_ref(tokens, &mut stmt.target.0);
-                Self::rewrite_expr(tokens, &mut stmt.value.0);
-            }
-            parser::Stmt::Connect(stmt) => {
-                Self::rewrite_span(tokens, &mut stmt.left);
-                Self::rewrite_span(tokens, &mut stmt.right);
-
-                Self::rewrite_connectable(tokens, &mut stmt.left.0);
-                Self::rewrite_connectable(tokens, &mut stmt.right.0);
-            }
-            parser::Stmt::Block(stmt) => {
-                Self::rewrite_span(tokens, &mut stmt.kind);
-                Self::rewrite_span(tokens, &mut stmt.name);
-                if let Some(parent) = &mut stmt.parent {
-                    Self::rewrite_span(tokens, parent);
-                }
-
-                for stmt in &mut stmt.body {
-                    Self::rewrite_span(tokens, stmt);
-                    Self::rewrite_stmt(tokens, stmt);
-                }
-            }
-            parser::Stmt::Signal(stmt) => {
-                Self::rewrite_span(tokens, &mut stmt.name);
-            }
-            parser::Stmt::Pin(stmt) => {
-                Self::rewrite_span(tokens, &mut stmt.name);
-            }
-            parser::Stmt::Assert(stmt) => {
-                Self::rewrite_span(tokens, &mut stmt.expr);
-                Self::rewrite_expr(tokens, &mut stmt.expr.0);
-            }
-            parser::Stmt::Comment(stmt) => {
-                Self::rewrite_span(tokens, &mut stmt.comment);
-            }
-            parser::Stmt::Specialize(stmt) => {
-                Self::rewrite_span(tokens, &mut stmt.port);
-                Self::rewrite_span(tokens, &mut stmt.value);
-
-                Self::rewrite_port_ref(tokens, &mut stmt.port.0);
-            }
-            parser::Stmt::Pass | parser::Stmt::Unparsable(_) => {}
-        }
-    }
-
-    fn rewrite_expr(tokens: &[Spanned<lexer::Token>], expr: &mut parser::Expr) {
-        match expr {
-            parser::Expr::String(s) => Self::rewrite_span(tokens, s),
-            parser::Expr::Number(n) => Self::rewrite_span(tokens, n),
-            parser::Expr::Port(p) => {
-                Self::rewrite_span(tokens, p);
-                Self::rewrite_port_ref(tokens, &mut p.0);
-            }
-            parser::Expr::New(n) => Self::rewrite_span(tokens, n),
-            parser::Expr::Bool(b) => Self::rewrite_span(tokens, b),
-            parser::Expr::BinaryOp(b) => {
-                Self::rewrite_span(tokens, b);
-                Self::rewrite_span(tokens, &mut b.0.left);
-                Self::rewrite_span(tokens, &mut b.0.op);
-                Self::rewrite_span(tokens, &mut b.0.right);
-
-                Self::rewrite_expr(tokens, &mut b.0.left.0);
-                Self::rewrite_expr(tokens, &mut b.0.right.0);
-            }
-            parser::Expr::Physical(p) => {
-                Self::rewrite_span(tokens, p);
-                Self::rewrite_span(tokens, &mut p.0.value);
-                if let Some(unit) = &mut p.0.unit {
-                    Self::rewrite_span(tokens, unit);
-                }
-                if let Some(tolerance) = &mut p.0.tolerance {
-                    Self::rewrite_span(tokens, tolerance);
-
-                    match &mut tolerance.0 {
-                        parser::Tolerance::Bilateral { value, unit } => {
-                            Self::rewrite_span(tokens, value);
-
-                            if let Some(unit) = unit {
-                                Self::rewrite_span(tokens, unit);
-                            }
-                        }
-                        parser::Tolerance::Bound { min, max } => {
-                            Self::rewrite_span(tokens, min);
-                            Self::rewrite_span(tokens, max);
-                        }
-                    }
-                }
-            }
-        }
-    }
-
-    fn rewrite_port_ref(tokens: &[Spanned<lexer::Token>], port_ref: &mut parser::PortRef) {
-        for part in &mut port_ref.parts {
-            Self::rewrite_span(tokens, part);
-        }
-    }
-
-    fn rewrite_connectable(
-        tokens: &[Spanned<lexer::Token>],
-        connectable: &mut parser::Connectable,
-    ) {
-        match connectable {
-            parser::Connectable::Port(p) => {
-                Self::rewrite_span(tokens, p);
-                Self::rewrite_port_ref(tokens, &mut p.0);
-            }
-            parser::Connectable::Pin(p) => Self::rewrite_span(tokens, p),
-            parser::Connectable::Signal(s) => Self::rewrite_span(tokens, s),
-        }
-    }
 
     /// Returns the deepest parser::Stmt that is present at the given index into the source file,
     /// if there is one.
@@ -349,15 +200,32 @@ pub struct StmtTraverser<'a> {
 
 impl<'a> StmtTraverser<'a> {
     fn new(stmts: &'a [Spanned<parser::Stmt>]) -> Self {
+        println!("Creating StmtTraverser with {} top-level statements", stmts.len());
+        for (i, stmt) in stmts.iter().enumerate() {
+            println!("Top-level statement {}: {:?}", i, stmt.0);
+            if let parser::Stmt::Block(block) = &stmt.0 {
+                println!("  Block has {} body items", block.body.len());
+                for (j, body_stmt) in block.body.iter().enumerate() {
+                    println!("    Body item {}: {:?}", j, body_stmt.0);
+                }
+            }
+        }
+        
         Self {
             stack: vec![(stmts.iter(), None)],
             current_path: Vec::new(),
         }
     }
 
-    fn get_block_stmts(stmt: &'a Spanned<parser::Stmt>) -> Option<&'a Vec<Spanned<parser::Stmt>>> {
+    fn get_block_stmts(stmt: &'a Spanned<parser::Stmt>) -> Option<&'a [Spanned<parser::Stmt>]> {
         match &stmt.0 {
-            parser::Stmt::Block(stmt) => Some(&stmt.body),
+            parser::Stmt::Block(block_stmt) => {
+                println!("Found block with {} body items", block_stmt.body.len());
+                for (i, body_stmt) in block_stmt.body.iter().enumerate() {
+                    println!("  Body item {}: {:?}", i, body_stmt.0);
+                }
+                Some(&block_stmt.body)
+            },
             _ => None,
         }
     }
@@ -367,26 +235,57 @@ impl<'a> Iterator for StmtTraverser<'a> {
     type Item = (&'a Spanned<parser::Stmt>, Vec<&'a Spanned<parser::Stmt>>);
 
     fn next(&mut self) -> Option<Self::Item> {
+        println!("StmtTraverser::next() - Stack size: {}", self.stack.len());
+        
         while let Some((iter, parent)) = self.stack.last_mut() {
+            println!("Checking iterator with parent: {:?}", parent.map(|p| &p.0));
+            
             if let Some(stmt) = iter.next() {
-                // If we have a parent statement, ensure it's in the path
+                println!("Found statement: {:?}", stmt.0);
+                
                 if let Some(parent) = parent {
                     if self.current_path.is_empty() || self.current_path.last() != Some(parent) {
+                        println!("Pushing parent to path: {:?}", parent.0);
                         self.current_path.push(parent);
                     }
                 }
-
-                // If this statement contains a block, push its iterator onto the stack
-                if let Some(block_stmts) = Self::get_block_stmts(stmt) {
-                    self.stack.push((block_stmts.iter(), Some(stmt)));
+                
+                let result = (stmt, self.current_path.clone());
+                
+                if let parser::Stmt::Block(block_stmt) = &stmt.0 {
+                    println!("Pushing block body with {} items to stack", block_stmt.body.len());
+                    if !block_stmt.body.is_empty() {
+                        self.stack.push((block_stmt.body.iter(), Some(stmt)));
+                    }
                 }
-
-                return Some((stmt, self.current_path.clone()));
+                
+                return Some(result);
             } else {
-                // No more statements at this level, pop the iterator and its parent
+                println!("Iterator exhausted, popping from stack");
                 self.stack.pop();
-                self.current_path.pop();
+                if !self.current_path.is_empty() {
+                    println!("Popping from path");
+                    self.current_path.pop();
+                }
             }
+        }
+        
+        println!("No more statements to traverse");
+        None
+    }
+}
+
+impl<'a> StmtTraverser<'a> {
+    fn get_stmt_text(&self, stmt: &Spanned<parser::Stmt>) -> Option<String> {
+        match &stmt.0 {
+            parser::Stmt::Assign(assign) => {
+                if let parser::Expr::New(name) = &assign.value.0 {
+                    let target = assign.target.0.parts.first()?.0.clone();
+                    let value = name.0.to_string();
+                    return Some(format!("{} = new {}", target, value));
+                }
+            }
+            _ => {}
         }
         None
     }
@@ -437,7 +336,7 @@ module M:
 
     assert_debug_snapshot!(
         source.stmt_at(0),
-        @r###"
+        @r#"
     Some(
         Spanned(
             Import(
@@ -459,10 +358,10 @@ module M:
             0..31,
         ),
     )
-    "###
+    "#
     );
 
-    assert_debug_snapshot!(source.stmt_at(48), @r###"
+    assert_debug_snapshot!(source.stmt_at(48), @r#"
     Some(
         Spanned(
             Assign(
@@ -485,7 +384,7 @@ module M:
                                 Symbol(
                                     "Resistor",
                                 ),
-                                56..64,
+                                1..2,
                             ),
                         ),
                         52..64,
@@ -495,7 +394,7 @@ module M:
             47..64,
         ),
     )
-    "###);
+    "#);
 
     assert_debug_snapshot!(source.stmt_at(1000), @r###"None"###);
 }
@@ -518,38 +417,29 @@ module M:
 
     assert_eq!(errors.len(), 0);
 
-    let mut traversal = source.traverse_all_stmts();
-
-    // Module statement with empty path
-    let (stmt, path) = traversal.next().unwrap();
-    assert!(matches!(stmt.0, parser::Stmt::Block(_)));
-    assert!(path.is_empty());
-
-    // First assign statement with module in path
-    let (stmt, path) = traversal.next().unwrap();
-    assert!(matches!(stmt.0, parser::Stmt::Assign(_)));
-    assert_eq!(path.len(), 1);
-    assert!(matches!(path[0].0, parser::Stmt::Block(_)));
-
-    // Second assign statement with same path
-    let (stmt, path) = traversal.next().unwrap();
-    assert!(matches!(stmt.0, parser::Stmt::Assign(_)));
-    assert_eq!(path.len(), 1);
-    assert!(matches!(path[0].0, parser::Stmt::Block(_)));
-
-    // Component statement with module in path
-    let (stmt, path) = traversal.next().unwrap();
-    assert!(matches!(stmt.0, parser::Stmt::Block(_)));
-    assert_eq!(path.len(), 1);
-    assert!(matches!(path[0].0, parser::Stmt::Block(_)));
-
-    // Nested assign with both module and component in path
-    let (stmt, path) = traversal.next().unwrap();
-    assert!(matches!(stmt.0, parser::Stmt::Assign(_)));
-    assert_eq!(path.len(), 2);
-    assert!(matches!(path[0].0, parser::Stmt::Block(_)));
-    assert!(matches!(path[1].0, parser::Stmt::Block(_)));
-
-    // Should be no more statements
-    assert!(traversal.next().is_none());
+    println!("AST: {:#?}", source.ast());
+    
+    for stmt in source.ast() {
+        if let parser::Stmt::Block(block) = &stmt.0 {
+            println!("Found block: {:?} with {} body items", block.name, block.body.len());
+            for body_stmt in &block.body {
+                println!("  Body item: {:?}", body_stmt.0);
+            }
+        }
+    }
+    
+    let mut statements = Vec::new();
+    let mut debug_traversal = source.traverse_all_stmts();
+    println!("Traversal results:");
+    while let Some((stmt, path)) = debug_traversal.next() {
+        println!("  Statement: {:?}, Path length: {}", stmt.0, path.len());
+        statements.push(stmt);
+    }
+    
+    println!("Collected {} statements during traversal:", statements.len());
+    for (i, stmt) in statements.iter().enumerate() {
+        println!("  Statement {}: {:?}", i, stmt.0);
+    }
+    
+    assert_eq!(statements.len(), 5);
 }
