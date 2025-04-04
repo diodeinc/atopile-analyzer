@@ -1661,7 +1661,10 @@ impl AtopileParser {
             .into())
     }
 
-    fn parse_name_token(&mut self, error_message: &str) -> Result<Spanned<String>, Box<Simple<Token>>> {
+    fn parse_name_token(
+        &mut self,
+        error_message: &str,
+    ) -> Result<Spanned<String>, Box<Simple<Token>>> {
         if let Some(token) = self.peek() {
             if let Token::Name(name) = &token.0 {
                 let spanned_name = (name.clone(), token.span().clone()).into();
