@@ -4,7 +4,7 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
-chumsky = "0.9.3"
+chumsky = { version = "0.10.0", features = ["pratt"] }
 insta = "1.41.1"
 serde = { version = "1.0.214", features = ["derive", "rc"] }
 log = "0.4.22"

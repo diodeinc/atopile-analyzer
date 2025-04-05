@@ -1,4 +1,4 @@
-use atopile_parser::lexer::lex;
+use atopile_parser::lexer::Lexer;
 use std::fs;
 
 macro_rules! create_lexer_test {
@@ -12,7 +12,7 @@ macro_rules! create_lexer_test {
             ))
             .unwrap();
             let normalized_input = input.replace("\r\n", "\n");
-            let output = lex(&normalized_input);
+            let output = Lexer::lex(&normalized_input);
             insta::assert_debug_snapshot!(output);
         }
     };
