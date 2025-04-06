@@ -8,6 +8,7 @@ use std::{
 use chumsky::span::SimpleSpan;
 #[cfg(test)]
 use insta::assert_debug_snapshot;
+use lexer::lex;
 use serde::Serialize;
 
 pub mod lexer;
@@ -101,7 +102,7 @@ impl AtopileSource {
     pub fn new(raw: String, path: PathBuf) -> (Self, Vec<AtopileError>) {
         let mut errors: Vec<AtopileError> = Vec::new();
 
-        let (tokens, lexer_errors) = lexer::Lexer::lex(&raw);
+        let (tokens, lexer_errors) = lex(&raw);
         errors.extend(
             lexer_errors
                 .into_iter()

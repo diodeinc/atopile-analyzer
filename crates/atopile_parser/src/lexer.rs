@@ -246,59 +246,139 @@ impl<'src> Lexer<'src> {
             .allow_trailing()
             .collect::<Vec<_>>()
     }
+}
 
-    pub fn lex(input: &'src str) -> (Vec<Spanned<Token<'src>>>, Vec<LexerError<'src>>) {
-        let mut tokens = Vec::new();
-        let mut errors = Vec::new();
-        let mut in_multiline_comment = false;
+pub fn lex<'src>(input: &'src str) -> (Vec<Spanned<Token<'src>>>, Vec<LexerError<'src>>) {
+    let mut tokens = Vec::new();
+    let mut errors = Vec::new();
+    let mut in_multiline_comment = false;
 
-        // Handle empty input
-        if input.is_empty() {
-            return (tokens, errors);
-        }
+    // Handle empty input
+    if input.is_empty() {
+        return (tokens, errors);
+    }
 
-        // Parse the input into lines with spans
-        let result = Self::line_parser().parse(input);
-        errors.extend(result.errors().map(|e| e.clone()));
+    // Parse the input into lines with spans
+    let result = Lexer::line_parser().parse(input);
+    errors.extend(result.errors().map(|e| e.clone()));
 
-        let mut indent_stack = vec![0];
+    let mut indent_stack = vec![0];
 
-        // Process each line
-        for (line, line_span) in result
-            .output()
-            .unwrap_or(&vec![])
-            .into_iter()
-            .map(|l| (l.0, l.1.clone()))
-        {
-            let indent_level = line.chars().take_while(|c| c.is_whitespace()).count();
+    // Process each line
+    for (line, line_span) in result
+        .output()
+        .unwrap_or(&vec![])
+        .into_iter()
+        .map(|l| (l.0, l.1.clone()))
+    {
+        let indent_level = line.chars().take_while(|c| c.is_whitespace()).count();
 
-            if !line.trim().is_empty() {
-                // Handle indentation (if we aren't in a multi-line comment)
-                if !in_multiline_comment {
-                    while indent_level < *indent_stack.last().unwrap() {
-                        indent_stack.pop();
-                        tokens.push((Token::Dedent, (line_span.start..line_span.start)).into());
-                    }
-
-                    if indent_level > *indent_stack.last().unwrap() {
-                        indent_stack.push(indent_level);
-                        tokens.push((Token::Indent, (line_span.start..line_span.start)).into());
-                    }
+        if !line.trim().is_empty() {
+            // Handle indentation (if we aren't in a multi-line comment)
+            if !in_multiline_comment {
+                while indent_level < *indent_stack.last().unwrap() {
+                    indent_stack.pop();
+                    tokens.push((Token::Dedent, (line_span.start..line_span.start)).into());
                 }
 
-                let mut line_pos = 0;
-                let trimmed_line = line.trim();
-                let content_offset = line_span.start + (line.len() - trimmed_line.len());
+                if indent_level > *indent_stack.last().unwrap() {
+                    indent_stack.push(indent_level);
+                    tokens.push((Token::Indent, (line_span.start..line_span.start)).into());
+                }
+            }
 
-                // Most of the logic below is to deal with multi-line comments. For
-                // now, we don't disambiguate between multi-line comments and
-                // regular comments in the final lexer output, as we depend on
-                // Newline tokens to match the line count. Instead, a multi-line
-                // comment will emit a separate Comment token for each line.
-                while line_pos < trimmed_line.len() {
-                    if in_multiline_comment {
+            let mut line_pos = 0;
+            let trimmed_line = line.trim();
+            let content_offset = line_span.start + (line.len() - trimmed_line.len());
+
+            // Most of the logic below is to deal with multi-line comments. For
+            // now, we don't disambiguate between multi-line comments and
+            // regular comments in the final lexer output, as we depend on
+            // Newline tokens to match the line count. Instead, a multi-line
+            // comment will emit a separate Comment token for each line.
+            while line_pos < trimmed_line.len() {
+                if in_multiline_comment {
+                    if let Some(end_pos) = trimmed_line[line_pos..].find("\"\"\"") {
+                        // Add comment content before the end marker
+                        let comment = trimmed_line[line_pos..line_pos + end_pos].trim();
+                        if !comment.is_empty() {
+                            tokens.push(
+                                (
+                                    Token::Comment(comment),
+                                    (content_offset + line_pos
+                                        ..content_offset + line_pos + end_pos),
+                                )
+                                    .into(),
+                            );
+                        }
+
+                        // Add end marker
+                        tokens.push(
+                            (
+                                Token::MultiCommentEnd,
+                                (content_offset + line_pos + end_pos
+                                    ..content_offset + line_pos + end_pos + 3),
+                            )
+                                .into(),
+                        );
+
+                        line_pos += end_pos + 3;
+                        in_multiline_comment = false;
+                    } else {
+                        // Add whole remaining line as comment
+                        tokens.push(
+                            (
+                                Token::Comment(&trimmed_line[line_pos..]),
+                                (content_offset + line_pos..line_span.end),
+                            )
+                                .into(),
+                        );
+                        break;
+                    }
+                } else {
+                    // Look for start of multi-line comment
+                    if let Some(start_pos) = trimmed_line[line_pos..].find("\"\"\"") {
+                        // Process tokens before comment if any
+                        if start_pos > 0 {
+                            let before_comment = &trimmed_line[line_pos..line_pos + start_pos];
+                            let result = Lexer::token()
+                                .repeated()
+                                .collect::<Vec<_>>()
+                                .parse(before_comment);
+                            errors.extend(result.errors().map(|e| e.clone()));
+
+                            if let Some(toks) = result.output() {
+                                for (tok, tok_span) in
+                                    toks.iter().map(|t| (t.0.clone(), t.1.clone()))
+                                {
+                                    tokens.push(
+                                        (
+                                            tok,
+                                            (tok_span.start + content_offset + line_pos
+                                                ..tok_span.end + content_offset + line_pos),
+                                        )
+                                            .into(),
+                                    );
+                                }
+                            }
+                        }
+
+                        // Add start marker
+                        tokens.push(
+                            (
+                                Token::MultiCommentStart,
+                                (content_offset + line_pos + start_pos
+                                    ..content_offset + line_pos + start_pos + 3),
+                            )
+                                .into(),
+                        );
+
+                        line_pos += start_pos + 3;
+                        in_multiline_comment = true;
+
+                        // Check if comment ends on same line
                         if let Some(end_pos) = trimmed_line[line_pos..].find("\"\"\"") {
-                            // Add comment content before the end marker
+                            // Add comment content if any
                             let comment = trimmed_line[line_pos..line_pos + end_pos].trim();
                             if !comment.is_empty() {
                                 tokens.push(
@@ -323,143 +403,61 @@ impl<'src> Lexer<'src> {
 
                             line_pos += end_pos + 3;
                             in_multiline_comment = false;
-                        } else {
-                            // Add whole remaining line as comment
-                            tokens.push(
-                                (
-                                    Token::Comment(&trimmed_line[line_pos..]),
-                                    (content_offset + line_pos..line_span.end),
-                                )
-                                    .into(),
-                            );
-                            break;
                         }
                     } else {
-                        // Look for start of multi-line comment
-                        if let Some(start_pos) = trimmed_line[line_pos..].find("\"\"\"") {
-                            // Process tokens before comment if any
-                            if start_pos > 0 {
-                                let before_comment = &trimmed_line[line_pos..line_pos + start_pos];
-                                let result = Self::token()
-                                    .repeated()
-                                    .collect::<Vec<_>>()
-                                    .parse(before_comment);
-                                errors.extend(result.errors().map(|e| e.clone()));
+                        // Process regular tokens
+                        let result = Lexer::token()
+                            .repeated()
+                            .collect::<Vec<_>>()
+                            .parse(&trimmed_line[line_pos..]);
+                        errors.extend(result.errors().map(|e| e.clone()));
 
-                                if let Some(toks) = result.output() {
-                                    for (tok, tok_span) in
-                                        toks.iter().map(|t| (t.0.clone(), t.1.clone()))
-                                    {
-                                        tokens.push(
-                                            (
-                                                tok,
-                                                (tok_span.start + content_offset + line_pos
-                                                    ..tok_span.end + content_offset + line_pos),
-                                            )
-                                                .into(),
-                                        );
-                                    }
-                                }
-                            }
-
-                            // Add start marker
-                            tokens.push(
-                                (
-                                    Token::MultiCommentStart,
-                                    (content_offset + line_pos + start_pos
-                                        ..content_offset + line_pos + start_pos + 3),
-                                )
-                                    .into(),
-                            );
-
-                            line_pos += start_pos + 3;
-                            in_multiline_comment = true;
-
-                            // Check if comment ends on same line
-                            if let Some(end_pos) = trimmed_line[line_pos..].find("\"\"\"") {
-                                // Add comment content if any
-                                let comment = trimmed_line[line_pos..line_pos + end_pos].trim();
-                                if !comment.is_empty() {
-                                    tokens.push(
-                                        (
-                                            Token::Comment(comment),
-                                            (content_offset + line_pos
-                                                ..content_offset + line_pos + end_pos),
-                                        )
-                                            .into(),
-                                    );
-                                }
-
-                                // Add end marker
+                        if let Some(toks) = result.output() {
+                            for (tok, tok_span) in toks.iter().map(|t| (t.0.clone(), t.1.clone())) {
                                 tokens.push(
                                     (
-                                        Token::MultiCommentEnd,
-                                        (content_offset + line_pos + end_pos
-                                            ..content_offset + line_pos + end_pos + 3),
+                                        tok,
+                                        (tok_span.start + content_offset + line_pos
+                                            ..tok_span.end + content_offset + line_pos),
                                     )
                                         .into(),
                                 );
-
-                                line_pos += end_pos + 3;
-                                in_multiline_comment = false;
                             }
-                        } else {
-                            // Process regular tokens
-                            let result = Self::token()
-                                .repeated()
-                                .collect::<Vec<_>>()
-                                .parse(&trimmed_line[line_pos..]);
-                            errors.extend(result.errors().map(|e| e.clone()));
-
-                            if let Some(toks) = result.output() {
-                                for (tok, tok_span) in
-                                    toks.iter().map(|t| (t.0.clone(), t.1.clone()))
-                                {
-                                    tokens.push(
-                                        (
-                                            tok,
-                                            (tok_span.start + content_offset + line_pos
-                                                ..tok_span.end + content_offset + line_pos),
-                                        )
-                                            .into(),
-                                    );
-                                }
-                            }
-                            break;
                         }
+                        break;
                     }
                 }
             }
+        }
 
-            // Add newline token
-            if line_span.end < input.len() {
-                if line.is_empty() {
-                    tokens.push((Token::Newline, (line_span.start..line_span.start + 1)).into());
-                } else {
-                    tokens.push((Token::Newline, (line_span.end..line_span.end + 1)).into());
-                }
+        // Add newline token
+        if line_span.end < input.len() {
+            if line.is_empty() {
+                tokens.push((Token::Newline, (line_span.start..line_span.start + 1)).into());
+            } else {
+                tokens.push((Token::Newline, (line_span.end..line_span.end + 1)).into());
             }
         }
-
-        // Handle any remaining dedents
-        while indent_stack.len() > 1 {
-            indent_stack.pop();
-            tokens.push((Token::Dedent, (input.len()..input.len())).into());
-        }
-
-        let tokens = tokens
-            .into_iter()
-            .filter(|t| !matches!(t.0, Token::MultiCommentStart | Token::MultiCommentEnd))
-            .collect::<Vec<_>>();
-
-        (tokens, errors)
     }
+
+    // Handle any remaining dedents
+    while indent_stack.len() > 1 {
+        indent_stack.pop();
+        tokens.push((Token::Dedent, (input.len()..input.len())).into());
+    }
+
+    let tokens = tokens
+        .into_iter()
+        .filter(|t| !matches!(t.0, Token::MultiCommentStart | Token::MultiCommentEnd))
+        .collect::<Vec<_>>();
+
+    (tokens, errors)
 }
 
 #[test]
 fn test_keyword_in_token() {
     let input = "top";
-    let output = Lexer::lex(input);
+    let output = lex(input);
     assert_debug_snapshot!(output, @r###"
     (
         [
@@ -478,7 +476,7 @@ fn test_keyword_in_token() {
 #[test]
 fn test_bool() {
     let input = "a = True";
-    let output = Lexer::lex(input);
+    let output = lex(input);
     assert_debug_snapshot!(output, @r###"
     (
         [
@@ -504,12 +502,10 @@ fn test_bool() {
 
 #[test]
 fn test_simple() {
-    let (tokens, errors) = Lexer::lex(
-        r#"
+    let (tokens, errors) = lex(r#"
 from "my/file.ato" import MyComponentA, MyComponentB
 from "my/other/file.ato" import MyOtherComponentA, MyOtherComponentB
-"#,
-    );
+"#);
 
     assert_debug_snapshot!(errors, @r###"
     []
@@ -595,8 +591,7 @@ from "my/other/file.ato" import MyOtherComponentA, MyOtherComponentB
 
 #[test]
 fn test_indent() {
-    let (tokens, errors) = Lexer::lex(
-        r#"
+    let (tokens, errors) = lex(r#"
 
     component Test:
 
@@ -606,8 +601,7 @@ fn test_indent() {
         signal c
 
         signal d
-    "#,
-    );
+    "#);
 
     assert_debug_snapshot!(errors, @r###"
     []
@@ -731,8 +725,7 @@ fn test_indent() {
 
 #[test]
 fn test_lexer() {
-    let (tokens, errors) = Lexer::lex(
-        r#"
+    let (tokens, errors) = lex(r#"
 from "my/file.ato" import MyComponentA, MyComponentB
 
 component Test:
@@ -751,8 +744,7 @@ module TestModule from Test:
 
 interface TestInterface:
     signal a
-    "#,
-    );
+    "#);
 
     assert_debug_snapshot!(errors, @r###"
     []
@@ -1208,7 +1200,7 @@ component Test:
     """
     signal a
 "#;
-    let (tokens, errors) = Lexer::lex(input);
+    let (tokens, errors) = lex(input);
     assert_eq!(errors.len(), 0);
 
     assert_debug_snapshot!(tokens, @r###"
@@ -1296,7 +1288,7 @@ component Test:
     signal a  """This is a same-line comment"""
     signal b
 "#;
-    let (tokens, errors) = Lexer::lex(input);
+    let (tokens, errors) = lex(input);
     assert_eq!(errors.len(), 0);
 
     assert_debug_snapshot!(tokens, @r###"
@@ -1381,7 +1373,7 @@ indentation
     """
     signal b
 "#;
-    let (tokens, errors) = Lexer::lex(input);
+    let (tokens, errors) = lex(input);
     assert_eq!(errors.len(), 0);
 
     assert_debug_snapshot!(tokens, @r###"

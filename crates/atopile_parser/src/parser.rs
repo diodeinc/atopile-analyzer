@@ -4,11 +4,11 @@ use std::ops::Deref;
 
 use chumsky::input::{MapExtra, ValueInput};
 use chumsky::pratt::{infix, left};
-use chumsky::prelude::*;
 use chumsky::Parser;
+use chumsky::{prelude::*, recovery};
 use serde::{Deserialize, Serialize};
 
-use crate::lexer::Token;
+use crate::lexer::{lex, Token};
 use crate::Spanned;
 
 #[cfg(test)]
@@ -89,6 +89,9 @@ pub enum Stmt {
 
     // pass
     Pass,
+
+    // Parse Error
+    ParseError,
 }
 
 #[derive(Debug, Clone, PartialEq)]
@@ -473,163 +476,172 @@ impl<'src, I: ValueInput<'src, Token = Token<'src>, Span = SimpleSpan>> AtopileP
         ))
     }
 
-    fn stmt() -> impl Parser<'src, I, Spanned<Stmt>, ParserExtra<'src>> + Clone {
-        recursive(|stmt| {
-            let import = just(Token::From)
-                .ignore_then(Self::string())
-                .then_ignore(just(Token::Import))
-                .then(
-                    Self::name()
-                        .separated_by(just(Token::Comma))
-                        .collect::<Vec<_>>(),
-                )
-                .map(|(path, imports)| {
-                    Stmt::Import(ImportStmt {
-                        from_path: path,
-                        imports: imports.into_iter().map(|s| s.map(Symbol::from)).collect(),
-                    })
+    fn top_stmt() -> impl Parser<'src, I, Spanned<Stmt>, ParserExtra<'src>> + Clone {
+        let import = just(Token::From)
+            .ignore_then(Self::string())
+            .then_ignore(just(Token::Import))
+            .then(
+                Self::name()
+                    .separated_by(just(Token::Comma))
+                    .collect::<Vec<_>>(),
+            )
+            .map(|(path, imports)| {
+                Stmt::Import(ImportStmt {
+                    from_path: path,
+                    imports: imports.into_iter().map(|s| s.map(Symbol::from)).collect(),
                 })
-                .map_with(|stmt, e| (stmt, e.span()).into());
+            })
+            .map_with(|stmt, e| (stmt, e.span()).into());
 
-            // Dep import statements (import x from "path")
-            let dep_import = just(Token::Import)
-                .ignore_then(Self::name())
-                .then_ignore(just(Token::From))
-                .then(Self::string())
-                .map(|(name, path)| {
-                    Stmt::DepImport(DepImportStmt {
-                        name: name.map(Symbol::from),
-                        from_path: path,
-                    })
+        // Dep import statements (import x from "path")
+        let dep_import = just(Token::Import)
+            .ignore_then(Self::name())
+            .then_ignore(just(Token::From))
+            .then(Self::string())
+            .map(|(name, path)| {
+                Stmt::DepImport(DepImportStmt {
+                    name: name.map(Symbol::from),
+                    from_path: path,
                 })
-                .map_with(|stmt, e| (stmt, e.span()).into());
+            })
+            .map_with(|stmt, e| (stmt, e.span()).into());
 
-            // Signal and Pin declarations
-            let pin = just(Token::Pin)
-                .ignore_then(choice((Self::name(), Self::number(), Self::string())))
-                .map(|name| {
-                    Stmt::Pin(PinStmt {
-                        name: name.map(Symbol::from),
-                    })
-                })
-                .map_with(|stmt, e| (stmt, e.span()).into());
+        // Block statements (component/module/interface)
+        let block_header = choice((
+            just(Token::Component)
+                .map(|_| BlockKind::Component)
+                .map_with(|kind, e| (kind, e.span()).into()),
+            just(Token::Module)
+                .map(|_| BlockKind::Module)
+                .map_with(|kind, e| (kind, e.span()).into()),
+            just(Token::Interface)
+                .map(|_| BlockKind::Interface)
+                .map_with(|kind, e| (kind, e.span()).into()),
+        ))
+        .then(Self::name())
+        .then(just(Token::From).ignore_then(Self::name()).or_not())
+        .then_ignore(just(Token::Colon));
 
-            // Attribute statements
-            let type_info = || just(Token::Colon).ignore_then(Self::name());
-            let attribute = Self::name()
-                .then(type_info())
-                .map(|(name, type_info)| {
-                    Stmt::Attribute(AttributeStmt {
-                        name: name.map(Symbol::from),
-                        type_info: type_info.map(Symbol::from),
-                    })
-                })
-                .map_with(|stmt, e| (stmt, e.span()).into());
-
-            // Assignment statements
-            let assign = Self::port_ref()
-                .then(type_info().or_not())
-                .then_ignore(just(Token::Equals))
-                .then(Self::expr())
-                .map(|((target, type_info), value)| {
-                    Stmt::Assign(AssignStmt {
-                        target,
-                        value,
-                        type_info,
-                    })
-                })
-                .map_with(|stmt, e| (stmt, e.span()).into());
-
-            // Connection statements
-            let connect = Self::connectable()
-                .then_ignore(just(Token::Tilde))
-                .then(Self::connectable())
-                .map(|(left, right)| Stmt::Connect(ConnectStmt { left, right }))
-                .map_with(|stmt, e| (stmt, e.span()).into());
-
-            // Block statements (component/module/interface)
-            let block_header = choice((
-                just(Token::Component)
-                    .map(|_| BlockKind::Component)
-                    .map_with(|kind, e| (kind, e.span()).into()),
-                just(Token::Module)
-                    .map(|_| BlockKind::Module)
-                    .map_with(|kind, e| (kind, e.span()).into()),
-                just(Token::Interface)
-                    .map(|_| BlockKind::Interface)
-                    .map_with(|kind, e| (kind, e.span()).into()),
-            ))
-            .then(Self::name())
-            .then(just(Token::From).ignore_then(Self::name()).or_not())
-            .then_ignore(just(Token::Colon));
-
-            let block_body = choice((
-                // Single line block
-                stmt.clone()
-                    .then_ignore(just(Token::Newline))
-                    .map(|s| vec![s]),
-                // Multi-line indented block
-                just(Token::Newline)
-                    .repeated()
-                    .ignore_then(just(Token::Indent))
-                    .ignore_then(stmt.clone().repeated().collect::<Vec<_>>())
-                    .then_ignore(just(Token::Dedent)),
-            ));
-
-            let block =
-                block_header
-                    .then(block_body)
-                    .map_with(|(((kind, name), parent), body), e| {
-                        (
-                            Stmt::Block(BlockStmt {
-                                kind,
-                                name: name.map(Symbol::from),
-                                parent: parent.map(|p| p.map(Symbol::from)),
-                                body,
-                            }),
-                            e.span(),
-                        )
-                            .into()
-                    });
-
-            // Pass statement
-            let pass = just(Token::Pass)
-                .map(|_| Stmt::Pass)
-                .map_with(|stmt, e| (stmt, e.span()).into());
-
-            // Assert statement
-            let assert = just(Token::Assert)
-                .ignore_then(Self::expr())
-                .map(|expr| Stmt::Assert(AssertStmt { expr }))
-                .map_with(|stmt, e| (stmt, e.span()).into())
-                .labelled("assert");
-
-            // Combine all statement types
-            let separator = just(Token::Newline).or(just(Token::Semicolon));
-            separator
-                .clone()
+        let block_body = choice((
+            // Single line block
+            Self::block_stmt()
+                .then_ignore(just(Token::Newline))
+                .map(|s| vec![s]),
+            // Multi-line indented block
+            just(Token::Newline)
                 .repeated()
-                .ignore_then(choice((
-                    assert,
-                    import,
-                    dep_import,
-                    block,
-                    Self::specialize(),
-                    assign,
-                    attribute,
-                    connect,
-                    Self::signal(),
-                    pin,
-                    pass,
-                    Self::comment(),
-                )))
-                .then_ignore(separator.repeated())
-        })
-        .labelled("stmt")
+                .ignore_then(just(Token::Indent))
+                .ignore_then(Self::block_stmt().repeated().collect::<Vec<_>>())
+                .then_ignore(just(Token::Dedent)),
+        ));
+
+        let block = block_header
+            .then(block_body)
+            .map_with(|(((kind, name), parent), body), e| {
+                (
+                    Stmt::Block(BlockStmt {
+                        kind,
+                        name: name.map(Symbol::from),
+                        parent: parent.map(|p| p.map(Symbol::from)),
+                        body,
+                    }),
+                    e.span(),
+                )
+                    .into()
+            });
+
+        // Combine all statement types
+        let separator = just(Token::Newline).or(just(Token::Semicolon));
+        separator
+            .clone()
+            .repeated()
+            .ignore_then(choice((import, dep_import, block, Self::comment())))
+            .then_ignore(separator.repeated())
+    }
+
+    fn block_stmt() -> impl Parser<'src, I, Spanned<Stmt>, ParserExtra<'src>> + Clone {
+        // Signal and Pin declarations
+        let pin = just(Token::Pin)
+            .ignore_then(choice((Self::name(), Self::number(), Self::string())))
+            .map(|name| {
+                Stmt::Pin(PinStmt {
+                    name: name.map(Symbol::from),
+                })
+            })
+            .map_with(|stmt, e| (stmt, e.span()).into());
+
+        // Attribute statements
+        let type_info = || just(Token::Colon).ignore_then(Self::name());
+        let attribute = Self::name()
+            .then(type_info())
+            .map(|(name, type_info)| {
+                Stmt::Attribute(AttributeStmt {
+                    name: name.map(Symbol::from),
+                    type_info: type_info.map(Symbol::from),
+                })
+            })
+            .map_with(|stmt, e| (stmt, e.span()).into());
+
+        // Assignment statements
+        let assign = Self::port_ref()
+            .then(type_info().or_not())
+            .then_ignore(just(Token::Equals))
+            .then(Self::expr())
+            .map(|((target, type_info), value)| {
+                Stmt::Assign(AssignStmt {
+                    target,
+                    value,
+                    type_info,
+                })
+            })
+            .map_with(|stmt, e| (stmt, e.span()).into());
+
+        // Connection statements
+        let connect = Self::connectable()
+            .then_ignore(just(Token::Tilde))
+            .then(Self::connectable())
+            .map(|(left, right)| Stmt::Connect(ConnectStmt { left, right }))
+            .map_with(|stmt, e| (stmt, e.span()).into());
+
+        // Pass statement
+        let pass = just(Token::Pass)
+            .map(|_| Stmt::Pass)
+            .map_with(|stmt, e| (stmt, e.span()).into());
+
+        // Assert statement
+        let assert = just(Token::Assert)
+            .ignore_then(Self::expr())
+            .map(|expr| Stmt::Assert(AssertStmt { expr }))
+            .map_with(|stmt, e| (stmt, e.span()).into())
+            .labelled("assert");
+
+        let recover = just(Token::Newline)
+            .not()
+            .repeated()
+            .then(just(Token::Newline))
+            .to(Stmt::ParseError);
+
+        let separator = just(Token::Newline).or(just(Token::Semicolon));
+        separator
+            .clone()
+            .repeated()
+            .ignore_then(choice((
+                assert,
+                Self::specialize(),
+                assign,
+                attribute,
+                connect,
+                Self::signal(),
+                pin,
+                pass,
+                Self::comment(),
+            )))
+            .then_ignore(separator.repeated())
+            .recover_with(recovery::via_parser(recover))
     }
 
     pub fn parser() -> impl Parser<'src, I, Vec<Spanned<Stmt>>, ParserExtra<'src>> {
-        Self::stmt()
+        Self::top_stmt()
             .repeated()
             .collect::<Vec<_>>()
             .then_ignore(end())
@@ -1075,6 +1087,25 @@ fn test_specialize() {
             ),
         ],
         [],
+    )
+    "###);
+}
+
+#[test]
+fn test_invalid() {
+    let input = r#"
+module M:
+    pass
+    a.b
+    pass
+    "#;
+
+    let (tokens, _) = lex(input);
+    let result = parse(&tokens);
+    assert_debug_snapshot!(result, @r###"
+    (
+        [],
+        [Rich { span: 0..1, kind: RichKind::Error, reason: "Unexpected token: !" }],
     )
     "###);
 }
