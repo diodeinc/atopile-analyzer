@@ -5,7 +5,7 @@ use std::ops::Deref;
 use chumsky::input::{MapExtra, ValueInput};
 use chumsky::pratt::{infix, left};
 use chumsky::prelude::*;
-use chumsky::{error::Simple, Parser};
+use chumsky::Parser;
 use serde::{Deserialize, Serialize};
 
 use crate::lexer::Token;
@@ -293,12 +293,11 @@ type ParserError<'src> = Rich<'src, Token<'src>, SimpleSpan>;
 type ParserExtra<'src> = extra::Err<ParserError<'src>>;
 
 struct AtopileParser<'src, I: ValueInput<'src, Token = Token<'src>, Span = SimpleSpan>> {
-    input: I,
-    phantom: PhantomData<&'src ()>,
+    phantom: PhantomData<(&'src (), I)>,
 }
 
 impl<'src, I: ValueInput<'src, Token = Token<'src>, Span = SimpleSpan>> AtopileParser<'src, I> {
-    fn atom() -> impl Parser<'src, I, Spanned<Expr>, ParserExtra<'src>> {
+    fn atom() -> impl Parser<'src, I, Spanned<Expr>, ParserExtra<'src>> + Clone {
         select! {
             Token::String(s) = e => Expr::String((s.to_string(), e.span()).into()),
             Token::Number(n) = e => Expr::Number((n.to_string(), e.span()).into()),
@@ -309,13 +308,13 @@ impl<'src, I: ValueInput<'src, Token = Token<'src>, Span = SimpleSpan>> AtopileP
         .map_with(|expr, e| (expr, e.span()).into())
     }
 
-    fn new() -> impl Parser<'src, I, Spanned<Expr>, ParserExtra<'src>> {
+    fn new() -> impl Parser<'src, I, Spanned<Expr>, ParserExtra<'src>> + Clone {
         just(Token::New)
             .ignore_then(Self::name())
             .map_with(|name, e| (Expr::New(name.map(Symbol::from)), e.span()).into())
     }
 
-    fn physical() -> impl Parser<'src, I, Spanned<Expr>, ParserExtra<'src>> {
+    fn physical() -> impl Parser<'src, I, Spanned<Expr>, ParserExtra<'src>> + Clone {
         let signed_number = just(Token::Minus)
             .or_not()
             .then(Self::number())
@@ -343,7 +342,7 @@ impl<'src, I: ValueInput<'src, Token = Token<'src>, Span = SimpleSpan>> AtopileP
             .map_with(|expr, e| (expr, e.span()).into())
     }
 
-    fn signal() -> impl Parser<'src, I, Spanned<Stmt>, ParserExtra<'src>> {
+    fn signal() -> impl Parser<'src, I, Spanned<Stmt>, ParserExtra<'src>> + Clone {
         just(Token::Signal)
             .ignore_then(Self::name())
             .map(|name| {
@@ -355,7 +354,7 @@ impl<'src, I: ValueInput<'src, Token = Token<'src>, Span = SimpleSpan>> AtopileP
             .labelled("signal")
     }
 
-    fn port_ref() -> impl Parser<'src, I, Spanned<PortRef>, ParserExtra<'src>> {
+    fn port_ref() -> impl Parser<'src, I, Spanned<PortRef>, ParserExtra<'src>> + Clone {
         choice((Self::name(), Self::number()))
             .separated_by(just(Token::Dot))
             .at_least(1)
@@ -365,19 +364,19 @@ impl<'src, I: ValueInput<'src, Token = Token<'src>, Span = SimpleSpan>> AtopileP
             .labelled("port_ref")
     }
 
-    fn name() -> impl Parser<'src, I, Spanned<String>, ParserExtra<'src>> {
+    fn name() -> impl Parser<'src, I, Spanned<String>, ParserExtra<'src>> + Clone {
         select! { Token::Name(n) = e => (n.to_string(), e.span()).into() }
     }
 
-    fn number() -> impl Parser<'src, I, Spanned<String>, ParserExtra<'src>> {
+    fn number() -> impl Parser<'src, I, Spanned<String>, ParserExtra<'src>> + Clone {
         select! { Token::Number(n) = e => (n.to_string(), e.span()).into() }
     }
 
-    fn string() -> impl Parser<'src, I, Spanned<String>, ParserExtra<'src>> {
+    fn string() -> impl Parser<'src, I, Spanned<String>, ParserExtra<'src>> + Clone {
         select! { Token::String(s) = e => (s.to_string(), e.span()).into() }
     }
 
-    fn tolerance() -> impl Parser<'src, I, Spanned<Tolerance>, ParserExtra<'src>> {
+    fn tolerance() -> impl Parser<'src, I, Spanned<Tolerance>, ParserExtra<'src>> + Clone {
         let signed_number = || {
             just(Token::Minus)
                 .or_not()
@@ -404,7 +403,7 @@ impl<'src, I: ValueInput<'src, Token = Token<'src>, Span = SimpleSpan>> AtopileP
         choice((bilateral, bound)).map_with(|tolerance, e| (tolerance, e.span()).into())
     }
 
-    fn connectable() -> impl Parser<'src, I, Spanned<Connectable>, ParserExtra<'src>> {
+    fn connectable() -> impl Parser<'src, I, Spanned<Connectable>, ParserExtra<'src>> + Clone {
         let name_or_string_or_number = || choice((Self::name(), Self::number(), Self::string()));
 
         choice((
@@ -416,14 +415,14 @@ impl<'src, I: ValueInput<'src, Token = Token<'src>, Span = SimpleSpan>> AtopileP
         .labelled("connectable")
     }
 
-    fn comment() -> impl Parser<'src, I, Spanned<Stmt>, ParserExtra<'src>> {
+    fn comment() -> impl Parser<'src, I, Spanned<Stmt>, ParserExtra<'src>> + Clone {
         select! { Token::Comment(c) = e => (c.to_string(), e.span()).into() }
             .map(|comment| Stmt::Comment(CommentStmt { comment }))
             .map_with(|stmt, e| (stmt, e.span()).into())
             .labelled("comment")
     }
 
-    fn specialize() -> impl Parser<'src, I, Spanned<Stmt>, ParserExtra<'src>> {
+    fn specialize() -> impl Parser<'src, I, Spanned<Stmt>, ParserExtra<'src>> + Clone {
         Self::port_ref()
             .then_ignore(just(Token::Arrow))
             .then(Self::name())
@@ -437,7 +436,7 @@ impl<'src, I: ValueInput<'src, Token = Token<'src>, Span = SimpleSpan>> AtopileP
             .labelled("specialize")
     }
 
-    fn expr() -> impl Parser<'src, I, Spanned<Expr>, ParserExtra<'src>> {
+    fn expr() -> impl Parser<'src, I, Spanned<Expr>, ParserExtra<'src>> + Clone {
         let op = |tok: Token<'src>, op: BinaryOperator| {
             just(tok).to(op).map_with(|op, e| (op, e.span()).into())
         };
@@ -445,7 +444,7 @@ impl<'src, I: ValueInput<'src, Token = Token<'src>, Span = SimpleSpan>> AtopileP
         let pratt_infix = |left: Spanned<Expr>,
                            op: Spanned<BinaryOperator>,
                            right: Spanned<Expr>,
-                           e: &mut MapExtra<'src, '_, &'src [Token<'src>], ParserExtra<'src>>|
+                           e: &mut MapExtra<'src, '_, I, ParserExtra<'src>>|
          -> Spanned<Expr> {
             (
                 Expr::BinaryOp(Box::new((BinaryOp { left, op, right }, e.span()).into())),
@@ -474,7 +473,7 @@ impl<'src, I: ValueInput<'src, Token = Token<'src>, Span = SimpleSpan>> AtopileP
         ))
     }
 
-    fn stmt() -> impl Parser<'src, I, Spanned<Stmt>, ParserExtra<'src>> {
+    fn stmt() -> impl Parser<'src, I, Spanned<Stmt>, ParserExtra<'src>> + Clone {
         recursive(|stmt| {
             let import = just(Token::From)
                 .ignore_then(Self::string())
@@ -635,26 +634,29 @@ impl<'src, I: ValueInput<'src, Token = Token<'src>, Span = SimpleSpan>> AtopileP
             .collect::<Vec<_>>()
             .then_ignore(end())
     }
+}
 
-    pub fn parse(
-        tokens: &'src [Spanned<Token<'src>>],
-    ) -> (Vec<Spanned<Stmt>>, Vec<Rich<'src, Token<'src>>>) {
-        let result = Self::parser().parse(tokens.map(tokens.len()..tokens.len(), |t| (t.0, t.1)));
-        (
-            result.output().map(|v| v.clone()).unwrap_or(vec![]),
-            result.errors().map(|e| e.clone()).collect(),
-        )
-    }
+pub fn parse<'src>(
+    tokens: &'src [Spanned<Token<'src>>],
+) -> (Vec<Spanned<Stmt>>, Vec<Rich<'src, Token<'src>>>) {
+    let mapped_input = Input::map(tokens, tokens.len()..tokens.len(), |t| (&t.0, &t.1))
+        .map_span(|span| span.into());
 
-    pub fn parse_raw(
-        tokens: &'src [Token<'src>],
-    ) -> (Vec<Spanned<Stmt>>, Vec<Rich<'src, Token<'src>>>) {
-        let result = Self::parser().parse(tokens);
-        (
-            result.output().map(|v| v.clone()).unwrap_or(vec![]),
-            result.errors().map(|e| e.clone()).collect(),
-        )
-    }
+    let result = AtopileParser::parser().parse(mapped_input);
+    (
+        result.output().map(|v| v.clone()).unwrap_or(vec![]),
+        result.errors().map(|e| e.clone()).collect(),
+    )
+}
+
+pub fn parse_raw<'src>(
+    tokens: &'src [Token<'src>],
+) -> (Vec<Spanned<Stmt>>, Vec<Rich<'src, Token<'src>>>) {
+    let result = AtopileParser::parser().parse(tokens);
+    (
+        result.output().map(|v| v.clone()).unwrap_or(vec![]),
+        result.errors().map(|e| e.clone()).collect(),
+    )
 }
 
 #[test]
@@ -668,100 +670,100 @@ fn test_physical() {
     ]);
 
     assert_debug_snapshot!(result, @r###"
-        (
-            Some(
-                Spanned(
-                    Physical(
-                        Spanned(
-                            PhysicalValue {
-                                value: Spanned(
-                                    "10",
-                                    0..1,
+    ParseResult {
+        output: Some(
+            Spanned(
+                Physical(
+                    Spanned(
+                        PhysicalValue {
+                            value: Spanned(
+                                "10",
+                                0..1,
+                            ),
+                            unit: Some(
+                                Spanned(
+                                    "kohm",
+                                    1..2,
                                 ),
-                                unit: Some(
-                                    Spanned(
-                                        "kohm",
-                                        1..2,
-                                    ),
+                            ),
+                            tolerance: Some(
+                                Spanned(
+                                    Bilateral {
+                                        value: Spanned(
+                                            "5",
+                                            3..4,
+                                        ),
+                                        unit: None,
+                                    },
+                                    2..5,
                                 ),
-                                tolerance: Some(
-                                    Spanned(
-                                        Bilateral {
-                                            value: Spanned(
-                                                "5",
-                                                3..4,
-                                            ),
-                                            unit: None,
-                                        },
-                                        2..5,
-                                    ),
-                                ),
-                            },
-                            0..5,
-                        ),
+                            ),
+                        },
+                        0..5,
                     ),
-                    0..5,
                 ),
+                0..5,
             ),
-            [],
-        )
-        "###);
+        ),
+        errs: [],
+    }
+    "###);
 
     // Add a new test case for negative numbers
     let result_negative =
         AtopileParser::physical().parse(&[Token::Minus, Token::Number("0.3"), Token::Name("V")]);
     assert_debug_snapshot!(result_negative, @r###"
-        (
-            Some(
-                Spanned(
-                    Physical(
-                        Spanned(
-                            PhysicalValue {
-                                value: Spanned(
-                                    "-0.3",
-                                    0..2,
+    ParseResult {
+        output: Some(
+            Spanned(
+                Physical(
+                    Spanned(
+                        PhysicalValue {
+                            value: Spanned(
+                                "-0.3",
+                                0..2,
+                            ),
+                            unit: Some(
+                                Spanned(
+                                    "V",
+                                    2..3,
                                 ),
-                                unit: Some(
-                                    Spanned(
-                                        "V",
-                                        2..3,
-                                    ),
-                                ),
-                                tolerance: None,
-                            },
-                            0..3,
-                        ),
+                            ),
+                            tolerance: None,
+                        },
+                        0..3,
                     ),
-                    0..3,
                 ),
+                0..3,
             ),
-            [],
-        )
-        "###);
+        ),
+        errs: [],
+    }
+    "###);
 }
 
 #[test]
 fn test_port_ref_simple() {
-    let tokens = vec![Token::Name("a")];
-    let result = AtopileParser::port_ref().parse(&tokens);
+    let tokens = &[Token::Name("a")];
+    let result = AtopileParser::port_ref().parse(tokens);
     assert_debug_snapshot!(result, @r###"
-        (
-            Some(
-                Spanned(
-                    PortRef {
-                        parts: [
-                            Spanned(
-                                "a",
-                                0..1,
-                            ),
-                        ],
-                    },
-                    0..1,
-                ),
+    ParseResult {
+        output: Some(
+            Spanned(
+                PortRef {
+                    parts: [
+                        Spanned(
+                            "a",
+                            0..1,
+                        ),
+                    ],
+                },
+                0..1,
             ),
-            [],
-        )
-        "###);
+        ),
+        errs: [],
+    }
+    "###);
 }
 
 #[test]
@@ -775,31 +777,31 @@ fn test_port_ref_nested() {
     ];
     let result = AtopileParser::port_ref().parse(tokens);
     assert_debug_snapshot!(result, @r###"
-        (
-            Some(
-                Spanned(
-                    PortRef {
-                        parts: [
-                            Spanned(
-                                "a",
-                                0..1,
-                            ),
-                            Spanned(
-                                "b",
-                                2..3,
-                            ),
-                            Spanned(
-                                "c",
-                                4..5,
-                            ),
-                        ],
-                    },
-                    0..5,
-                ),
+    ParseResult {
+        output: Some(
+            Spanned(
+                PortRef {
+                    parts: [
+                        Spanned(
+                            "a",
+                            0..1,
+                        ),
+                        Spanned(
+                            "b",
+                            2..3,
+                        ),
+                        Spanned(
+                            "c",
+                            4..5,
+                        ),
+                    ],
+                },
+                0..5,
             ),
-            [],
-        )
-        "###);
+        ),
+        errs: [],
+    }
+    "###);
 }
 
 #[test]
@@ -814,7 +816,7 @@ fn test_assert_range() {
         Token::Number("20"),
         Token::Name("kohm"),
     ];
-    let result = AtopileParser::parse_raw(tokens);
+    let result = parse_raw(tokens);
     assert_debug_snapshot!(result, @r###"
     (
         [
@@ -906,38 +908,36 @@ fn test_signal_pin_connect() {
         Token::Name("A1"),
     ];
 
-    let result = parser().parse(tokens);
+    let result = parse_raw(tokens);
     assert_debug_snapshot!(result, @r###"
     (
-        Some(
-            [
-                Spanned(
-                    Connect(
-                        ConnectStmt {
-                            left: Spanned(
-                                Signal(
-                                    Spanned(
-                                        "a",
-                                        1..2,
-                                    ),
+        [
+            Spanned(
+                Connect(
+                    ConnectStmt {
+                        left: Spanned(
+                            Signal(
+                                Spanned(
+                                    "a",
+                                    1..2,
                                 ),
-                                0..2,
                             ),
-                            right: Spanned(
-                                Pin(
-                                    Spanned(
-                                        "A1",
-                                        4..5,
-                                    ),
+                            0..2,
+                        ),
+                        right: Spanned(
+                            Pin(
+                                Spanned(
+                                    "A1",
+                                    4..5,
                                 ),
-                                3..5,
                             ),
-                        },
-                    ),
-                    0..5,
+                            3..5,
+                        ),
+                    },
                 ),
-            ],
-        ),
+                0..5,
+            ),
+        ],
         [],
     )
     "###);
@@ -946,7 +946,7 @@ fn test_signal_pin_connect() {
 #[test]
 fn test_assert() {
     let tokens = &[Token::Assert, Token::Number("10"), Token::Name("kohm")];
-    let result = AtopileParser::parse_raw(tokens);
+    let result = parse_raw(tokens);
     assert_debug_snapshot!(result, @r###"
     (
         [
@@ -992,7 +992,7 @@ fn test_assign() {
         Token::New,
         Token::Name("Resistor"),
     ];
-    let result = AtopileParser::parse_raw(tokens);
+    let result = parse_raw(tokens);
     assert_debug_snapshot!(result, @r###"
     (
         [
@@ -1041,7 +1041,7 @@ fn test_specialize() {
         Token::Arrow,
         Token::Name("Resistor"),
     ];
-    let result = AtopileParser::parse_raw(tokens);
+    let result = parse_raw(tokens);
     assert_debug_snapshot!(result, @r###"
     (
         [

@@ -1158,10 +1158,6 @@ impl Evaluator {
                 self.evaluate_block(source, file_scope, block)
             }
             Stmt::Comment(_) => Ok(()),
-            Stmt::Unparsable(_) => Err(EvaluatorError::new(
-                EvaluatorErrorKind::UnparsableStmt,
-                &stmt.span().to_location(source),
-            )),
             _ => Err(EvaluatorError::new(
                 EvaluatorErrorKind::UnexpectedStmt,
                 &stmt.span().to_location(source),

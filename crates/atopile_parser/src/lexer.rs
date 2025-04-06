@@ -1,6 +1,6 @@
-use crate::{Span, Spanned};
-use chumsky::{prelude::*, DefaultExpected};
-use std::fmt;
+use crate::Spanned;
+use chumsky::prelude::*;
+use std::{fmt, marker::PhantomData};
 
 #[cfg(test)]
 use insta::assert_debug_snapshot;
@@ -137,9 +137,7 @@ type LexerError<'src> = Rich<'src, char, SimpleSpan>;
 type LexerExtra<'src> = extra::Err<LexerError<'src>>;
 
 pub struct Lexer<'src> {
-    input: &'src str,
-    tokens: Vec<Spanned<Token<'src>>>,
-    errors: Vec<LexerError<'src>>,
+    phantom: PhantomData<&'src ()>,
 }
 
 impl<'src> Lexer<'src> {
