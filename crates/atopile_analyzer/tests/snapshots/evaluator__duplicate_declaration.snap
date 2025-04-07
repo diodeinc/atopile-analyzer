@@ -1,0 +1,29 @@
+---
+source: crates/atopile_analyzer/tests/evaluator.rs
+expression: result
+---
+state:
+  instances:
+    "tests/resources/corpus/duplicate_declaration.ato:MyModule":
+      type_ref:
+        source_path: tests/resources/corpus/duplicate_declaration.ato
+        module_name: MyModule
+      kind: Module
+      attributes: {}
+      children:
+        x: "tests/resources/corpus/duplicate_declaration.ato:MyModule.x"
+      connections: []
+      reference_designator: ~
+    "tests/resources/corpus/duplicate_declaration.ato:MyModule.x":
+      type_ref:
+        source_path: ""
+        module_name: ""
+      kind: Port
+      attributes: {}
+      children: {}
+      connections: []
+      reference_designator: ~
+diagnostics:
+  - severity: Error
+    kind: Evaluator
+    file: tests/resources/corpus/duplicate_declaration.ato 

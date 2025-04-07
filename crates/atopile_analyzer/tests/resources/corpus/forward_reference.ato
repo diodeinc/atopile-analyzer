@@ -1,0 +1,6 @@
+module Child from Parent:
+    signal x
+
+module Parent:
+    signal y
+} 

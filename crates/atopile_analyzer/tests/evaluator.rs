@@ -87,3 +87,6 @@ macro_rules! create_evaluator_test {
 create_evaluator_test!(simple_module);
 create_evaluator_test!(simple_component);
 create_evaluator_test!(simple_connection);
+create_evaluator_test!(forward_reference);
+create_evaluator_test!(cyclic_inheritance);
+create_evaluator_test!(duplicate_declaration);

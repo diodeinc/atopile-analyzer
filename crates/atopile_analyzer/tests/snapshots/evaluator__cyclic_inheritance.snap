@@ -1,0 +1,19 @@
+---
+source: crates/atopile_analyzer/tests/evaluator.rs
+expression: result
+---
+state:
+  instances: {}
+diagnostics:
+  - severity: Error
+    kind: Evaluator
+    file: tests/resources/corpus/cyclic_inheritance.ato
+  - severity: Error
+    kind: Evaluator
+    file: tests/resources/corpus/cyclic_inheritance.ato
+  - severity: Error
+    kind: Evaluator
+    file: tests/resources/corpus/cyclic_inheritance.ato
+  - severity: Error
+    kind: Evaluator
+    file: tests/resources/corpus/cyclic_inheritance.ato
