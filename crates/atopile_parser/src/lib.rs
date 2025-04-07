@@ -35,7 +35,7 @@ impl<T> From<(T, SimpleSpan)> for Spanned<T> {
 
 impl<T> From<(T, Range<usize>)> for Spanned<T> {
     fn from((item, span): (T, Range<usize>)) -> Self {
-        Self(item, span.into())
+        Self(item, span)
     }
 }
 
@@ -82,7 +82,7 @@ pub enum AtopileError {
 impl<'src, T: Debug + Clone + Display> From<chumsky::error::Rich<'src, T>> for AtopileErrorReport {
     fn from(err: chumsky::error::Rich<'src, T>) -> Self {
         Self {
-            span: err.span().clone(),
+            span: *err.span(),
             reason: format!("{:?}", err.reason()),
             expected: err.expected().map(|e| e.to_string()).collect(),
             found: err.found().cloned().map(|c| c.to_string()),

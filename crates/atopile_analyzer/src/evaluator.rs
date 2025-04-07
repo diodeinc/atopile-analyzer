@@ -189,6 +189,13 @@ impl ModuleRef {
             module_name: "".into(),
         }
     }
+
+    fn pin() -> Self {
+        Self {
+            source_path: PathBuf::new(),
+            module_name: "".into(),
+        }
+    }
 }
 
 impl std::fmt::Display for ModuleRef {
@@ -257,6 +264,7 @@ pub(crate) enum InstanceKind {
     Component,
     Interface,
     Port,
+    Pin,
 }
 
 impl std::fmt::Display for InstanceKind {
@@ -358,6 +366,17 @@ impl Instance {
         Self {
             type_ref: ModuleRef::port(),
             kind: InstanceKind::Port,
+            attributes: HashMap::new(),
+            children: HashMap::new(),
+            connections: Vec::new(),
+            reference_designator: None,
+        }
+    }
+
+    fn pin() -> Self {
+        Self {
+            type_ref: ModuleRef::pin(),
+            kind: InstanceKind::Pin,
             attributes: HashMap::new(),
             children: HashMap::new(),
             connections: Vec::new(),
@@ -745,7 +764,10 @@ impl Evaluator {
         })?;
 
         let connections = match (left_instance.kind, right_instance.kind) {
-            (InstanceKind::Port, InstanceKind::Port) => {
+            (InstanceKind::Port, InstanceKind::Port)
+            | (InstanceKind::Pin, InstanceKind::Pin)
+            | (InstanceKind::Port, InstanceKind::Pin)
+            | (InstanceKind::Pin, InstanceKind::Port) => {
                 vec![Connection::new(
                     source.deref().clone(),
                     target.deref().clone(),
@@ -1024,6 +1046,14 @@ impl Evaluator {
                 instance.add_child(signal_name, &signal_ref);
                 Ok(())
             }
+            Stmt::Pin(pin) => {
+                debug!("Processing pin statement: {}", pin.name.deref());
+                let pin_name = pin.name.deref();
+                let pin_ref = InstanceRef::new(module_ref, vec![pin_name.clone()]);
+                self.add_instance(&pin_ref, Instance::pin());
+                instance.add_child(pin_name, &pin_ref);
+                Ok(())
+            }
             Stmt::Connect(connect) => {
                 debug!("Processing connect statement");
                 let left = connect.left.deref();
@@ -1047,7 +1077,13 @@ impl Evaluator {
                             .map(|p| p.deref().clone().into())
                             .collect(),
                     )),
-                    Connectable::Pin(_) => None,
+                    Connectable::Pin(pin) => {
+                        let pin_symbol: Symbol = pin.deref().clone().into();
+                        let instance_ref = InstanceRef::new(module_ref, vec![pin_symbol.clone()]);
+                        self.add_instance(&instance_ref, Instance::pin());
+                        instance.add_child(&pin_symbol, &instance_ref);
+                        Some(instance_ref)
+                    }
                 };
 
                 let right_instance_ref = match right {
@@ -1067,7 +1103,13 @@ impl Evaluator {
                             .map(|p| p.deref().clone().into())
                             .collect(),
                     )),
-                    Connectable::Pin(_) => None,
+                    Connectable::Pin(pin) => {
+                        let pin_symbol: Symbol = pin.deref().clone().into();
+                        let instance_ref = InstanceRef::new(module_ref, vec![pin_symbol.clone()]);
+                        self.add_instance(&instance_ref, Instance::pin());
+                        instance.add_child(&pin_symbol, &instance_ref);
+                        Some(instance_ref)
+                    }
                 };
 
                 if let (Some(left), Some(right)) = (left_instance_ref, right_instance_ref) {

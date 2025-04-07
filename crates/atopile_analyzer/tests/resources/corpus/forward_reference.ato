@@ -3,4 +3,3 @@ module Child from Parent:
 
 module Parent:
     signal y
-} 

@@ -1,0 +1,9 @@
+component MyComponent:
+    # Signal and pin connections
+    signal s1 ~ pin 1
+    signal s2 ~ pin 2
+    signal s3 ~ pin 3
+    
+module MyModule:
+    c = new MyComponent
+    c.s1 ~ c.1

@@ -321,6 +321,7 @@ impl<'src, I: ValueInput<'src, Token = Token<'src>, Span = SimpleSpan>> AtopileP
         .map_with(|expr, e| (expr, e.span()).into())
     }
 
+    #[allow(clippy::new_ret_no_self)]
     fn new() -> impl Parser<'src, I, Spanned<Expr>, ParserExtra<'src>> + Clone {
         just(Token::New)
             .ignore_then(Self::name())
@@ -629,7 +630,7 @@ impl<'src, I: ValueInput<'src, Token = Token<'src>, Span = SimpleSpan>> AtopileP
     pub fn parser() -> impl Parser<'src, I, Vec<Spanned<Stmt>>, ParserExtra<'src>> {
         // Drive the top-level parsing. We implement this manually to implement
         // our own error recovery and diagnostics.
-        custom(|mut inp| {
+        custom(|inp| {
             let skip_separators = |inp: &mut InputRef<'src, '_, I, ParserExtra<'src>>| {
                 while matches!(inp.peek(), Some(Token::Newline) | Some(Token::Semicolon)) {
                     inp.next();
@@ -661,7 +662,7 @@ impl<'src, I: ValueInput<'src, Token = Token<'src>, Span = SimpleSpan>> AtopileP
 
                 prev_cursor = Some(inp.cursor());
 
-                skip_separators(&mut inp);
+                skip_separators(inp);
 
                 let checkpoint = inp.save();
 
@@ -677,15 +678,13 @@ impl<'src, I: ValueInput<'src, Token = Token<'src>, Span = SimpleSpan>> AtopileP
                     inp.rewind(checkpoint.clone());
                     if inp.peek() == Some(Token::Dedent) {
                         inp.next();
-                        ast.push(
-                            (Stmt::Block(block.clone()), inp.span_since(&start_cursor)).into(),
-                        );
+                        ast.push((Stmt::Block(block.clone()), inp.span_since(start_cursor)).into());
                         current_block = None;
                         continue;
                     }
 
                     // If we can't find either, let's skip to the next line and report an error.
-                    skip_statement(&mut inp);
+                    skip_statement(inp);
 
                     ast.push(Stmt::spanned_error(
                         "syntax error",
@@ -757,7 +756,7 @@ impl<'src, I: ValueInput<'src, Token = Token<'src>, Span = SimpleSpan>> AtopileP
 
                                     ast.push(Stmt::spanned_error(
                                         "syntax error",
-                                        inp.span_since(&stmt_checkpoint.cursor()),
+                                        inp.span_since(stmt_checkpoint.cursor()),
                                     ));
                                 }
 
@@ -765,7 +764,7 @@ impl<'src, I: ValueInput<'src, Token = Token<'src>, Span = SimpleSpan>> AtopileP
                                     ast.push(
                                         (
                                             Stmt::Block(block),
-                                            inp.span_since(&block_checkpoint.cursor()),
+                                            inp.span_since(block_checkpoint.cursor()),
                                         )
                                             .into(),
                                     );
@@ -781,7 +780,7 @@ impl<'src, I: ValueInput<'src, Token = Token<'src>, Span = SimpleSpan>> AtopileP
 
                     // We didn't find a regular top statement or block header, so fail.
                     inp.rewind(checkpoint.clone());
-                    skip_statement(&mut inp);
+                    skip_statement(inp);
 
                     ast.push(Stmt::spanned_error(
                         "syntax error: unexpected top-level statement",
@@ -792,7 +791,7 @@ impl<'src, I: ValueInput<'src, Token = Token<'src>, Span = SimpleSpan>> AtopileP
 
             // If we ended in the middle of a block, add the block to the AST.
             if let Some((ref mut block, ref start_cursor)) = current_block {
-                ast.push((Stmt::Block(block.clone()), inp.span_since(&start_cursor)).into());
+                ast.push((Stmt::Block(block.clone()), inp.span_since(start_cursor)).into());
             }
 
             Ok(ast)
@@ -808,8 +807,8 @@ pub fn parse<'src>(
 
     let result = AtopileParser::parser().parse(mapped_input);
     (
-        result.output().map(|v| v.clone()).unwrap_or(vec![]),
-        result.errors().map(|e| e.clone()).collect(),
+        result.output().cloned().unwrap_or(vec![]),
+        result.errors().cloned().collect(),
     )
 }
 

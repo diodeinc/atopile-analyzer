@@ -23,7 +23,7 @@ impl From<&AnalyzerDiagnostic> for DiagnosticInfo {
 
         let kind = match &diag.kind {
             AnalyzerDiagnosticKind::UnconnectedInterface(_) => "UnconnectedInterface",
-            AnalyzerDiagnosticKind::Evaluator(_) => "Evaluator",
+            AnalyzerDiagnosticKind::Evaluator(err) => &format!("Evaluator: {}", err),
         };
 
         Self {
@@ -90,3 +90,4 @@ create_evaluator_test!(simple_connection);
 create_evaluator_test!(forward_reference);
 create_evaluator_test!(cyclic_inheritance);
 create_evaluator_test!(duplicate_declaration);
+create_evaluator_test!(pin_connections);

@@ -75,7 +75,7 @@ pub enum Token<'src> {
     Newline,
 }
 
-impl<'src> fmt::Display for Token<'src> {
+impl fmt::Display for Token<'_> {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self {
             Token::Component => write!(f, "component"),
@@ -248,7 +248,7 @@ impl<'src> Lexer<'src> {
     }
 }
 
-pub fn lex<'src>(input: &'src str) -> (Vec<Spanned<Token<'src>>>, Vec<LexerError<'src>>) {
+pub fn lex(input: &str) -> (Vec<Spanned<Token<'_>>>, Vec<LexerError<'_>>) {
     let mut tokens = Vec::new();
     let mut errors = Vec::new();
     let mut in_multiline_comment = false;
@@ -260,7 +260,7 @@ pub fn lex<'src>(input: &'src str) -> (Vec<Spanned<Token<'src>>>, Vec<LexerError
 
     // Parse the input into lines with spans
     let result = Lexer::line_parser().parse(input);
-    errors.extend(result.errors().map(|e| e.clone()));
+    errors.extend(result.errors().cloned());
 
     let mut indent_stack = vec![0];
 
@@ -268,7 +268,7 @@ pub fn lex<'src>(input: &'src str) -> (Vec<Spanned<Token<'src>>>, Vec<LexerError
     for (line, line_span) in result
         .output()
         .unwrap_or(&vec![])
-        .into_iter()
+        .iter()
         .map(|l| (l.0, l.1.clone()))
     {
         let indent_level = line.chars().take_while(|c| c.is_whitespace()).count();
@@ -345,7 +345,7 @@ pub fn lex<'src>(input: &'src str) -> (Vec<Spanned<Token<'src>>>, Vec<LexerError
                                 .repeated()
                                 .collect::<Vec<_>>()
                                 .parse(before_comment);
-                            errors.extend(result.errors().map(|e| e.clone()));
+                            errors.extend(result.errors().cloned());
 
                             if let Some(toks) = result.output() {
                                 for (tok, tok_span) in
@@ -410,7 +410,7 @@ pub fn lex<'src>(input: &'src str) -> (Vec<Spanned<Token<'src>>>, Vec<LexerError
                             .repeated()
                             .collect::<Vec<_>>()
                             .parse(&trimmed_line[line_pos..]);
-                        errors.extend(result.errors().map(|e| e.clone()));
+                        errors.extend(result.errors().cloned());
 
                         if let Some(toks) = result.output() {
                             for (tok, tok_span) in toks.iter().map(|t| (t.0.clone(), t.1.clone())) {

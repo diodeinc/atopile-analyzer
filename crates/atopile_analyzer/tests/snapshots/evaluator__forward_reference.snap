@@ -52,7 +52,4 @@ state:
       children: {}
       connections: []
       reference_designator: ~
-diagnostics:
-  - severity: Error
-    kind: Evaluator
-    file: tests/resources/corpus/forward_reference.ato
+diagnostics: []
