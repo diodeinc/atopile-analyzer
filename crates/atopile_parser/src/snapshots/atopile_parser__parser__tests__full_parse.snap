@@ -1,0 +1,130 @@
+---
+source: crates/atopile_parser/src/parser.rs
+expression: result
+---
+(
+    [
+        Spanned(
+            Block(
+                BlockStmt {
+                    kind: Spanned(
+                        Module,
+                        0..6,
+                    ),
+                    name: Spanned(
+                        Symbol(
+                            "Test",
+                        ),
+                        7..11,
+                    ),
+                    parent: None,
+                    body: [
+                        Spanned(
+                            Assign(
+                                AssignStmt {
+                                    target: Spanned(
+                                        PortRef {
+                                            parts: [
+                                                Spanned(
+                                                    "r1",
+                                                    25..27,
+                                                ),
+                                            ],
+                                        },
+                                        25..27,
+                                    ),
+                                    type_info: None,
+                                    value: Spanned(
+                                        New(
+                                            Spanned(
+                                                Symbol(
+                                                    "Resistor",
+                                                ),
+                                                34..42,
+                                            ),
+                                        ),
+                                        30..42,
+                                    ),
+                                },
+                            ),
+                            25..42,
+                        ),
+                        Spanned(
+                            Connect(
+                                ConnectStmt {
+                                    left: Spanned(
+                                        Port(
+                                            Spanned(
+                                                PortRef {
+                                                    parts: [
+                                                        Spanned(
+                                                            "r1",
+                                                            55..57,
+                                                        ),
+                                                    ],
+                                                },
+                                                55..57,
+                                            ),
+                                        ),
+                                        55..57,
+                                    ),
+                                    right: Spanned(
+                                        Pin(
+                                            Spanned(
+                                                "A1",
+                                                64..66,
+                                            ),
+                                        ),
+                                        60..66,
+                                    ),
+                                },
+                            ),
+                            55..66,
+                        ),
+                        Spanned(
+                            Assert(
+                                AssertStmt {
+                                    expr: Spanned(
+                                        Physical(
+                                            Spanned(
+                                                PhysicalValue {
+                                                    value: Spanned(
+                                                        "10",
+                                                        86..88,
+                                                    ),
+                                                    unit: Some(
+                                                        Spanned(
+                                                            "kohm",
+                                                            88..92,
+                                                        ),
+                                                    ),
+                                                    tolerance: Some(
+                                                        Spanned(
+                                                            Bilateral {
+                                                                value: Spanned(
+                                                                    "5",
+                                                                    97..98,
+                                                                ),
+                                                                unit: None,
+                                                            },
+                                                            93..99,
+                                                        ),
+                                                    ),
+                                                },
+                                                86..99,
+                                            ),
+                                        ),
+                                        86..99,
+                                    ),
+                                },
+                            ),
+                            79..99,
+                        ),
+                    ],
+                },
+            ),
+            0..99,
+        ),
+    ],
+    [],
+)

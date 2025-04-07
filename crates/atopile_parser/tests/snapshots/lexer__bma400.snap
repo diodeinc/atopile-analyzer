@@ -160,357 +160,353 @@ expression: output
             Comment(
                 "- Ultra-low power consumption (14.5μA in normal mode, 850nA in low-power mode)",
             ),
-            279..357,
+            279..358,
         ),
         Spanned(
             Newline,
-            357..358,
+            358..359,
         ),
         Spanned(
             Comment(
                 "- 12-bit digital resolution",
             ),
-            362..389,
+            363..390,
         ),
         Spanned(
             Newline,
-            389..390,
+            390..391,
         ),
         Spanned(
             Comment(
                 "- Programmable measurement ranges: ±2g, ±4g, ±8g, ±16g",
             ),
-            394..448,
+            395..453,
         ),
         Spanned(
             Newline,
-            448..449,
+            453..454,
         ),
         Spanned(
             Comment(
                 "- Built-in power management with auto wake-up/sleep capability",
             ),
-            453..515,
+            458..520,
         ),
         Spanned(
             Newline,
-            515..516,
+            520..521,
         ),
         Spanned(
             Comment(
                 "- Integrated FIFO (1KB)",
             ),
-            520..543,
+            525..548,
         ),
         Spanned(
             Newline,
-            543..544,
+            548..549,
         ),
         Spanned(
             Comment(
                 "- Smart interrupts including:",
             ),
-            548..577,
+            553..582,
         ),
         Spanned(
             Newline,
-            577..578,
+            582..583,
         ),
         Spanned(
             Comment(
                 "- Activity/inactivity detection",
             ),
-            584..615,
+            589..620,
         ),
         Spanned(
             Newline,
-            615..616,
+            620..621,
         ),
         Spanned(
             Comment(
                 "- Step counting with low power consumption (4μA)",
             ),
-            622..670,
+            627..676,
         ),
         Spanned(
             Newline,
-            670..671,
+            676..677,
         ),
         Spanned(
             Comment(
                 "- Orientation detection",
             ),
-            677..700,
+            683..706,
         ),
         Spanned(
             Newline,
-            700..701,
+            706..707,
         ),
         Spanned(
             Comment(
                 "- Tap/double-tap sensing",
             ),
-            707..731,
+            713..737,
         ),
         Spanned(
             Newline,
-            731..732,
+            737..738,
         ),
         Spanned(
             Comment(
                 "- Digital interfaces: I2C or SPI",
             ),
-            736..768,
+            742..774,
         ),
         Spanned(
             Newline,
-            768..769,
+            774..775,
         ),
         Spanned(
             Comment(
                 "- VDDIO voltage range: 1.2V to 3.6V",
             ),
-            773..808,
+            779..814,
         ),
         Spanned(
             Newline,
-            808..809,
+            814..815,
         ),
         Spanned(
             Comment(
                 "- VDD voltage range: 1.7V to 3.6V",
             ),
-            813..846,
+            819..852,
         ),
         Spanned(
             Newline,
-            846..847,
+            852..853,
         ),
         Spanned(
             Newline,
-            851..852,
+            857..858,
         ),
         Spanned(
             Comment(
                 "Example Usage:",
             ),
-            856..870,
+            862..876,
         ),
         Spanned(
             Newline,
-            870..871,
+            876..877,
         ),
         Spanned(
             Comment(
                 "```",
             ),
-            875..878,
+            881..884,
         ),
         Spanned(
             Newline,
-            878..879,
+            884..885,
         ),
         Spanned(
             Comment(
                 "from 'generics/interfaces.ato' import Power, I2C, GPIO",
             ),
-            883..937,
+            889..943,
         ),
         Spanned(
             Newline,
-            937..938,
+            943..944,
         ),
         Spanned(
             Comment(
                 "from 'bma400/bma400.ato' import Bma400, Bma400_I2C",
             ),
-            942..992,
+            948..998,
         ),
         Spanned(
             Newline,
-            992..993,
+            998..999,
         ),
         Spanned(
             Newline,
-            997..998,
+            1003..1004,
         ),
         Spanned(
             Comment(
                 "module UserBoard:",
             ),
-            1002..1019,
+            1008..1025,
         ),
         Spanned(
             Newline,
-            1019..1020,
+            1025..1026,
         ),
         Spanned(
             Comment(
                 "'''User board with BMA400 accelerometer'''",
             ),
-            1028..1070,
+            1034..1076,
         ),
         Spanned(
             Newline,
-            1070..1071,
+            1076..1077,
         ),
         Spanned(
             Newline,
-            1079..1080,
+            1085..1086,
         ),
         Spanned(
             Comment(
                 "# Interfaces",
             ),
-            1088..1100,
+            1094..1106,
         ),
         Spanned(
             Newline,
-            1100..1101,
+            1106..1107,
         ),
         Spanned(
             Comment(
                 "power_1v8 = new Power  # 1.8V power supply",
             ),
-            1109..1151,
+            1115..1157,
         ),
         Spanned(
             Newline,
-            1151..1152,
+            1157..1158,
         ),
         Spanned(
             Comment(
                 "i2c = new I2C          # I2C bus",
             ),
-            1160..1192,
+            1166..1198,
         ),
         Spanned(
             Newline,
-            1192..1193,
+            1198..1199,
         ),
         Spanned(
             Comment(
                 "int1 = new GPIO        # Interrupt 1 input",
             ),
-            1201..1243,
+            1207..1249,
         ),
         Spanned(
             Newline,
-            1243..1244,
+            1249..1250,
         ),
         Spanned(
             Newline,
-            1252..1253,
+            1258..1259,
         ),
         Spanned(
             Comment(
                 "# Accelerometer",
             ),
-            1261..1276,
+            1267..1282,
         ),
         Spanned(
             Newline,
-            1276..1277,
+            1282..1283,
         ),
         Spanned(
             Comment(
                 "accel = new Bma400",
             ),
-            1285..1303,
+            1291..1309,
         ),
         Spanned(
             Newline,
-            1303..1304,
+            1309..1310,
         ),
         Spanned(
             Comment(
                 "accel.ic -> Bma400_I2C  # Use I2C interface",
             ),
-            1312..1355,
+            1318..1361,
         ),
         Spanned(
             Newline,
-            1355..1356,
+            1361..1362,
         ),
         Spanned(
             Newline,
-            1364..1365,
+            1370..1371,
         ),
         Spanned(
             Comment(
                 "# Connections",
             ),
-            1373..1386,
+            1379..1392,
         ),
         Spanned(
             Newline,
-            1386..1387,
+            1392..1393,
         ),
         Spanned(
             Comment(
                 "accel.power ~ power_1v8",
             ),
-            1395..1418,
+            1401..1424,
         ),
         Spanned(
             Newline,
-            1418..1419,
+            1424..1425,
         ),
         Spanned(
             Comment(
                 "accel.i2c ~ i2c",
             ),
-            1427..1442,
+            1433..1448,
         ),
         Spanned(
             Newline,
-            1442..1443,
+            1448..1449,
         ),
         Spanned(
             Comment(
                 "accel.int1 ~ int1",
             ),
-            1451..1468,
+            1457..1474,
         ),
         Spanned(
             Newline,
-            1468..1469,
+            1474..1475,
         ),
         Spanned(
             Comment(
                 "```",
             ),
-            1473..1476,
+            1479..1482,
         ),
         Spanned(
             Newline,
-            1476..1477,
+            1482..1483,
         ),
         Spanned(
             Newline,
-            1484..1485,
+            1490..1491,
         ),
         Spanned(
             Newline,
-            1489..1490,
+            1495..1496,
         ),
         Spanned(
             Signal,
-            1494..1500,
+            1500..1506,
         ),
         Spanned(
             Name(
                 "gnd",
             ),
-            1501..1504,
+            1507..1510,
         ),
         Spanned(
             Newline,
-            1504..1505,
-        ),
-        Spanned(
-            Newline,
-            1509..1510,
+            1510..1511,
         ),
         Spanned(
             Dedent,

@@ -1,0 +1,30 @@
+---
+source: crates/atopile_parser/src/parser.rs
+expression: result
+---
+ParseResult {
+    output: Some(
+        Spanned(
+            Physical(
+                Spanned(
+                    PhysicalValue {
+                        value: Spanned(
+                            "-0.3",
+                            0..4,
+                        ),
+                        unit: Some(
+                            Spanned(
+                                "V",
+                                4..5,
+                            ),
+                        ),
+                        tolerance: None,
+                    },
+                    0..5,
+                ),
+            ),
+            0..5,
+        ),
+    ),
+    errs: [],
+}

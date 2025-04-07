@@ -19,8 +19,32 @@ state:
         value:
           Physical: "100nF "
       children:
+        "1": "tests/resources/corpus/simple_component.ato:SimpleComponent.1"
+        "2": "tests/resources/corpus/simple_component.ato:SimpleComponent.2"
         p1: "tests/resources/corpus/simple_component.ato:SimpleComponent.p1"
         p2: "tests/resources/corpus/simple_component.ato:SimpleComponent.p2"
+      connections:
+        - left: "tests/resources/corpus/simple_component.ato:SimpleComponent.p1"
+          right: "tests/resources/corpus/simple_component.ato:SimpleComponent.1"
+        - left: "tests/resources/corpus/simple_component.ato:SimpleComponent.p2"
+          right: "tests/resources/corpus/simple_component.ato:SimpleComponent.2"
+      reference_designator: ~
+    "tests/resources/corpus/simple_component.ato:SimpleComponent.1":
+      type_ref:
+        source_path: ""
+        module_name: ""
+      kind: Pin
+      attributes: {}
+      children: {}
+      connections: []
+      reference_designator: ~
+    "tests/resources/corpus/simple_component.ato:SimpleComponent.2":
+      type_ref:
+        source_path: ""
+        module_name: ""
+      kind: Pin
+      attributes: {}
+      children: {}
       connections: []
       reference_designator: ~
     "tests/resources/corpus/simple_component.ato:SimpleComponent.p1":

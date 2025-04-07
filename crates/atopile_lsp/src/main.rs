@@ -104,7 +104,7 @@ fn diagnostic_to_lsp(diag: &AnalyzerDiagnostic) -> Diagnostic {
         AnalyzerDiagnosticKind::Evaluator(evaluator_diag) => Diagnostic {
             range: range_to_lsp(evaluator_diag.location.range),
             severity: Some(diagnostic_severity_to_lsp(diag.severity)),
-            message: format!("{}", evaluator_diag.to_string()),
+            message: evaluator_diag.to_string(),
             ..Default::default()
         },
     }
@@ -197,8 +197,7 @@ impl Backend {
             Ok(diagnostics_per_file) => {
                 let publish_start = Instant::now();
                 for (file, diagnostics) in diagnostics_per_file {
-                    let lsp_diagnostics =
-                        diagnostics.iter().map(|d| diagnostic_to_lsp(d)).collect();
+                    let lsp_diagnostics = diagnostics.iter().map(diagnostic_to_lsp).collect();
 
                     info!(
                         "publishing diagnostics for file {:?}: {:?}",
@@ -285,7 +284,6 @@ impl LanguageServer for Backend {
                 name: "atopile_lsp".to_string(),
                 version: Some(env!("CARGO_PKG_VERSION").to_string()),
             }),
-            ..Default::default()
         })
     }
 

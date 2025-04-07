@@ -1,0 +1,55 @@
+---
+source: crates/atopile_analyzer/tests/evaluator.rs
+expression: result
+---
+state:
+  instances:
+    "tests/resources/corpus/forward_reference.ato:Child":
+      type_ref:
+        source_path: tests/resources/corpus/forward_reference.ato
+        module_name: Child
+      kind: Module
+      attributes: {}
+      children:
+        x: "tests/resources/corpus/forward_reference.ato:Child.x"
+        y: "tests/resources/corpus/forward_reference.ato:Child.y"
+      connections: []
+      reference_designator: ~
+    "tests/resources/corpus/forward_reference.ato:Child.x":
+      type_ref:
+        source_path: ""
+        module_name: ""
+      kind: Port
+      attributes: {}
+      children: {}
+      connections: []
+      reference_designator: ~
+    "tests/resources/corpus/forward_reference.ato:Child.y":
+      type_ref:
+        source_path: ""
+        module_name: ""
+      kind: Port
+      attributes: {}
+      children: {}
+      connections: []
+      reference_designator: ~
+    "tests/resources/corpus/forward_reference.ato:Parent":
+      type_ref:
+        source_path: tests/resources/corpus/forward_reference.ato
+        module_name: Parent
+      kind: Module
+      attributes: {}
+      children:
+        y: "tests/resources/corpus/forward_reference.ato:Parent.y"
+      connections: []
+      reference_designator: ~
+    "tests/resources/corpus/forward_reference.ato:Parent.y":
+      type_ref:
+        source_path: ""
+        module_name: ""
+      kind: Port
+      attributes: {}
+      children: {}
+      connections: []
+      reference_designator: ~
+diagnostics: []

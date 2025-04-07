@@ -1,0 +1,29 @@
+---
+source: crates/atopile_analyzer/tests/evaluator.rs
+expression: result
+---
+state:
+  instances:
+    "tests/resources/corpus/duplicate_declaration.ato:MyModule":
+      type_ref:
+        source_path: tests/resources/corpus/duplicate_declaration.ato
+        module_name: MyModule
+      kind: Module
+      attributes: {}
+      children:
+        x: "tests/resources/corpus/duplicate_declaration.ato:MyModule.x"
+      connections: []
+      reference_designator: ~
+    "tests/resources/corpus/duplicate_declaration.ato:MyModule.x":
+      type_ref:
+        source_path: ""
+        module_name: ""
+      kind: Port
+      attributes: {}
+      children: {}
+      connections: []
+      reference_designator: ~
+diagnostics:
+  - severity: Error
+    kind: "Evaluator: duplicate declaration: Block 'MyModule' is already declared at Location { file: \"tests/resources/corpus/duplicate_declaration.ato\", range: Range { start: Position { line: 0, column: 0 }, end: Position { line: 3, column: 0 } } }"
+    file: tests/resources/corpus/duplicate_declaration.ato

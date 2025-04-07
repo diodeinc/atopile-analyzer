@@ -31,7 +31,11 @@ macro_rules! create_parser_test {
                     .for_each(|(i, t)| {
                         println!(
                             "{}{:2}: {:?}",
-                            if span.contains(&i) { "-> " } else { "   " },
+                            if span.into_range().contains(&i) {
+                                "-> "
+                            } else {
+                                "   "
+                            },
                             i,
                             t
                         )

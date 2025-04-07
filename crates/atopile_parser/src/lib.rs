@@ -1,12 +1,14 @@
 use std::{
-    fmt::Debug,
+    fmt::{Debug, Display},
     hash::Hash,
     ops::{Deref, Range},
     path::{Path, PathBuf},
 };
 
+use chumsky::span::SimpleSpan;
 #[cfg(test)]
 use insta::assert_debug_snapshot;
+use lexer::lex;
 use serde::Serialize;
 
 pub mod lexer;
@@ -25,8 +27,14 @@ impl<T> Deref for Spanned<T> {
     }
 }
 
-impl<T> From<(T, Span)> for Spanned<T> {
-    fn from((item, span): (T, Span)) -> Self {
+impl<T> From<(T, SimpleSpan)> for Spanned<T> {
+    fn from((item, span): (T, SimpleSpan)) -> Self {
+        Self(item, span.into())
+    }
+}
+
+impl<T> From<(T, Range<usize>)> for Spanned<T> {
+    fn from((item, span): (T, Range<usize>)) -> Self {
         Self(item, span)
     }
 }
@@ -58,26 +66,26 @@ pub struct Position {
 }
 
 #[derive(Debug, Clone, PartialEq)]
-pub struct AtopileErrorReport<T> {
-    span: Span,
+pub struct AtopileErrorReport {
+    span: SimpleSpan,
     reason: String,
-    expected: Vec<Option<T>>,
-    found: Option<T>,
+    expected: Vec<String>,
+    found: Option<String>,
 }
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum AtopileError {
-    Lexer(AtopileErrorReport<char>),
-    Parser(AtopileErrorReport<lexer::Token>),
+    Lexer(AtopileErrorReport),
+    Parser(AtopileErrorReport),
 }
 
-impl<T: Hash + Eq + Debug + Clone> From<chumsky::error::Simple<T>> for AtopileErrorReport<T> {
-    fn from(err: chumsky::error::Simple<T>) -> Self {
+impl<'src, T: Debug + Clone + Display> From<chumsky::error::Rich<'src, T>> for AtopileErrorReport {
+    fn from(err: chumsky::error::Rich<'src, T>) -> Self {
         Self {
-            span: err.span(),
+            span: *err.span(),
             reason: format!("{:?}", err.reason()),
-            expected: err.expected().cloned().collect(),
-            found: err.found().cloned(),
+            expected: err.expected().map(|e| e.to_string()).collect(),
+            found: err.found().cloned().map(|c| c.to_string()),
         }
     }
 }
@@ -86,7 +94,6 @@ impl<T: Hash + Eq + Debug + Clone> From<chumsky::error::Simple<T>> for AtopileEr
 pub struct AtopileSource {
     raw: String,
     path: PathBuf,
-    tokens: Vec<Spanned<lexer::Token>>,
     ast: Vec<Spanned<parser::Stmt>>,
     line_to_index: Vec<usize>,
 }
@@ -95,26 +102,19 @@ impl AtopileSource {
     pub fn new(raw: String, path: PathBuf) -> (Self, Vec<AtopileError>) {
         let mut errors: Vec<AtopileError> = Vec::new();
 
-        let (tokens, lexer_errors) = lexer::lex(&raw);
+        let (tokens, lexer_errors) = lex(&raw);
         errors.extend(
             lexer_errors
                 .into_iter()
                 .map(|e| AtopileError::Lexer(e.into())),
         );
 
-        let (mut ast, parser_errors) = parser::parse(&tokens);
+        let (ast, parser_errors) = parser::parse(&tokens);
         errors.extend(
             parser_errors
                 .into_iter()
                 .map(|e| AtopileError::Parser(e.into())),
         );
-
-        // The spans on the original token stream are w.r.t. the token stream, so we traverse the
-        // generated AST and rewrite the spans to reference raw characters in the source file.
-        for stmt in &mut ast {
-            Self::rewrite_span(&tokens, stmt);
-            Self::rewrite_stmt(&tokens, stmt);
-        }
 
         let line_to_index = vec![0]
             .into_iter()
@@ -129,157 +129,12 @@ impl AtopileSource {
         (
             Self {
                 raw,
-                tokens,
+                path,
                 ast,
                 line_to_index,
-                path,
             },
             errors,
         )
-    }
-
-    fn rewrite_span<T>(tokens: &[Spanned<lexer::Token>], spanned: &mut Spanned<T>) {
-        let start = tokens
-            .get(spanned.span().start)
-            .map(|t| t.1.start)
-            .unwrap_or(0);
-        let end = tokens
-            .get(spanned.span().end.saturating_sub(1))
-            .map(|t| t.1.end)
-            .unwrap_or(0);
-
-        spanned.1 = start..end;
-    }
-
-    fn rewrite_stmt(tokens: &[Spanned<lexer::Token>], stmt: &mut Spanned<parser::Stmt>) {
-        match &mut stmt.0 {
-            parser::Stmt::Import(stmt) => {
-                Self::rewrite_span(tokens, &mut stmt.from_path);
-                for import in &mut stmt.imports {
-                    Self::rewrite_span(tokens, import);
-                }
-            }
-            parser::Stmt::DepImport(stmt) => {
-                Self::rewrite_span(tokens, &mut stmt.name);
-                Self::rewrite_span(tokens, &mut stmt.from_path);
-            }
-            parser::Stmt::Attribute(stmt) => {
-                Self::rewrite_span(tokens, &mut stmt.name);
-                Self::rewrite_span(tokens, &mut stmt.type_info);
-            }
-            parser::Stmt::Assign(stmt) => {
-                Self::rewrite_span(tokens, &mut stmt.target);
-                Self::rewrite_span(tokens, &mut stmt.value);
-
-                Self::rewrite_port_ref(tokens, &mut stmt.target.0);
-                Self::rewrite_expr(tokens, &mut stmt.value.0);
-            }
-            parser::Stmt::Connect(stmt) => {
-                Self::rewrite_span(tokens, &mut stmt.left);
-                Self::rewrite_span(tokens, &mut stmt.right);
-
-                Self::rewrite_connectable(tokens, &mut stmt.left.0);
-                Self::rewrite_connectable(tokens, &mut stmt.right.0);
-            }
-            parser::Stmt::Block(stmt) => {
-                Self::rewrite_span(tokens, &mut stmt.kind);
-                Self::rewrite_span(tokens, &mut stmt.name);
-                if let Some(parent) = &mut stmt.parent {
-                    Self::rewrite_span(tokens, parent);
-                }
-
-                for stmt in &mut stmt.body {
-                    Self::rewrite_span(tokens, stmt);
-                    Self::rewrite_stmt(tokens, stmt);
-                }
-            }
-            parser::Stmt::Signal(stmt) => {
-                Self::rewrite_span(tokens, &mut stmt.name);
-            }
-            parser::Stmt::Pin(stmt) => {
-                Self::rewrite_span(tokens, &mut stmt.name);
-            }
-            parser::Stmt::Assert(stmt) => {
-                Self::rewrite_span(tokens, &mut stmt.expr);
-                Self::rewrite_expr(tokens, &mut stmt.expr.0);
-            }
-            parser::Stmt::Comment(stmt) => {
-                Self::rewrite_span(tokens, &mut stmt.comment);
-            }
-            parser::Stmt::Specialize(stmt) => {
-                Self::rewrite_span(tokens, &mut stmt.port);
-                Self::rewrite_span(tokens, &mut stmt.value);
-
-                Self::rewrite_port_ref(tokens, &mut stmt.port.0);
-            }
-            parser::Stmt::Pass | parser::Stmt::Unparsable(_) => {}
-        }
-    }
-
-    fn rewrite_expr(tokens: &[Spanned<lexer::Token>], expr: &mut parser::Expr) {
-        match expr {
-            parser::Expr::String(s) => Self::rewrite_span(tokens, s),
-            parser::Expr::Number(n) => Self::rewrite_span(tokens, n),
-            parser::Expr::Port(p) => {
-                Self::rewrite_span(tokens, p);
-                Self::rewrite_port_ref(tokens, &mut p.0);
-            }
-            parser::Expr::New(n) => Self::rewrite_span(tokens, n),
-            parser::Expr::Bool(b) => Self::rewrite_span(tokens, b),
-            parser::Expr::BinaryOp(b) => {
-                Self::rewrite_span(tokens, b);
-                Self::rewrite_span(tokens, &mut b.0.left);
-                Self::rewrite_span(tokens, &mut b.0.op);
-                Self::rewrite_span(tokens, &mut b.0.right);
-
-                Self::rewrite_expr(tokens, &mut b.0.left.0);
-                Self::rewrite_expr(tokens, &mut b.0.right.0);
-            }
-            parser::Expr::Physical(p) => {
-                Self::rewrite_span(tokens, p);
-                Self::rewrite_span(tokens, &mut p.0.value);
-                if let Some(unit) = &mut p.0.unit {
-                    Self::rewrite_span(tokens, unit);
-                }
-                if let Some(tolerance) = &mut p.0.tolerance {
-                    Self::rewrite_span(tokens, tolerance);
-
-                    match &mut tolerance.0 {
-                        parser::Tolerance::Bilateral { value, unit } => {
-                            Self::rewrite_span(tokens, value);
-
-                            if let Some(unit) = unit {
-                                Self::rewrite_span(tokens, unit);
-                            }
-                        }
-                        parser::Tolerance::Bound { min, max } => {
-                            Self::rewrite_span(tokens, min);
-                            Self::rewrite_span(tokens, max);
-                        }
-                    }
-                }
-            }
-        }
-    }
-
-    fn rewrite_port_ref(tokens: &[Spanned<lexer::Token>], port_ref: &mut parser::PortRef) {
-        for part in &mut port_ref.parts {
-            Self::rewrite_span(tokens, part);
-        }
-    }
-
-    fn rewrite_connectable(
-        tokens: &[Spanned<lexer::Token>],
-        connectable: &mut parser::Connectable,
-    ) {
-        match connectable {
-            parser::Connectable::Port(p) => {
-                Self::rewrite_span(tokens, p);
-                Self::rewrite_port_ref(tokens, &mut p.0);
-            }
-            parser::Connectable::Pin(p) => Self::rewrite_span(tokens, p),
-            parser::Connectable::Signal(s) => Self::rewrite_span(tokens, s),
-        }
     }
 
     /// Returns the deepest parser::Stmt that is present at the given index into the source file,
@@ -498,58 +353,4 @@ module M:
     "###);
 
     assert_debug_snapshot!(source.stmt_at(1000), @r###"None"###);
-}
-
-#[test]
-fn test_traverse_all_stmts() {
-    let (source, errors) = AtopileSource::new(
-        r#"
-module M:
-    r1 = new Resistor
-    r2 = new Resistor
-    
-    component Sub:
-        x = new Thing
-"#
-        .trim()
-        .to_string(),
-        PathBuf::from("test.ato"),
-    );
-
-    assert_eq!(errors.len(), 0);
-
-    let mut traversal = source.traverse_all_stmts();
-
-    // Module statement with empty path
-    let (stmt, path) = traversal.next().unwrap();
-    assert!(matches!(stmt.0, parser::Stmt::Block(_)));
-    assert!(path.is_empty());
-
-    // First assign statement with module in path
-    let (stmt, path) = traversal.next().unwrap();
-    assert!(matches!(stmt.0, parser::Stmt::Assign(_)));
-    assert_eq!(path.len(), 1);
-    assert!(matches!(path[0].0, parser::Stmt::Block(_)));
-
-    // Second assign statement with same path
-    let (stmt, path) = traversal.next().unwrap();
-    assert!(matches!(stmt.0, parser::Stmt::Assign(_)));
-    assert_eq!(path.len(), 1);
-    assert!(matches!(path[0].0, parser::Stmt::Block(_)));
-
-    // Component statement with module in path
-    let (stmt, path) = traversal.next().unwrap();
-    assert!(matches!(stmt.0, parser::Stmt::Block(_)));
-    assert_eq!(path.len(), 1);
-    assert!(matches!(path[0].0, parser::Stmt::Block(_)));
-
-    // Nested assign with both module and component in path
-    let (stmt, path) = traversal.next().unwrap();
-    assert!(matches!(stmt.0, parser::Stmt::Assign(_)));
-    assert_eq!(path.len(), 2);
-    assert!(matches!(path[0].0, parser::Stmt::Block(_)));
-    assert!(matches!(path[1].0, parser::Stmt::Block(_)));
-
-    // Should be no more statements
-    assert!(traversal.next().is_none());
 }

@@ -1,0 +1,5 @@
+module MyModule:
+    signal x
+
+module MyModule:
+    signal y 

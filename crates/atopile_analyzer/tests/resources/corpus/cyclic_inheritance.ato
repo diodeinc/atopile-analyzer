@@ -1,0 +1,8 @@
+module ModuleA from ModuleB:
+    signal x
+
+module ModuleB from ModuleC:
+    signal y
+
+module ModuleC from ModuleA:
+    signal z 

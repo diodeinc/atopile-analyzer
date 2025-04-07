@@ -1,15 +1,15 @@
 use std::fmt;
+use std::marker::PhantomData;
 use std::ops::Deref;
 
+use chumsky::input::{Cursor, InputRef, MapExtra, ValueInput};
+use chumsky::pratt::{infix, left};
 use chumsky::prelude::*;
-use chumsky::{error::Simple, Parser};
+use chumsky::Parser;
 use serde::{Deserialize, Serialize};
 
 use crate::lexer::Token;
 use crate::Spanned;
-
-#[cfg(test)]
-use insta::assert_debug_snapshot;
 
 #[derive(Clone, Debug, PartialEq, Hash, Eq, Serialize, Deserialize)]
 pub struct Symbol(String);
@@ -87,8 +87,14 @@ pub enum Stmt {
     // pass
     Pass,
 
-    // Unparsable. Used for error recovery.
-    Unparsable(Vec<Spanned<Token>>),
+    // Parse Error
+    ParseError(String),
+}
+
+impl Stmt {
+    pub fn spanned_error(msg: &str, span: SimpleSpan) -> Spanned<Self> {
+        (Self::ParseError(msg.to_string()), span).into()
+    }
 }
 
 #[derive(Debug, Clone, PartialEq)]
@@ -289,369 +295,283 @@ impl std::fmt::Display for PortRef {
     }
 }
 
-fn atom() -> impl Parser<Token, Spanned<Expr>, Error = Simple<Token>> {
-    select! { |span|
-        Token::String(s) => Expr::String((s, span).into()),
-        Token::Number(n) => Expr::Number((n, span).into()),
-        Token::True => Expr::Bool((true, span).into()),
-        Token::False => Expr::Bool((false, span).into()),
+#[derive(Debug, Clone, PartialEq)]
+struct BlockHeader {
+    kind: Spanned<BlockKind>,
+    name: Spanned<Symbol>,
+    parent: Option<Spanned<Symbol>>,
+}
+
+type ParserError<'src> = Rich<'src, Token<'src>, SimpleSpan>;
+type ParserExtra<'src> = extra::Err<ParserError<'src>>;
+
+struct AtopileParser<'src, I: ValueInput<'src, Token = Token<'src>, Span = SimpleSpan>> {
+    phantom: PhantomData<(&'src (), I)>,
+}
+
+impl<'src, I: ValueInput<'src, Token = Token<'src>, Span = SimpleSpan>> AtopileParser<'src, I> {
+    fn atom() -> impl Parser<'src, I, Spanned<Expr>, ParserExtra<'src>> + Clone {
+        select! {
+            Token::String(s) = e => Expr::String((s.to_string(), e.span()).into()),
+            Token::Number(n) = e => Expr::Number((n.to_string(), e.span()).into()),
+            Token::True = e => Expr::Bool((true, e.span()).into()),
+            Token::False = e => Expr::Bool((false, e.span()).into()),
+        }
+        .or(Self::port_ref().map(|p| Expr::Port(p.clone())))
+        .map_with(|expr, e| (expr, e.span()).into())
     }
-    .or(port_ref().map(Expr::Port))
-    .map_with_span(|expr, span| (expr, span).into())
-}
 
-fn new() -> impl Parser<Token, Spanned<Expr>, Error = Simple<Token>> {
-    just(Token::New)
-        .ignore_then(name())
-        .map_with_span(|name, span| (Expr::New(name.map(Symbol::from)), span).into())
-}
+    #[allow(clippy::new_ret_no_self)]
+    fn new() -> impl Parser<'src, I, Spanned<Expr>, ParserExtra<'src>> + Clone {
+        just(Token::New)
+            .ignore_then(Self::name())
+            .map_with(|name, e| (Expr::New(name.map(Symbol::from)), e.span()).into())
+    }
 
-fn physical() -> impl Parser<Token, Spanned<Expr>, Error = Simple<Token>> {
-    let signed_number = just(Token::Minus)
-        .or_not()
-        .then(number())
-        .map(|(sign, num)| match sign {
-            Some(_) => Spanned(format!("-{}", num.0), num.span().start - 1..num.span().end),
-            None => num,
-        });
-
-    signed_number
-        .then(name().or_not())
-        .then(tolerance().or_not())
-        .map_with_span(|((value, unit), tol), span| {
-            Expr::Physical(
-                (
-                    PhysicalValue {
-                        value,
-                        unit,
-                        tolerance: tol,
-                    },
-                    span,
-                )
-                    .into(),
-            )
-        })
-        .map_with_span(|expr, span| (expr, span).into())
-}
-
-#[test]
-fn test_physical() {
-    let result = physical().parse_recovery(vec![
-        Token::Number("10".to_string()),
-        Token::Name("kohm".to_string().into()),
-        Token::PlusOrMinus,
-        Token::Number("5".to_string()),
-        Token::Percent,
-    ]);
-    assert_debug_snapshot!(result, @r###"
-    (
-        Some(
-            Spanned(
-                Physical(
-                    Spanned(
-                        PhysicalValue {
-                            value: Spanned(
-                                "10",
-                                0..1,
-                            ),
-                            unit: Some(
-                                Spanned(
-                                    "kohm",
-                                    1..2,
-                                ),
-                            ),
-                            tolerance: Some(
-                                Spanned(
-                                    Bilateral {
-                                        value: Spanned(
-                                            "5",
-                                            3..4,
-                                        ),
-                                        unit: None,
-                                    },
-                                    2..5,
-                                ),
-                            ),
-                        },
-                        0..5,
-                    ),
-                ),
-                0..5,
-            ),
-        ),
-        [],
-    )
-    "###);
-
-    // Add a new test case for negative numbers
-    let result_negative = physical().parse_recovery(vec![
-        Token::Minus,
-        Token::Number("0.3".to_string()),
-        Token::Name("V".to_string().into()),
-    ]);
-    assert_debug_snapshot!(result_negative, @r###"
-    (
-        Some(
-            Spanned(
-                Physical(
-                    Spanned(
-                        PhysicalValue {
-                            value: Spanned(
-                                "-0.3",
-                                0..2,
-                            ),
-                            unit: Some(
-                                Spanned(
-                                    "V",
-                                    2..3,
-                                ),
-                            ),
-                            tolerance: None,
-                        },
-                        0..3,
-                    ),
-                ),
-                0..3,
-            ),
-        ),
-        [],
-    )
-    "###);
-}
-
-fn signal() -> impl Parser<Token, Spanned<Stmt>, Error = Simple<Token>> {
-    just(Token::Signal)
-        .ignore_then(name())
-        .map(|name| {
-            Stmt::Signal(SignalStmt {
-                name: name.map(Symbol::from),
-            })
-        })
-        .map_with_span(|stmt, span| (stmt, span).into())
-        .labelled("signal")
-}
-
-fn port_ref() -> impl Parser<Token, Spanned<PortRef>, Error = Simple<Token>> {
-    choice((name(), number()))
-        .separated_by(just(Token::Dot))
-        .at_least(1)
-        .map(|parts| PortRef { parts })
-        .map_with_span(|port_ref, span| (port_ref, span).into())
-        .labelled("port_ref")
-}
-
-#[test]
-fn test_port_ref_simple() {
-    let tokens = vec![Token::Name("a".to_string().into())];
-    let result = port_ref().parse_recovery(tokens);
-    assert_debug_snapshot!(result, @r###"
-    (
-        Some(
-            Spanned(
-                PortRef {
-                    parts: [
-                        Spanned(
-                            "a",
-                            0..1,
-                        ),
-                    ],
-                },
-                0..1,
-            ),
-        ),
-        [],
-    )
-    "###);
-}
-
-#[test]
-fn test_port_ref_nested() {
-    let tokens = vec![
-        Token::Name("a".to_string().into()),
-        Token::Dot,
-        Token::Name("b".to_string().into()),
-        Token::Dot,
-        Token::Name("c".to_string().into()),
-    ];
-    let result = port_ref().parse_recovery(tokens);
-    assert_debug_snapshot!(result, @r###"
-    (
-        Some(
-            Spanned(
-                PortRef {
-                    parts: [
-                        Spanned(
-                            "a",
-                            0..1,
-                        ),
-                        Spanned(
-                            "b",
-                            2..3,
-                        ),
-                        Spanned(
-                            "c",
-                            4..5,
-                        ),
-                    ],
-                },
-                0..5,
-            ),
-        ),
-        [],
-    )
-    "###);
-}
-
-fn name() -> impl Parser<Token, Spanned<String>, Error = Simple<Token>> {
-    select! { |span| Token::Name(n) => (n, span).into() }
-}
-
-fn number() -> impl Parser<Token, Spanned<String>, Error = Simple<Token>> {
-    select! { |span| Token::Number(n) => (n, span).into() }
-}
-
-fn string() -> impl Parser<Token, Spanned<String>, Error = Simple<Token>> {
-    select! { |span| Token::String(s) => (s, span).into() }
-}
-
-fn tolerance() -> impl Parser<Token, Spanned<Tolerance>, Error = Simple<Token>> {
-    let signed_number = || {
-        just(Token::Minus)
+    fn physical() -> impl Parser<'src, I, Spanned<Expr>, ParserExtra<'src>> + Clone {
+        let signed_number = just(Token::Minus)
             .or_not()
-            .then(number())
+            .then(Self::number())
             .map(|(sign, num)| match sign {
                 Some(_) => Spanned(format!("-{}", num.0), num.span().start - 1..num.span().end),
                 None => num,
-            })
-    };
+            });
 
-    let bilateral = just(Token::PlusOrMinus)
-        .ignore_then(signed_number())
-        .then(just(Token::Percent).to(None).or(name().map(Some)))
-        .map(|(value, unit)| Tolerance::Bilateral { value, unit });
-
-    let bound = just(Token::To)
-        .ignore_then(signed_number())
-        .then(name().or_not())
-        .map(|(max, _unit)| Tolerance::Bound {
-            min: ("0".to_string(), 0..0).into(),
-            max,
-        });
-
-    choice((bilateral, bound)).map_with_span(|tolerance, span| (tolerance, span).into())
-}
-
-fn connectable() -> impl Parser<Token, Spanned<Connectable>, Error = Simple<Token>> {
-    let name_or_string_or_number = || choice((name(), number(), string()));
-
-    choice((
-        just(Token::Pin).ignore_then(name_or_string_or_number().map(Connectable::Pin)),
-        port_ref().map(Connectable::Port),
-        just(Token::Signal).ignore_then(name_or_string_or_number().map(Connectable::Signal)),
-    ))
-    .map_with_span(|connectable, span| (connectable, span).into())
-    .labelled("connectable")
-}
-
-fn comment() -> impl Parser<Token, Spanned<Stmt>, Error = Simple<Token>> {
-    select! { |span| Token::Comment(c) => (c, span).into() }
-        .map(|comment| Stmt::Comment(CommentStmt { comment }))
-        .map_with_span(|stmt, span| (stmt, span).into())
-        .labelled("comment")
-}
-
-fn specialize() -> impl Parser<Token, Spanned<Stmt>, Error = Simple<Token>> {
-    port_ref()
-        .then_ignore(just(Token::Arrow))
-        .then(name())
-        .map(|(port, value)| {
-            Stmt::Specialize(SpecializeStmt {
-                port,
-                value: value.map(Symbol::from),
-            })
-        })
-        .map_with_span(|stmt, span| (stmt, span).into())
-        .labelled("specialize")
-}
-
-fn expr() -> impl Parser<Token, Spanned<Expr>, Error = Simple<Token>> {
-    recursive(|expr| {
-        let parens = expr
-            .clone()
-            .delimited_by(just(Token::LParen), just(Token::RParen));
-
-        let operand = || choice((physical(), new(), atom(), parens.clone()));
-
-        let op = choice((
-            just(Token::Star).to(BinaryOperator::Mul),
-            just(Token::Plus).to(BinaryOperator::Add),
-            just(Token::Minus).to(BinaryOperator::Sub),
-            just(Token::Div).to(BinaryOperator::Div),
-            just(Token::Eq).to(BinaryOperator::Eq),
-            just(Token::Gt).to(BinaryOperator::Gt),
-            just(Token::GtEq).to(BinaryOperator::Gte),
-            just(Token::Lt).to(BinaryOperator::Lt),
-            just(Token::LtEq).to(BinaryOperator::Lte),
-            just(Token::Within).to(BinaryOperator::Within),
-        ))
-        .map_with_span(|op, span| (op, span).into());
-
-        operand()
-            .then(op.then(operand()).repeated())
-            .foldl(|left: Spanned<Expr>, (op, right)| {
-                let binary_op_span = left.span().start..right.span().end;
-                (
-                    Expr::BinaryOp(Box::new(
-                        (BinaryOp { left, op, right }, binary_op_span.clone()).into(),
-                    )),
-                    binary_op_span,
+        signed_number
+            .then(Self::name().or_not())
+            .then(Self::tolerance().or_not())
+            .map_with(|((value, unit), tol), e| {
+                Expr::Physical(
+                    (
+                        PhysicalValue {
+                            value,
+                            unit,
+                            tolerance: tol,
+                        },
+                        e.span(),
+                    )
+                        .into(),
                 )
-                    .into()
             })
-    })
-    .labelled("expr")
-}
+            .map_with(|expr, e| (expr, e.span()).into())
+    }
 
-fn stmt() -> impl Parser<Token, Spanned<Stmt>, Error = Simple<Token>> {
-    recursive(|stmt| {
+    fn signal() -> impl Parser<'src, I, Spanned<Stmt>, ParserExtra<'src>> + Clone {
+        just(Token::Signal)
+            .ignore_then(Self::name())
+            .map(|name| {
+                Stmt::Signal(SignalStmt {
+                    name: name.map(Symbol::from),
+                })
+            })
+            .map_with(|stmt, e| (stmt, e.span()).into())
+            .labelled("signal")
+    }
+
+    fn port_ref() -> impl Parser<'src, I, Spanned<PortRef>, ParserExtra<'src>> + Clone {
+        choice((Self::name(), Self::number()))
+            .separated_by(just(Token::Dot))
+            .at_least(1)
+            .collect()
+            .map(|parts| PortRef { parts })
+            .map_with(|port_ref, e| (port_ref, e.span()).into())
+            .labelled("port_ref")
+    }
+
+    fn name() -> impl Parser<'src, I, Spanned<String>, ParserExtra<'src>> + Clone {
+        select! { Token::Name(n) = e => (n.to_string(), e.span()).into() }
+    }
+
+    fn number() -> impl Parser<'src, I, Spanned<String>, ParserExtra<'src>> + Clone {
+        select! { Token::Number(n) = e => (n.to_string(), e.span()).into() }
+    }
+
+    fn string() -> impl Parser<'src, I, Spanned<String>, ParserExtra<'src>> + Clone {
+        select! { Token::String(s) = e => (s.to_string(), e.span()).into() }
+    }
+
+    fn tolerance() -> impl Parser<'src, I, Spanned<Tolerance>, ParserExtra<'src>> + Clone {
+        let signed_number = || {
+            just(Token::Minus)
+                .or_not()
+                .then(Self::number())
+                .map(|(sign, num)| match sign {
+                    Some(_) => Spanned(format!("-{}", num.0), num.span().start - 1..num.span().end),
+                    None => num,
+                })
+        };
+
+        let bilateral = just(Token::PlusOrMinus)
+            .ignore_then(signed_number())
+            .then(just(Token::Percent).to(None).or(Self::name().map(Some)))
+            .map(|(value, unit)| Tolerance::Bilateral { value, unit });
+
+        let bound = just(Token::To)
+            .ignore_then(signed_number())
+            .then(Self::name().or_not())
+            .map(|(max, _unit)| Tolerance::Bound {
+                min: ("0".to_string(), 0..0).into(),
+                max,
+            });
+
+        choice((bilateral, bound)).map_with(|tolerance, e| (tolerance, e.span()).into())
+    }
+
+    fn connectable() -> impl Parser<'src, I, Spanned<Connectable>, ParserExtra<'src>> + Clone {
+        let name_or_string_or_number = || choice((Self::name(), Self::number(), Self::string()));
+
+        choice((
+            just(Token::Pin).ignore_then(name_or_string_or_number().map(Connectable::Pin)),
+            Self::port_ref().map(Connectable::Port),
+            just(Token::Signal).ignore_then(name_or_string_or_number().map(Connectable::Signal)),
+        ))
+        .map_with(|connectable, e| (connectable, e.span()).into())
+        .labelled("connectable")
+    }
+
+    fn comment() -> impl Parser<'src, I, Spanned<Stmt>, ParserExtra<'src>> + Clone {
+        select! { Token::Comment(c) = e => (c.to_string(), e.span()).into() }
+            .map(|comment| Stmt::Comment(CommentStmt { comment }))
+            .map_with(|stmt, e| (stmt, e.span()).into())
+            .labelled("comment")
+    }
+
+    fn specialize() -> impl Parser<'src, I, Spanned<Stmt>, ParserExtra<'src>> + Clone {
+        Self::port_ref()
+            .then_ignore(just(Token::Arrow))
+            .then(Self::name())
+            .map(|(port, value)| {
+                Stmt::Specialize(SpecializeStmt {
+                    port,
+                    value: value.map(Symbol::from),
+                })
+            })
+            .map_with(|stmt, e| (stmt, e.span()).into())
+            .labelled("specialize")
+    }
+
+    fn expr() -> impl Parser<'src, I, Spanned<Expr>, ParserExtra<'src>> + Clone {
+        let op = |tok: Token<'src>, op: BinaryOperator| {
+            just(tok).to(op).map_with(|op, e| (op, e.span()).into())
+        };
+
+        let pratt_infix = |left: Spanned<Expr>,
+                           op: Spanned<BinaryOperator>,
+                           right: Spanned<Expr>,
+                           e: &mut MapExtra<'src, '_, I, ParserExtra<'src>>|
+         -> Spanned<Expr> {
+            (
+                Expr::BinaryOp(Box::new((BinaryOp { left, op, right }, e.span()).into())),
+                e.span(),
+            )
+                .into()
+        };
+
+        recursive(|expr| {
+            let operand = choice((
+                just(Token::LParen)
+                    .ignore_then(expr)
+                    .then_ignore(just(Token::RParen)),
+                Self::physical(),
+                Self::new(),
+                Self::atom(),
+            ));
+
+            operand.pratt((
+                infix(left(6), op(Token::Star, BinaryOperator::Mul), pratt_infix),
+                infix(left(6), op(Token::Div, BinaryOperator::Div), pratt_infix),
+                infix(left(5), op(Token::Plus, BinaryOperator::Add), pratt_infix),
+                infix(left(5), op(Token::Minus, BinaryOperator::Sub), pratt_infix),
+                infix(left(4), op(Token::Gt, BinaryOperator::Gt), pratt_infix),
+                infix(left(4), op(Token::GtEq, BinaryOperator::Gte), pratt_infix),
+                infix(left(4), op(Token::Lt, BinaryOperator::Lt), pratt_infix),
+                infix(left(4), op(Token::LtEq, BinaryOperator::Lte), pratt_infix),
+                infix(left(3), op(Token::Eq, BinaryOperator::Eq), pratt_infix),
+                infix(
+                    left(2),
+                    op(Token::Within, BinaryOperator::Within),
+                    pratt_infix,
+                ),
+            ))
+        })
+    }
+
+    fn top_stmt() -> impl Parser<'src, I, Spanned<Stmt>, ParserExtra<'src>> + Clone {
         let import = just(Token::From)
-            .ignore_then(string())
+            .ignore_then(Self::string())
             .then_ignore(just(Token::Import))
-            .then(name().separated_by(just(Token::Comma)))
+            .then(
+                Self::name()
+                    .separated_by(just(Token::Comma))
+                    .collect::<Vec<_>>(),
+            )
             .map(|(path, imports)| {
                 Stmt::Import(ImportStmt {
                     from_path: path,
                     imports: imports.into_iter().map(|s| s.map(Symbol::from)).collect(),
                 })
             })
-            .map_with_span(|stmt, span| (stmt, span).into());
+            .map_with(|stmt, e| (stmt, e.span()).into());
 
         // Dep import statements (import x from "path")
         let dep_import = just(Token::Import)
-            .ignore_then(name())
+            .ignore_then(Self::name())
             .then_ignore(just(Token::From))
-            .then(string())
+            .then(Self::string())
             .map(|(name, path)| {
                 Stmt::DepImport(DepImportStmt {
                     name: name.map(Symbol::from),
                     from_path: path,
                 })
             })
-            .map_with_span(|stmt, span| (stmt, span).into());
+            .map_with(|stmt, e| (stmt, e.span()).into());
 
+        // Combine all statement types
+        choice((import, dep_import, Self::comment()))
+    }
+
+    fn block_header() -> impl Parser<'src, I, Spanned<BlockHeader>, ParserExtra<'src>> + Clone {
+        choice((
+            just(Token::Component)
+                .map(|_| BlockKind::Component)
+                .map_with(|kind, e| (kind, e.span()).into()),
+            just(Token::Module)
+                .map(|_| BlockKind::Module)
+                .map_with(|kind, e| (kind, e.span()).into()),
+            just(Token::Interface)
+                .map(|_| BlockKind::Interface)
+                .map_with(|kind, e| (kind, e.span()).into()),
+        ))
+        .then(Self::name())
+        .then(just(Token::From).ignore_then(Self::name()).or_not())
+        .then_ignore(just(Token::Colon))
+        .map_with(|((kind, name), parent), e| {
+            (
+                BlockHeader {
+                    kind,
+                    name: name.map(Symbol::from),
+                    parent: parent.map(|p| p.map(Symbol::from)),
+                },
+                e.span(),
+            )
+                .into()
+        })
+    }
+
+    fn block_stmt() -> impl Parser<'src, I, Spanned<Stmt>, ParserExtra<'src>> + Clone {
         // Signal and Pin declarations
         let pin = just(Token::Pin)
-            .ignore_then(choice((name(), number(), string())))
+            .ignore_then(choice((Self::name(), Self::number(), Self::string())))
             .map(|name| {
                 Stmt::Pin(PinStmt {
                     name: name.map(Symbol::from),
                 })
             })
-            .map_with_span(|stmt, span| (stmt, span).into());
+            .map_with(|stmt, e| (stmt, e.span()).into());
 
         // Attribute statements
-        let type_info = || just(Token::Colon).ignore_then(name());
-        let attribute = name()
+        let type_info = || just(Token::Colon).ignore_then(Self::name());
+        let attribute = Self::name()
             .then(type_info())
             .map(|(name, type_info)| {
                 Stmt::Attribute(AttributeStmt {
@@ -659,13 +579,13 @@ fn stmt() -> impl Parser<Token, Spanned<Stmt>, Error = Simple<Token>> {
                     type_info: type_info.map(Symbol::from),
                 })
             })
-            .map_with_span(|stmt, span| (stmt, span).into());
+            .map_with(|stmt, e| (stmt, e.span()).into());
 
         // Assignment statements
-        let assign = port_ref()
+        let assign = Self::port_ref()
             .then(type_info().or_not())
             .then_ignore(just(Token::Equals))
-            .then(expr())
+            .then(Self::expr())
             .map(|((target, type_info), value)| {
                 Stmt::Assign(AssignStmt {
                     target,
@@ -673,394 +593,320 @@ fn stmt() -> impl Parser<Token, Spanned<Stmt>, Error = Simple<Token>> {
                     type_info,
                 })
             })
-            .map_with_span(|stmt, span| (stmt, span).into());
+            .map_with(|stmt, e| (stmt, e.span()).into());
 
         // Connection statements
-        let connect = connectable()
+        let connect = Self::connectable()
             .then_ignore(just(Token::Tilde))
-            .then(connectable())
+            .then(Self::connectable())
             .map(|(left, right)| Stmt::Connect(ConnectStmt { left, right }))
-            .map_with_span(|stmt, span| (stmt, span).into());
-
-        // Block statements (component/module/interface)
-        let block_header = choice((
-            just(Token::Component)
-                .map(|_| BlockKind::Component)
-                .map_with_span(|kind, span| (kind, span).into()),
-            just(Token::Module)
-                .map(|_| BlockKind::Module)
-                .map_with_span(|kind, span| (kind, span).into()),
-            just(Token::Interface)
-                .map(|_| BlockKind::Interface)
-                .map_with_span(|kind, span| (kind, span).into()),
-        ))
-        .then(name())
-        .then(just(Token::From).ignore_then(name()).or_not())
-        .then_ignore(just(Token::Colon));
-
-        let block_body = choice((
-            // Single line block
-            stmt.clone()
-                .then_ignore(just(Token::Newline))
-                .map(|s| vec![s]),
-            // Multi-line indented block
-            just(Token::Newline)
-                .repeated()
-                .ignore_then(just(Token::Indent))
-                .ignore_then(stmt.clone().repeated())
-                .then_ignore(just(Token::Dedent)),
-        ));
-
-        let block =
-            block_header
-                .then(block_body)
-                .map_with_span(|(((kind, name), parent), body), span| {
-                    (
-                        Stmt::Block(BlockStmt {
-                            kind,
-                            name: name.map(Symbol::from),
-                            parent: parent.map(|p| p.map(Symbol::from)),
-                            body,
-                        }),
-                        span,
-                    )
-                        .into()
-                });
+            .map_with(|stmt, e| (stmt, e.span()).into());
 
         // Pass statement
-        let pass = just::<_, _, Simple<Token>>(Token::Pass)
+        let pass = just(Token::Pass)
             .map(|_| Stmt::Pass)
-            .map_with_span(|stmt, span| (stmt, span).into());
+            .map_with(|stmt, e| (stmt, e.span()).into());
 
         // Assert statement
         let assert = just(Token::Assert)
-            .ignore_then(expr())
+            .ignore_then(Self::expr())
             .map(|expr| Stmt::Assert(AssertStmt { expr }))
-            .map_with_span(|stmt, span| (stmt, span).into())
+            .map_with(|stmt, e| (stmt, e.span()).into())
             .labelled("assert");
 
-        // Combine all statement types
-        let separator = just(Token::Newline).or(just(Token::Semicolon));
-        separator
-            .clone()
-            .repeated()
-            .ignore_then(choice((
-                assert,
-                import,
-                dep_import,
-                block,
-                specialize(),
-                assign,
-                attribute,
-                connect,
-                signal(),
-                pin,
-                pass,
-                comment(),
-            )))
-            .then_ignore(separator.repeated())
-    })
-    .recover_with(skip_parser(
-        none_of([Token::Newline, Token::Semicolon])
-            .map_with_span(|token, span| (token, span).into())
-            .repeated()
-            .then_ignore(just(Token::Newline))
-            .map_with_span(|tokens, span| (Stmt::Unparsable(tokens), span).into()),
-    ))
-    .labelled("stmt")
-}
+        choice((
+            assert,
+            Self::specialize(),
+            assign,
+            attribute,
+            connect,
+            Self::signal(),
+            pin,
+            pass,
+            Self::comment(),
+        ))
+    }
 
-pub fn parser() -> impl Parser<Token, Vec<Spanned<Stmt>>, Error = Simple<Token>> {
-    stmt().repeated().then_ignore(end())
-}
+    pub fn parser() -> impl Parser<'src, I, Vec<Spanned<Stmt>>, ParserExtra<'src>> {
+        // Drive the top-level parsing. We implement this manually to implement
+        // our own error recovery and diagnostics.
+        custom(|inp| {
+            let skip_separators = |inp: &mut InputRef<'src, '_, I, ParserExtra<'src>>| {
+                while matches!(inp.peek(), Some(Token::Newline) | Some(Token::Semicolon)) {
+                    inp.next();
+                }
+            };
 
-pub fn parse(tokens: &[Spanned<Token>]) -> (Vec<Spanned<Stmt>>, Vec<Simple<Token>>) {
-    let raw_tokens: Vec<Token> = tokens.iter().map(|t| t.0.clone()).collect();
-    parse_raw(raw_tokens)
-}
+            let skip_statement = |inp: &mut InputRef<'src, '_, I, ParserExtra<'src>>| {
+                while !matches!(
+                    inp.peek(),
+                    None | Some(Token::Newline) | Some(Token::Semicolon)
+                ) {
+                    inp.next();
+                }
+            };
 
-pub fn parse_raw(tokens: Vec<Token>) -> (Vec<Spanned<Stmt>>, Vec<Simple<Token>>) {
-    let (ast, errors) = parser().parse_recovery(tokens);
-    (ast.unwrap_or_default(), errors)
-}
+            let mut ast = Vec::new();
 
-#[test]
-fn test_assert_range() {
-    let tokens = vec![
-        Token::Assert,
-        Token::Name("a".to_string()),
-        Token::Within,
-        Token::Number("10".to_string()),
-        Token::Name("kohm".to_string()),
-        Token::To,
-        Token::Number("20".to_string()),
-        Token::Name("kohm".to_string()),
-    ];
-    let result = parse_raw(tokens);
-    assert_debug_snapshot!(result, @r###"
-    (
-        [
-            Spanned(
-                Assert(
-                    AssertStmt {
-                        expr: Spanned(
-                            BinaryOp(
-                                Spanned(
-                                    BinaryOp {
-                                        left: Spanned(
-                                            Port(
-                                                Spanned(
-                                                    PortRef {
-                                                        parts: [
-                                                            Spanned(
-                                                                "a",
-                                                                1..2,
-                                                            ),
-                                                        ],
-                                                    },
-                                                    1..2,
-                                                ),
-                                            ),
-                                            1..2,
-                                        ),
-                                        op: Spanned(
-                                            Within,
-                                            2..3,
-                                        ),
-                                        right: Spanned(
-                                            Physical(
-                                                Spanned(
-                                                    PhysicalValue {
-                                                        value: Spanned(
-                                                            "10",
-                                                            3..4,
-                                                        ),
-                                                        unit: Some(
-                                                            Spanned(
-                                                                "kohm",
-                                                                4..5,
-                                                            ),
-                                                        ),
-                                                        tolerance: Some(
-                                                            Spanned(
-                                                                Bound {
-                                                                    min: Spanned(
-                                                                        "0",
-                                                                        0..0,
-                                                                    ),
-                                                                    max: Spanned(
-                                                                        "20",
-                                                                        6..7,
-                                                                    ),
-                                                                },
-                                                                5..8,
-                                                            ),
-                                                        ),
-                                                    },
-                                                    3..8,
-                                                ),
-                                            ),
-                                            3..8,
-                                        ),
+            // The current block and the cursor of the start of the block.
+            let mut current_block = None::<(BlockStmt, Cursor<'src, '_, I>)>;
+
+            let mut prev_cursor = None::<Cursor<'src, '_, I>>;
+            while inp.peek().is_some() {
+                if prev_cursor == Some(inp.cursor()) {
+                    return Err(Rich::custom(
+                        inp.span_since(&prev_cursor.unwrap()),
+                        "internal error: infinite loop",
+                    ));
+                }
+
+                prev_cursor = Some(inp.cursor());
+
+                skip_separators(inp);
+
+                let checkpoint = inp.save();
+
+                if let Some((ref mut block, ref start_cursor)) = current_block {
+                    // We are in a multi-line block, so let's try to parse a block statement.
+                    let result = inp.parse(Self::block_stmt());
+                    if let Ok(stmt) = result {
+                        block.body.push(stmt);
+                        continue;
+                    }
+
+                    // We can't parse a block statement, so let's see if we found a dedent.
+                    inp.rewind(checkpoint.clone());
+                    if inp.peek() == Some(Token::Dedent) {
+                        inp.next();
+                        ast.push((Stmt::Block(block.clone()), inp.span_since(start_cursor)).into());
+                        current_block = None;
+                        continue;
+                    }
+
+                    // If we can't find either, let's skip to the next line and report an error.
+                    skip_statement(inp);
+
+                    ast.push(Stmt::spanned_error(
+                        "syntax error",
+                        inp.span_since(checkpoint.cursor()),
+                    ));
+                } else {
+                    // Try to parse a normal top statement.
+                    let result = inp.parse(Self::top_stmt());
+                    if let Ok(stmt) = result {
+                        ast.push(stmt);
+                        continue;
+                    }
+
+                    // Not a normal top statement, so let's try to parse a block header.
+                    inp.rewind(checkpoint.clone());
+                    let result = inp.parse(Self::block_header());
+                    if let Ok(header) = result {
+                        // We have two kinds of blocks: single-line and multi-line.
+                        let mut is_multiline = false;
+                        while inp.peek() == Some(Token::Newline) {
+                            inp.next();
+                            is_multiline = true;
+                        }
+
+                        if is_multiline {
+                            if inp.peek() != Some(Token::Indent) {
+                                ast.push(Stmt::spanned_error(
+                                    "syntax error: expected indent after block header",
+                                    inp.span_since(checkpoint.cursor()),
+                                ));
+                            } else {
+                                // Skip the indent
+                                inp.next();
+
+                                current_block = Some((
+                                    BlockStmt {
+                                        kind: header.kind.clone(),
+                                        name: header.name.clone(),
+                                        parent: header.parent.clone(),
+                                        body: Vec::new(),
                                     },
-                                    1..8,
-                                ),
-                            ),
-                            1..8,
-                        ),
-                    },
-                ),
-                0..8,
-            ),
-        ],
-        [],
-    )
-    "###);
+                                    checkpoint.cursor().clone(),
+                                ));
+                            }
+                        } else {
+                            // This is a single-line block, so let's look for
+                            // statement separated by semicolons.
+                            let mut block = BlockStmt {
+                                kind: header.kind.clone(),
+                                name: header.name.clone(),
+                                parent: header.parent.clone(),
+                                body: Vec::new(),
+                            };
+
+                            let block_checkpoint = inp.save();
+                            loop {
+                                let stmt_checkpoint = inp.save();
+                                let result = inp.parse(Self::block_stmt());
+                                if let Ok(stmt) = result {
+                                    block.body.push(stmt);
+                                } else {
+                                    inp.rewind(stmt_checkpoint.clone());
+                                    while !matches!(
+                                        inp.peek(),
+                                        None | Some(Token::Newline) | Some(Token::Semicolon)
+                                    ) {
+                                        inp.next();
+                                    }
+
+                                    ast.push(Stmt::spanned_error(
+                                        "syntax error",
+                                        inp.span_since(stmt_checkpoint.cursor()),
+                                    ));
+                                }
+
+                                if inp.peek() != Some(Token::Semicolon) {
+                                    ast.push(
+                                        (
+                                            Stmt::Block(block),
+                                            inp.span_since(block_checkpoint.cursor()),
+                                        )
+                                            .into(),
+                                    );
+                                    break;
+                                }
+
+                                inp.next();
+                            }
+                        }
+
+                        continue;
+                    }
+
+                    // We didn't find a regular top statement or block header, so fail.
+                    inp.rewind(checkpoint.clone());
+                    skip_statement(inp);
+
+                    ast.push(Stmt::spanned_error(
+                        "syntax error: unexpected top-level statement",
+                        inp.span_since(checkpoint.cursor()),
+                    ));
+                }
+            }
+
+            // If we ended in the middle of a block, add the block to the AST.
+            if let Some((ref mut block, ref start_cursor)) = current_block {
+                ast.push((Stmt::Block(block.clone()), inp.span_since(start_cursor)).into());
+            }
+
+            Ok(ast)
+        })
+    }
 }
 
-#[test]
-fn test_signal_pin_connect() {
-    let tokens = vec![
-        Token::Signal,
-        Token::Name("a".to_string()),
-        Token::Tilde,
-        Token::Pin,
-        Token::Name("A1".to_string()),
-    ];
+pub fn parse<'src>(
+    tokens: &'src [Spanned<Token<'src>>],
+) -> (Vec<Spanned<Stmt>>, Vec<Rich<'src, Token<'src>>>) {
+    let mapped_input = Input::map(tokens, tokens.len()..tokens.len(), |t| (&t.0, &t.1))
+        .map_span(|span| span.into());
 
-    let result = parser().parse_recovery(tokens);
-    assert_debug_snapshot!(result, @r###"
+    let result = AtopileParser::parser().parse(mapped_input);
     (
-        Some(
-            [
-                Spanned(
-                    Connect(
-                        ConnectStmt {
-                            left: Spanned(
-                                Signal(
-                                    Spanned(
-                                        "a",
-                                        1..2,
-                                    ),
-                                ),
-                                0..2,
-                            ),
-                            right: Spanned(
-                                Pin(
-                                    Spanned(
-                                        "A1",
-                                        4..5,
-                                    ),
-                                ),
-                                3..5,
-                            ),
-                        },
-                    ),
-                    0..5,
-                ),
-            ],
-        ),
-        [],
+        result.output().cloned().unwrap_or(vec![]),
+        result.errors().cloned().collect(),
     )
-    "###);
 }
 
-#[test]
-fn test_assert() {
-    let tokens = vec![
-        Token::Assert,
-        Token::Number("10".to_string()),
-        Token::Name("kohm".to_string()),
-    ];
-    let result = parse_raw(tokens);
-    assert_debug_snapshot!(result, @r###"
-    (
-        [
-            Spanned(
-                Assert(
-                    AssertStmt {
-                        expr: Spanned(
-                            Physical(
-                                Spanned(
-                                    PhysicalValue {
-                                        value: Spanned(
-                                            "10",
-                                            1..2,
-                                        ),
-                                        unit: Some(
-                                            Spanned(
-                                                "kohm",
-                                                2..3,
-                                            ),
-                                        ),
-                                        tolerance: None,
-                                    },
-                                    1..3,
-                                ),
-                            ),
-                            1..3,
-                        ),
-                    },
-                ),
-                0..3,
-            ),
-        ],
-        [],
-    )
-    "###);
-}
+#[cfg(test)]
+mod tests {
+    use insta::assert_debug_snapshot;
 
-#[test]
-fn test_assign() {
-    let tokens = vec![
-        Token::Name("r1".to_string()),
-        Token::Equals,
-        Token::New,
-        Token::Name("Resistor".to_string()),
-    ];
-    let result = parse_raw(tokens);
-    assert_debug_snapshot!(result, @r###"
-    (
-        [
-            Spanned(
-                Assign(
-                    AssignStmt {
-                        target: Spanned(
-                            PortRef {
-                                parts: [
-                                    Spanned(
-                                        "r1",
-                                        0..1,
-                                    ),
-                                ],
-                            },
-                            0..1,
-                        ),
-                        type_info: None,
-                        value: Spanned(
-                            New(
-                                Spanned(
-                                    Symbol(
-                                        "Resistor",
-                                    ),
-                                    3..4,
-                                ),
-                            ),
-                            2..4,
-                        ),
-                    },
-                ),
-                0..4,
-            ),
-        ],
-        [],
-    )
-    "###);
-}
+    use super::*;
 
-#[test]
-fn test_specialize() {
-    let tokens = vec![
-        Token::Name("u1".to_string()),
-        Token::Dot,
-        Token::Name("a".to_string()),
-        Token::Arrow,
-        Token::Name("Resistor".to_string()),
-    ];
-    let result = parse_raw(tokens);
-    assert_debug_snapshot!(result, @r###"
-    (
-        [
-            Spanned(
-                Specialize(
-                    SpecializeStmt {
-                        port: Spanned(
-                            PortRef {
-                                parts: [
-                                    Spanned(
-                                        "u1",
-                                        0..1,
-                                    ),
-                                    Spanned(
-                                        "a",
-                                        2..3,
-                                    ),
-                                ],
-                            },
-                            0..3,
-                        ),
-                        value: Spanned(
-                            Symbol(
-                                "Resistor",
-                            ),
-                            4..5,
-                        ),
-                    },
-                ),
-                0..5,
-            ),
-        ],
-        [],
-    )
-    "###);
+    macro_rules! test_parser {
+        // Version with just input string - uses full parse()
+        ($name:ident, $input:expr) => {
+            #[test]
+            fn $name() {
+                let (tokens, lex_errors) = crate::lexer::lex($input);
+                assert!(lex_errors.is_empty(), "Lexer errors: {:?}", lex_errors);
+                let result = parse(&tokens);
+                assert_debug_snapshot!(result);
+            }
+        };
+        // Version with specific parser function
+        ($name:ident, $parser:expr, $input:expr) => {
+            #[test]
+            fn $name() {
+                let (tokens, lex_errors) = crate::lexer::lex($input);
+                assert!(lex_errors.is_empty(), "Lexer errors: {:?}", lex_errors);
+
+                let mapped_input =
+                    chumsky::input::Input::map(&tokens[..], tokens.len()..tokens.len(), |t| {
+                        (&t.0, &t.1)
+                    })
+                    .map_span(|span| span.into());
+
+                let result = $parser.parse(mapped_input);
+                assert_debug_snapshot!(result);
+            }
+        };
+    }
+
+    test_parser!(
+        test_physical_basic,
+        AtopileParser::physical(),
+        "10kohm +/- 5%"
+    );
+
+    test_parser!(test_physical_negative, AtopileParser::physical(), "-0.3V");
+
+    test_parser!(
+        test_full_parse,
+        "module Test:
+            r1 = new Resistor
+            r1 ~ pin A1
+            assert 10kohm +/- 5%"
+    );
+
+    test_parser!(test_port_ref_simple, AtopileParser::port_ref(), "a");
+
+    test_parser!(test_port_ref_nested, AtopileParser::port_ref(), "a.b.c");
+
+    test_parser!(
+        test_assert_range,
+        AtopileParser::block_stmt(),
+        "assert a within 10kohm to 20kohm"
+    );
+
+    test_parser!(
+        test_signal_pin_connect,
+        AtopileParser::block_stmt(),
+        "signal a ~ pin A1"
+    );
+
+    test_parser!(test_assert, AtopileParser::block_stmt(), "assert 10kohm");
+
+    test_parser!(
+        test_assign,
+        AtopileParser::block_stmt(),
+        "r1 = new Resistor"
+    );
+
+    test_parser!(
+        test_specialize,
+        AtopileParser::block_stmt(),
+        "u1.a -> Resistor"
+    );
+
+    test_parser!(
+        test_complex_expr,
+        AtopileParser::expr(),
+        "v_in * r_bottom.value / (r_top.value + r_bottom.value) within v_out"
+    );
+
+    test_parser!(
+        test_nested_blocks_fail,
+        "module M:
+            r1 = new Resistor
+            component C:
+                r1 = new Resistor
+                r1 ~ pin A1
+                assert 10kohm within 5%"
+    );
 }

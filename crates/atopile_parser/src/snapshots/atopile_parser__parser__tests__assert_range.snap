@@ -1,0 +1,81 @@
+---
+source: crates/atopile_parser/src/parser.rs
+expression: result
+---
+ParseResult {
+    output: Some(
+        Spanned(
+            Assert(
+                AssertStmt {
+                    expr: Spanned(
+                        BinaryOp(
+                            Spanned(
+                                BinaryOp {
+                                    left: Spanned(
+                                        Port(
+                                            Spanned(
+                                                PortRef {
+                                                    parts: [
+                                                        Spanned(
+                                                            "a",
+                                                            7..8,
+                                                        ),
+                                                    ],
+                                                },
+                                                7..8,
+                                            ),
+                                        ),
+                                        7..8,
+                                    ),
+                                    op: Spanned(
+                                        Within,
+                                        9..15,
+                                    ),
+                                    right: Spanned(
+                                        Physical(
+                                            Spanned(
+                                                PhysicalValue {
+                                                    value: Spanned(
+                                                        "10",
+                                                        16..18,
+                                                    ),
+                                                    unit: Some(
+                                                        Spanned(
+                                                            "kohm",
+                                                            18..22,
+                                                        ),
+                                                    ),
+                                                    tolerance: Some(
+                                                        Spanned(
+                                                            Bound {
+                                                                min: Spanned(
+                                                                    "0",
+                                                                    0..0,
+                                                                ),
+                                                                max: Spanned(
+                                                                    "20",
+                                                                    26..28,
+                                                                ),
+                                                            },
+                                                            23..32,
+                                                        ),
+                                                    ),
+                                                },
+                                                16..32,
+                                            ),
+                                        ),
+                                        16..32,
+                                    ),
+                                },
+                                7..32,
+                            ),
+                        ),
+                        7..32,
+                    ),
+                },
+            ),
+            0..32,
+        ),
+    ),
+    errs: [],
+}

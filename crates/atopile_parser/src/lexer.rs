@@ -1,12 +1,12 @@
-use crate::{Span, Spanned};
+use crate::Spanned;
 use chumsky::prelude::*;
-use std::fmt;
+use std::{fmt, marker::PhantomData};
 
 #[cfg(test)]
 use insta::assert_debug_snapshot;
 
 #[derive(Clone, Debug, PartialEq, Hash, Eq)]
-pub enum Token {
+pub enum Token<'src> {
     // Keywords
     Component,
     Module,
@@ -22,9 +22,9 @@ pub enum Token {
     Pass,
 
     // Literals
-    String(String),
-    Number(String),
-    Name(String),
+    String(&'src str),
+    Number(&'src str),
+    Name(&'src str),
     True,
     False,
 
@@ -65,7 +65,7 @@ pub enum Token {
     GtEq, // >=
 
     // Comments
-    Comment(String),
+    Comment(&'src str),
     MultiCommentStart, // """
     MultiCommentEnd,   // """
 
@@ -75,7 +75,7 @@ pub enum Token {
     Newline,
 }
 
-impl fmt::Display for Token {
+impl fmt::Display for Token<'_> {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self {
             Token::Component => write!(f, "component"),
@@ -133,116 +133,122 @@ impl fmt::Display for Token {
     }
 }
 
-fn keyword() -> impl Parser<char, Token, Error = Simple<char>> {
-    choice([
-        text::keyword("component").to(Token::Component),
-        text::keyword("module").to(Token::Module),
-        text::keyword("interface").to(Token::Interface),
-        text::keyword("pin").to(Token::Pin),
-        text::keyword("signal").to(Token::Signal),
-        text::keyword("new").to(Token::New),
-        text::keyword("from").to(Token::From),
-        text::keyword("import").to(Token::Import),
-        text::keyword("assert").to(Token::Assert),
-        text::keyword("to").to(Token::To),
-        text::keyword("within").to(Token::Within),
-        text::keyword("pass").to(Token::Pass),
-        text::keyword("True").to(Token::True),
-        text::keyword("False").to(Token::False),
-    ])
+type LexerError<'src> = Rich<'src, char, SimpleSpan>;
+type LexerExtra<'src> = extra::Err<LexerError<'src>>;
+
+pub struct Lexer<'src> {
+    phantom: PhantomData<&'src ()>,
 }
 
-fn name() -> impl Parser<char, Token, Error = Simple<char>> {
-    text::ident().map(Token::Name)
+impl<'src> Lexer<'src> {
+    fn keyword() -> impl Parser<'src, &'src str, Token<'src>, LexerExtra<'src>> {
+        choice([
+            text::keyword("component").to(Token::Component),
+            text::keyword("module").to(Token::Module),
+            text::keyword("interface").to(Token::Interface),
+            text::keyword("pin").to(Token::Pin),
+            text::keyword("signal").to(Token::Signal),
+            text::keyword("new").to(Token::New),
+            text::keyword("from").to(Token::From),
+            text::keyword("import").to(Token::Import),
+            text::keyword("assert").to(Token::Assert),
+            text::keyword("to").to(Token::To),
+            text::keyword("within").to(Token::Within),
+            text::keyword("pass").to(Token::Pass),
+            text::keyword("True").to(Token::True),
+            text::keyword("False").to(Token::False),
+        ])
+    }
+
+    fn name() -> impl Parser<'src, &'src str, Token<'src>, LexerExtra<'src>> {
+        text::ident().map(Token::Name)
+    }
+
+    fn number() -> impl Parser<'src, &'src str, Token<'src>, LexerExtra<'src>> {
+        text::int(10)
+            .then(just('.').then(text::digits(10)).or_not())
+            .to_slice()
+            .map(Token::Number)
+    }
+
+    fn string() -> impl Parser<'src, &'src str, Token<'src>, LexerExtra<'src>> {
+        just('"')
+            .ignore_then(none_of("\"").repeated().to_slice())
+            .then_ignore(just('"'))
+            .map(Token::String)
+    }
+
+    fn symbol() -> impl Parser<'src, &'src str, Token<'src>, LexerExtra<'src>> {
+        choice([
+            just("+/-").to(Token::PlusOrMinus),
+            just("±").to(Token::PlusOrMinus),
+            just("->").to(Token::Arrow),
+            just("%").to(Token::Percent),
+            just(".").to(Token::Dot),
+            just("*").to(Token::Star),
+            just("+").to(Token::Plus),
+            just("-").to(Token::Minus),
+            just("/").to(Token::Div),
+            just("~").to(Token::Tilde),
+            just("(").to(Token::LParen),
+            just(")").to(Token::RParen),
+            just("[").to(Token::LBrack),
+            just("]").to(Token::RBrack),
+            just("{").to(Token::LBrace),
+            just("}").to(Token::RBrace),
+            just(":").to(Token::Colon),
+            just(";").to(Token::Semicolon),
+            just(",").to(Token::Comma),
+            just("+=").to(Token::PlusEquals),
+            just("-=").to(Token::MinusEquals),
+            just("|=").to(Token::OrEquals),
+            just("&=").to(Token::AndEquals),
+            just("==").to(Token::Eq),
+            just("=").to(Token::Equals),
+            just("<=").to(Token::LtEq),
+            just(">=").to(Token::GtEq),
+            just("<").to(Token::Lt),
+            just(">").to(Token::Gt),
+        ])
+    }
+
+    fn single_comment() -> impl Parser<'src, &'src str, Token<'src>, LexerExtra<'src>> {
+        just('#')
+            .ignore_then(none_of("\n").repeated().to_slice())
+            .map(Token::Comment)
+    }
+
+    fn multi_comment() -> impl Parser<'src, &'src str, Token<'src>, LexerExtra<'src>> {
+        just("\"\"\"")
+            .ignore_then(any().and_is(just("\"\"\"").not()).repeated().to_slice())
+            .then_ignore(just("\"\"\""))
+            .map(Token::Comment)
+    }
+
+    fn token() -> impl Parser<'src, &'src str, Spanned<Token<'src>>, LexerExtra<'src>> {
+        choice((
+            Self::multi_comment(),
+            Self::single_comment(),
+            Self::keyword(),
+            Self::name(),
+            Self::number(),
+            Self::string(),
+            Self::symbol(),
+        ))
+        .map_with(|tok, e| (tok, e.span()).into())
+        .padded()
+    }
+
+    fn line_parser() -> impl Parser<'src, &'src str, Vec<Spanned<&'src str>>, LexerExtra<'src>> {
+        let line_content = none_of("\n").repeated().to_slice();
+        let line = line_content.map_with(|content, e| (content, e.span()).into());
+        line.separated_by(just('\n'))
+            .allow_trailing()
+            .collect::<Vec<_>>()
+    }
 }
 
-fn number() -> impl Parser<char, Token, Error = Simple<char>> {
-    text::int(10)
-        .chain::<char, _, _>(just('.').chain(text::digits(10)).or_not().flatten())
-        .collect::<String>()
-        .map(Token::Number)
-}
-
-fn string() -> impl Parser<char, Token, Error = Simple<char>> {
-    just('"')
-        .ignore_then(none_of("\"").repeated())
-        .then_ignore(just('"'))
-        .collect::<String>()
-        .map(Token::String)
-}
-
-fn symbol() -> impl Parser<char, Token, Error = Simple<char>> {
-    choice([
-        just::<_, _, Simple<char>>("+/-").to(Token::PlusOrMinus),
-        just::<_, _, Simple<char>>("±").to(Token::PlusOrMinus),
-        just::<_, _, Simple<char>>("->").to(Token::Arrow),
-        just::<_, _, Simple<char>>("%").to(Token::Percent),
-        just::<_, _, Simple<char>>(".").to(Token::Dot),
-        just::<_, _, Simple<char>>("*").to(Token::Star),
-        just::<_, _, Simple<char>>("+").to(Token::Plus),
-        just::<_, _, Simple<char>>("-").to(Token::Minus),
-        just::<_, _, Simple<char>>("/").to(Token::Div),
-        just::<_, _, Simple<char>>("~").to(Token::Tilde),
-        just::<_, _, Simple<char>>("(").to(Token::LParen),
-        just::<_, _, Simple<char>>(")").to(Token::RParen),
-        just::<_, _, Simple<char>>("[").to(Token::LBrack),
-        just::<_, _, Simple<char>>("]").to(Token::RBrack),
-        just::<_, _, Simple<char>>("{").to(Token::LBrace),
-        just::<_, _, Simple<char>>("}").to(Token::RBrace),
-        just::<_, _, Simple<char>>(":").to(Token::Colon),
-        just::<_, _, Simple<char>>(";").to(Token::Semicolon),
-        just::<_, _, Simple<char>>(",").to(Token::Comma),
-        just::<_, _, Simple<char>>("+=").to(Token::PlusEquals),
-        just::<_, _, Simple<char>>("-=").to(Token::MinusEquals),
-        just::<_, _, Simple<char>>("|=").to(Token::OrEquals),
-        just::<_, _, Simple<char>>("&=").to(Token::AndEquals),
-        just::<_, _, Simple<char>>("==").to(Token::Eq),
-        just::<_, _, Simple<char>>("=").to(Token::Equals),
-        just::<_, _, Simple<char>>("<=").to(Token::LtEq),
-        just::<_, _, Simple<char>>(">=").to(Token::GtEq),
-        just::<_, _, Simple<char>>("<").to(Token::Lt),
-        just::<_, _, Simple<char>>(">").to(Token::Gt),
-    ])
-}
-
-fn single_comment() -> impl Parser<char, Token, Error = Simple<char>> {
-    just('#')
-        .ignore_then(none_of("\n").repeated())
-        .collect::<String>()
-        .map(Token::Comment)
-}
-
-fn multi_comment() -> impl Parser<char, Token, Error = Simple<char>> {
-    just("\"\"\"")
-        .ignore_then(
-            take_until(just("\"\"\"")).map(|(chars, _end)| chars.into_iter().collect::<String>()),
-        )
-        .map(Token::Comment)
-}
-
-fn token() -> impl Parser<char, Spanned<Token>, Error = Simple<char>> {
-    choice((
-        multi_comment(),
-        single_comment(),
-        keyword(),
-        name(),
-        number(),
-        string(),
-        symbol(),
-    ))
-    .map_with_span(|tok, span| (tok, span).into())
-    .padded()
-}
-
-fn line_parser() -> impl Parser<char, Vec<Spanned<String>>, Error = Simple<char, Span>> {
-    let line_content = none_of("\n").repeated().collect::<String>();
-    let line = line_content.map_with_span(|content, span| (content, span).into());
-    line.separated_by(just('\n'))
-        .allow_trailing()
-        .collect::<Vec<_>>()
-}
-
-pub fn lex(input: &str) -> (Vec<Spanned<Token>>, Vec<Simple<char, Span>>) {
+pub fn lex(input: &str) -> (Vec<Spanned<Token<'_>>>, Vec<LexerError<'_>>) {
     let mut tokens = Vec::new();
     let mut errors = Vec::new();
     let mut in_multiline_comment = false;
@@ -253,13 +259,18 @@ pub fn lex(input: &str) -> (Vec<Spanned<Token>>, Vec<Simple<char, Span>>) {
     }
 
     // Parse the input into lines with spans
-    let (lines, line_errs) = line_parser().parse_recovery(input);
-    errors.extend(line_errs);
+    let result = Lexer::line_parser().parse(input);
+    errors.extend(result.errors().cloned());
 
     let mut indent_stack = vec![0];
 
     // Process each line
-    for (line, line_span) in lines.unwrap_or_default().into_iter().map(|l| (l.0, l.1)) {
+    for (line, line_span) in result
+        .output()
+        .unwrap_or(&vec![])
+        .iter()
+        .map(|l| (l.0, l.1.clone()))
+    {
         let indent_level = line.chars().take_while(|c| c.is_whitespace()).count();
 
         if !line.trim().is_empty() {
@@ -267,12 +278,12 @@ pub fn lex(input: &str) -> (Vec<Spanned<Token>>, Vec<Simple<char, Span>>) {
             if !in_multiline_comment {
                 while indent_level < *indent_stack.last().unwrap() {
                     indent_stack.pop();
-                    tokens.push((Token::Dedent, line_span.start..line_span.start).into());
+                    tokens.push((Token::Dedent, (line_span.start..line_span.start)).into());
                 }
 
                 if indent_level > *indent_stack.last().unwrap() {
                     indent_stack.push(indent_level);
-                    tokens.push((Token::Indent, line_span.start..line_span.start).into());
+                    tokens.push((Token::Indent, (line_span.start..line_span.start)).into());
                 }
             }
 
@@ -293,8 +304,9 @@ pub fn lex(input: &str) -> (Vec<Spanned<Token>>, Vec<Simple<char, Span>>) {
                         if !comment.is_empty() {
                             tokens.push(
                                 (
-                                    Token::Comment(comment.to_string()),
-                                    content_offset + line_pos..content_offset + line_pos + end_pos,
+                                    Token::Comment(comment),
+                                    (content_offset + line_pos
+                                        ..content_offset + line_pos + end_pos),
                                 )
                                     .into(),
                             );
@@ -304,8 +316,8 @@ pub fn lex(input: &str) -> (Vec<Spanned<Token>>, Vec<Simple<char, Span>>) {
                         tokens.push(
                             (
                                 Token::MultiCommentEnd,
-                                content_offset + line_pos + end_pos
-                                    ..content_offset + line_pos + end_pos + 3,
+                                (content_offset + line_pos + end_pos
+                                    ..content_offset + line_pos + end_pos + 3),
                             )
                                 .into(),
                         );
@@ -316,8 +328,8 @@ pub fn lex(input: &str) -> (Vec<Spanned<Token>>, Vec<Simple<char, Span>>) {
                         // Add whole remaining line as comment
                         tokens.push(
                             (
-                                Token::Comment(trimmed_line[line_pos..].to_string()),
-                                content_offset + line_pos..line_span.end,
+                                Token::Comment(&trimmed_line[line_pos..]),
+                                (content_offset + line_pos..line_span.end),
                             )
                                 .into(),
                         );
@@ -329,21 +341,21 @@ pub fn lex(input: &str) -> (Vec<Spanned<Token>>, Vec<Simple<char, Span>>) {
                         // Process tokens before comment if any
                         if start_pos > 0 {
                             let before_comment = &trimmed_line[line_pos..line_pos + start_pos];
-                            let (toks, errs) = token()
+                            let result = Lexer::token()
                                 .repeated()
-                                .then_ignore(end())
-                                .parse_recovery(before_comment);
-                            errors.extend(errs);
+                                .collect::<Vec<_>>()
+                                .parse(before_comment);
+                            errors.extend(result.errors().cloned());
 
-                            if let Some(toks) = toks {
+                            if let Some(toks) = result.output() {
                                 for (tok, tok_span) in
                                     toks.iter().map(|t| (t.0.clone(), t.1.clone()))
                                 {
                                     tokens.push(
                                         (
                                             tok,
-                                            tok_span.start + content_offset + line_pos
-                                                ..tok_span.end + content_offset + line_pos,
+                                            (tok_span.start + content_offset + line_pos
+                                                ..tok_span.end + content_offset + line_pos),
                                         )
                                             .into(),
                                     );
@@ -355,8 +367,8 @@ pub fn lex(input: &str) -> (Vec<Spanned<Token>>, Vec<Simple<char, Span>>) {
                         tokens.push(
                             (
                                 Token::MultiCommentStart,
-                                content_offset + line_pos + start_pos
-                                    ..content_offset + line_pos + start_pos + 3,
+                                (content_offset + line_pos + start_pos
+                                    ..content_offset + line_pos + start_pos + 3),
                             )
                                 .into(),
                         );
@@ -371,9 +383,9 @@ pub fn lex(input: &str) -> (Vec<Spanned<Token>>, Vec<Simple<char, Span>>) {
                             if !comment.is_empty() {
                                 tokens.push(
                                     (
-                                        Token::Comment(comment.to_string()),
-                                        content_offset + line_pos
-                                            ..content_offset + line_pos + end_pos,
+                                        Token::Comment(comment),
+                                        (content_offset + line_pos
+                                            ..content_offset + line_pos + end_pos),
                                     )
                                         .into(),
                                 );
@@ -383,8 +395,8 @@ pub fn lex(input: &str) -> (Vec<Spanned<Token>>, Vec<Simple<char, Span>>) {
                             tokens.push(
                                 (
                                     Token::MultiCommentEnd,
-                                    content_offset + line_pos + end_pos
-                                        ..content_offset + line_pos + end_pos + 3,
+                                    (content_offset + line_pos + end_pos
+                                        ..content_offset + line_pos + end_pos + 3),
                                 )
                                     .into(),
                             );
@@ -394,19 +406,19 @@ pub fn lex(input: &str) -> (Vec<Spanned<Token>>, Vec<Simple<char, Span>>) {
                         }
                     } else {
                         // Process regular tokens
-                        let (toks, errs) = token()
+                        let result = Lexer::token()
                             .repeated()
-                            .then_ignore(end())
-                            .parse_recovery(&trimmed_line[line_pos..]);
-                        errors.extend(errs);
+                            .collect::<Vec<_>>()
+                            .parse(&trimmed_line[line_pos..]);
+                        errors.extend(result.errors().cloned());
 
-                        if let Some(toks) = toks {
+                        if let Some(toks) = result.output() {
                             for (tok, tok_span) in toks.iter().map(|t| (t.0.clone(), t.1.clone())) {
                                 tokens.push(
                                     (
                                         tok,
-                                        tok_span.start + content_offset + line_pos
-                                            ..tok_span.end + content_offset + line_pos,
+                                        (tok_span.start + content_offset + line_pos
+                                            ..tok_span.end + content_offset + line_pos),
                                     )
                                         .into(),
                                 );
@@ -421,9 +433,9 @@ pub fn lex(input: &str) -> (Vec<Spanned<Token>>, Vec<Simple<char, Span>>) {
         // Add newline token
         if line_span.end < input.len() {
             if line.is_empty() {
-                tokens.push((Token::Newline, line_span.start..line_span.start + 1).into());
+                tokens.push((Token::Newline, (line_span.start..line_span.start + 1)).into());
             } else {
-                tokens.push((Token::Newline, line_span.end..line_span.end + 1).into());
+                tokens.push((Token::Newline, (line_span.end..line_span.end + 1)).into());
             }
         }
     }
@@ -431,7 +443,7 @@ pub fn lex(input: &str) -> (Vec<Spanned<Token>>, Vec<Simple<char, Span>>) {
     // Handle any remaining dedents
     while indent_stack.len() > 1 {
         indent_stack.pop();
-        tokens.push((Token::Dedent, input.len()..input.len()).into());
+        tokens.push((Token::Dedent, (input.len()..input.len())).into());
     }
 
     let tokens = tokens

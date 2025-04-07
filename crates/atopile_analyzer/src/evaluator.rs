@@ -21,6 +21,25 @@ use crate::{
     Location,
 };
 
+#[derive(Debug, Clone)]
+struct BlockDeclaration {
+    name: Symbol,
+    parent: Option<Symbol>,
+    location: Location,
+    stmt: BlockStmt,
+}
+
+impl BlockDeclaration {
+    fn new(block: &BlockStmt, location: Location) -> Self {
+        Self {
+            name: block.name.deref().clone(),
+            parent: block.parent.as_ref().map(|p| p.deref().clone()),
+            location,
+            stmt: block.clone(),
+        }
+    }
+}
+
 #[derive(Debug, Clone, Serialize)]
 pub struct EvaluatorState {
     instances: HashMap<InstanceRef, Instance>,
@@ -170,6 +189,13 @@ impl ModuleRef {
             module_name: "".into(),
         }
     }
+
+    fn pin() -> Self {
+        Self {
+            source_path: PathBuf::new(),
+            module_name: "".into(),
+        }
+    }
 }
 
 impl std::fmt::Display for ModuleRef {
@@ -238,6 +264,7 @@ pub(crate) enum InstanceKind {
     Component,
     Interface,
     Port,
+    Pin,
 }
 
 impl std::fmt::Display for InstanceKind {
@@ -346,6 +373,17 @@ impl Instance {
         }
     }
 
+    fn pin() -> Self {
+        Self {
+            type_ref: ModuleRef::pin(),
+            kind: InstanceKind::Pin,
+            attributes: HashMap::new(),
+            children: HashMap::new(),
+            connections: Vec::new(),
+            reference_designator: None,
+        }
+    }
+
     fn add_attribute(&mut self, attribute: &Symbol, value: impl Into<AttributeValue>) {
         self.attributes.insert(attribute.clone(), value.into());
     }
@@ -389,6 +427,14 @@ impl EvaluatorError {
         Self::new(EvaluatorErrorKind::Internal, &location.as_location()).with_message(message)
     }
 
+    fn invalid_connection<T: AsLocation>(location: &T, message: String) -> Self {
+        Self::new(
+            EvaluatorErrorKind::InvalidConnection,
+            &location.as_location(),
+        )
+        .with_message(message)
+    }
+
     fn with_message(mut self, message: String) -> Self {
         debug!(
             "Adding message to EvaluatorError: {:?} @ {:?} = {}",
@@ -401,24 +447,30 @@ impl EvaluatorError {
 
 #[derive(Debug, Clone, Error)]
 pub enum EvaluatorErrorKind {
-    #[error("Import path not found")]
+    #[error("import path not found")]
     ImportPathNotFound,
-    #[error("Cyclic import detected")]
+    #[error("cyclic import detected")]
     ImportCycle,
-    #[error("Failed to load import")]
+    #[error("failed to load import")]
     ImportLoadFailed,
-    #[error("Symbol not found")]
+    #[error("symbol not found")]
     ImportNotFound,
-    #[error("Unexpected statement")]
+    #[error("unexpected statement")]
     UnexpectedStmt,
-    #[error("Type not found")]
+    #[error("type not found")]
     TypeNotFound,
-    #[error("Invalid assignment")]
+    #[error("invalid assignment")]
     InvalidAssignment,
-    #[error("Unparsable statement")]
-    UnparsableStmt,
+    #[error("invalid connection")]
+    InvalidConnection,
+    #[error("parse error")]
+    ParseError,
+    #[error("duplicate declaration")]
+    DuplicateDeclaration,
+    #[error("cyclic inheritance detected")]
+    CyclicInheritance,
 
-    #[error("Internal error")]
+    #[error("internal error")]
     Internal,
 }
 
@@ -698,21 +750,24 @@ impl Evaluator {
             target.deref()
         );
         let left_instance = self.resolve_instance(source).ok_or_else(|| {
-            EvaluatorError::internal(
+            EvaluatorError::invalid_connection(
                 source,
-                "Cannot connect to non-existent instance".to_string(),
+                format!("`{}` does not exist", source.deref()),
             )
         })?;
 
         let right_instance = self.resolve_instance(target).ok_or_else(|| {
-            EvaluatorError::internal(
+            EvaluatorError::invalid_connection(
                 target,
-                "Cannot connect to non-existent instance".to_string(),
+                format!("`{}` does not exist", target.deref()),
             )
         })?;
 
         let connections = match (left_instance.kind, right_instance.kind) {
-            (InstanceKind::Port, InstanceKind::Port) => {
+            (InstanceKind::Port, InstanceKind::Port)
+            | (InstanceKind::Pin, InstanceKind::Pin)
+            | (InstanceKind::Port, InstanceKind::Pin)
+            | (InstanceKind::Pin, InstanceKind::Port) => {
                 vec![Connection::new(
                     source.deref().clone(),
                     target.deref().clone(),
@@ -725,7 +780,7 @@ impl Evaluator {
                         assignment.location(),
                     )
                     .with_message(format!(
-                        "Cannot connect interfaces of different type: `{}` and `{}`",
+                        "cannot connect interfaces of different type: `{}` and `{}`",
                         left_instance.type_ref, right_instance.type_ref
                     )));
                 }
@@ -787,9 +842,9 @@ impl Evaluator {
 
                 self.resolve_instance_mut(&common_ancestor_ref)
                     .ok_or_else(|| {
-                        EvaluatorError::internal(
+                        EvaluatorError::invalid_connection(
                             assignment,
-                            "Cannot connect to non-existent instance".to_string(),
+                            format!("`{}` does not exist", common_ancestor_ref),
                         )
                     })?
                     .connections
@@ -991,6 +1046,14 @@ impl Evaluator {
                 instance.add_child(signal_name, &signal_ref);
                 Ok(())
             }
+            Stmt::Pin(pin) => {
+                debug!("Processing pin statement: {}", pin.name.deref());
+                let pin_name = pin.name.deref();
+                let pin_ref = InstanceRef::new(module_ref, vec![pin_name.clone()]);
+                self.add_instance(&pin_ref, Instance::pin());
+                instance.add_child(pin_name, &pin_ref);
+                Ok(())
+            }
             Stmt::Connect(connect) => {
                 debug!("Processing connect statement");
                 let left = connect.left.deref();
@@ -1014,7 +1077,13 @@ impl Evaluator {
                             .map(|p| p.deref().clone().into())
                             .collect(),
                     )),
-                    Connectable::Pin(_) => None,
+                    Connectable::Pin(pin) => {
+                        let pin_symbol: Symbol = pin.deref().clone().into();
+                        let instance_ref = InstanceRef::new(module_ref, vec![pin_symbol.clone()]);
+                        self.add_instance(&instance_ref, Instance::pin());
+                        instance.add_child(&pin_symbol, &instance_ref);
+                        Some(instance_ref)
+                    }
                 };
 
                 let right_instance_ref = match right {
@@ -1034,7 +1103,13 @@ impl Evaluator {
                             .map(|p| p.deref().clone().into())
                             .collect(),
                     )),
-                    Connectable::Pin(_) => None,
+                    Connectable::Pin(pin) => {
+                        let pin_symbol: Symbol = pin.deref().clone().into();
+                        let instance_ref = InstanceRef::new(module_ref, vec![pin_symbol.clone()]);
+                        self.add_instance(&instance_ref, Instance::pin());
+                        instance.add_child(&pin_symbol, &instance_ref);
+                        Some(instance_ref)
+                    }
                 };
 
                 if let (Some(left), Some(right)) = (left_instance_ref, right_instance_ref) {
@@ -1158,15 +1233,125 @@ impl Evaluator {
                 self.evaluate_block(source, file_scope, block)
             }
             Stmt::Comment(_) => Ok(()),
-            Stmt::Unparsable(_) => Err(EvaluatorError::new(
-                EvaluatorErrorKind::UnparsableStmt,
-                &stmt.span().to_location(source),
-            )),
+            Stmt::ParseError(err) => {
+                self.reporter.report(
+                    EvaluatorError::new(
+                        EvaluatorErrorKind::ParseError,
+                        &stmt.span().to_location(source),
+                    )
+                    .with_message(err.to_string())
+                    .into(),
+                );
+                Ok(())
+            }
             _ => Err(EvaluatorError::new(
                 EvaluatorErrorKind::UnexpectedStmt,
                 &stmt.span().to_location(source),
             )),
         }
+    }
+
+    fn collect_block_declarations(&mut self, source: &AtopileSource) -> Vec<BlockDeclaration> {
+        debug!(
+            "Collecting block declarations from source: {:?}",
+            source.path()
+        );
+        let mut declarations = Vec::new();
+        let mut seen_names = HashMap::new();
+
+        for stmt in source.ast() {
+            if let Stmt::Block(block) = stmt.deref() {
+                let location = stmt.span().to_location(source);
+                let name = block.name.deref();
+
+                // Check for duplicate declarations
+                if let Some(prev_loc) = seen_names.get(name) {
+                    self.reporter.report(
+                        EvaluatorError::new(EvaluatorErrorKind::DuplicateDeclaration, &location)
+                            .with_message(format!(
+                                "Block '{}' is already declared at {:?}",
+                                name, prev_loc
+                            ))
+                            .into(),
+                    );
+                    continue;
+                }
+
+                seen_names.insert(name.clone(), location.clone());
+                declarations.push(BlockDeclaration::new(block, location));
+            }
+        }
+
+        declarations
+    }
+
+    fn sort_blocks<'a>(
+        &mut self,
+        declarations: &'a [BlockDeclaration],
+    ) -> Vec<&'a BlockDeclaration> {
+        debug!("Sorting {} block declarations", declarations.len());
+        let mut sorted = Vec::new();
+        let mut visited = HashMap::new();
+        let mut temp_mark = HashMap::new();
+
+        // Helper function for depth-first topological sort
+        fn visit<'a>(
+            block: &'a BlockDeclaration,
+            declarations: &'a [BlockDeclaration],
+            sorted: &mut Vec<&'a BlockDeclaration>,
+            visited: &mut HashMap<Symbol, bool>,
+            temp_mark: &mut HashMap<Symbol, bool>,
+            reporter: &mut AnalyzerReporter,
+        ) {
+            // If we've already visited this node, return
+            if visited.get(&block.name).copied().unwrap_or(false) {
+                return;
+            }
+
+            // Check for cycles
+            if temp_mark.get(&block.name).copied().unwrap_or(false) {
+                reporter.report(
+                    EvaluatorError::new(EvaluatorErrorKind::CyclicInheritance, &block.location)
+                        .with_message(format!(
+                            "Cyclic inheritance detected involving '{}'",
+                            block.name
+                        ))
+                        .into(),
+                );
+                return;
+            }
+
+            // Mark temporarily for cycle detection
+            temp_mark.insert(block.name.clone(), true);
+
+            // If this block has a parent, visit it first
+            if let Some(parent_name) = &block.parent {
+                if let Some(parent) = declarations.iter().find(|d| &d.name == parent_name) {
+                    visit(parent, declarations, sorted, visited, temp_mark, reporter);
+                }
+            }
+
+            // Remove temporary mark and add to visited
+            temp_mark.remove(&block.name);
+            visited.insert(block.name.clone(), true);
+            sorted.push(block);
+        }
+
+        // Visit all nodes
+        for block in declarations {
+            if !visited.get(&block.name).copied().unwrap_or(false) {
+                visit(
+                    block,
+                    declarations,
+                    &mut sorted,
+                    &mut visited,
+                    &mut temp_mark,
+                    &mut self.reporter,
+                );
+            }
+        }
+
+        sorted
     }
 
     fn evaluate_inner(&mut self, source: &AtopileSource, import_stack: Vec<PathBuf>) {
@@ -1175,8 +1360,32 @@ impl Evaluator {
         self.reporter.clear(source.path());
 
         let mut file_scope = FileScope::new();
+
+        // Phase 1: Collect block declarations
+        let block_declarations = self.collect_block_declarations(source);
+
+        // Phase 2: Sort blocks by inheritance dependencies
+        let sorted_blocks = self.sort_blocks(&block_declarations);
+
+        // Phase 3: Pre-register all blocks in scope
+        for block in &block_declarations {
+            let module_ref = ModuleRef::new(source.path(), &block.name);
+            file_scope.define(&block.name, &module_ref);
+        }
+
+        // Phase 4: Process all non-block statements
         for stmt in source.ast() {
-            if let Err(e) = self.evaluate_top_stmt(source, &import_stack, &mut file_scope, stmt) {
+            if !matches!(stmt.deref(), Stmt::Block(_)) {
+                if let Err(e) = self.evaluate_top_stmt(source, &import_stack, &mut file_scope, stmt)
+                {
+                    self.reporter.report(e.into());
+                }
+            }
+        }
+
+        // Phase 5: Evaluate blocks in dependency order
+        for block in sorted_blocks {
+            if let Err(e) = self.evaluate_block(source, &mut file_scope, &block.stmt) {
                 self.reporter.report(e.into());
             }
         }

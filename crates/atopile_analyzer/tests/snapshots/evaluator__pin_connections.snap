@@ -1,0 +1,169 @@
+---
+source: crates/atopile_analyzer/tests/evaluator.rs
+expression: result
+---
+state:
+  instances:
+    "tests/resources/corpus/pin_connections.ato:MyComponent":
+      type_ref:
+        source_path: tests/resources/corpus/pin_connections.ato
+        module_name: MyComponent
+      kind: Component
+      attributes: {}
+      children:
+        "1": "tests/resources/corpus/pin_connections.ato:MyComponent.1"
+        "2": "tests/resources/corpus/pin_connections.ato:MyComponent.2"
+        "3": "tests/resources/corpus/pin_connections.ato:MyComponent.3"
+        s1: "tests/resources/corpus/pin_connections.ato:MyComponent.s1"
+        s2: "tests/resources/corpus/pin_connections.ato:MyComponent.s2"
+        s3: "tests/resources/corpus/pin_connections.ato:MyComponent.s3"
+      connections:
+        - left: "tests/resources/corpus/pin_connections.ato:MyComponent.s1"
+          right: "tests/resources/corpus/pin_connections.ato:MyComponent.1"
+        - left: "tests/resources/corpus/pin_connections.ato:MyComponent.s2"
+          right: "tests/resources/corpus/pin_connections.ato:MyComponent.2"
+        - left: "tests/resources/corpus/pin_connections.ato:MyComponent.s3"
+          right: "tests/resources/corpus/pin_connections.ato:MyComponent.3"
+      reference_designator: ~
+    "tests/resources/corpus/pin_connections.ato:MyComponent.1":
+      type_ref:
+        source_path: ""
+        module_name: ""
+      kind: Pin
+      attributes: {}
+      children: {}
+      connections: []
+      reference_designator: ~
+    "tests/resources/corpus/pin_connections.ato:MyComponent.2":
+      type_ref:
+        source_path: ""
+        module_name: ""
+      kind: Pin
+      attributes: {}
+      children: {}
+      connections: []
+      reference_designator: ~
+    "tests/resources/corpus/pin_connections.ato:MyComponent.3":
+      type_ref:
+        source_path: ""
+        module_name: ""
+      kind: Pin
+      attributes: {}
+      children: {}
+      connections: []
+      reference_designator: ~
+    "tests/resources/corpus/pin_connections.ato:MyComponent.s1":
+      type_ref:
+        source_path: ""
+        module_name: ""
+      kind: Port
+      attributes: {}
+      children: {}
+      connections: []
+      reference_designator: ~
+    "tests/resources/corpus/pin_connections.ato:MyComponent.s2":
+      type_ref:
+        source_path: ""
+        module_name: ""
+      kind: Port
+      attributes: {}
+      children: {}
+      connections: []
+      reference_designator: ~
+    "tests/resources/corpus/pin_connections.ato:MyComponent.s3":
+      type_ref:
+        source_path: ""
+        module_name: ""
+      kind: Port
+      attributes: {}
+      children: {}
+      connections: []
+      reference_designator: ~
+    "tests/resources/corpus/pin_connections.ato:MyModule":
+      type_ref:
+        source_path: tests/resources/corpus/pin_connections.ato
+        module_name: MyModule
+      kind: Module
+      attributes: {}
+      children:
+        c: "tests/resources/corpus/pin_connections.ato:MyModule.c"
+      connections: []
+      reference_designator: ~
+    "tests/resources/corpus/pin_connections.ato:MyModule.c":
+      type_ref:
+        source_path: tests/resources/corpus/pin_connections.ato
+        module_name: MyComponent
+      kind: Component
+      attributes: {}
+      children:
+        "1": "tests/resources/corpus/pin_connections.ato:MyModule.c.1"
+        "2": "tests/resources/corpus/pin_connections.ato:MyModule.c.2"
+        "3": "tests/resources/corpus/pin_connections.ato:MyModule.c.3"
+        s1: "tests/resources/corpus/pin_connections.ato:MyModule.c.s1"
+        s2: "tests/resources/corpus/pin_connections.ato:MyModule.c.s2"
+        s3: "tests/resources/corpus/pin_connections.ato:MyModule.c.s3"
+      connections:
+        - left: "tests/resources/corpus/pin_connections.ato:MyModule.c.s1"
+          right: "tests/resources/corpus/pin_connections.ato:MyModule.c.1"
+        - left: "tests/resources/corpus/pin_connections.ato:MyModule.c.s2"
+          right: "tests/resources/corpus/pin_connections.ato:MyModule.c.2"
+        - left: "tests/resources/corpus/pin_connections.ato:MyModule.c.s3"
+          right: "tests/resources/corpus/pin_connections.ato:MyModule.c.3"
+        - left: "tests/resources/corpus/pin_connections.ato:MyModule.c.s1"
+          right: "tests/resources/corpus/pin_connections.ato:MyModule.c.1"
+      reference_designator: ~
+    "tests/resources/corpus/pin_connections.ato:MyModule.c.1":
+      type_ref:
+        source_path: ""
+        module_name: ""
+      kind: Pin
+      attributes: {}
+      children: {}
+      connections: []
+      reference_designator: ~
+    "tests/resources/corpus/pin_connections.ato:MyModule.c.2":
+      type_ref:
+        source_path: ""
+        module_name: ""
+      kind: Pin
+      attributes: {}
+      children: {}
+      connections: []
+      reference_designator: ~
+    "tests/resources/corpus/pin_connections.ato:MyModule.c.3":
+      type_ref:
+        source_path: ""
+        module_name: ""
+      kind: Pin
+      attributes: {}
+      children: {}
+      connections: []
+      reference_designator: ~
+    "tests/resources/corpus/pin_connections.ato:MyModule.c.s1":
+      type_ref:
+        source_path: ""
+        module_name: ""
+      kind: Port
+      attributes: {}
+      children: {}
+      connections: []
+      reference_designator: ~
+    "tests/resources/corpus/pin_connections.ato:MyModule.c.s2":
+      type_ref:
+        source_path: ""
+        module_name: ""
+      kind: Port
+      attributes: {}
+      children: {}
+      connections: []
+      reference_designator: ~
+    "tests/resources/corpus/pin_connections.ato:MyModule.c.s3":
+      type_ref:
+        source_path: ""
+        module_name: ""
+      kind: Port
+      attributes: {}
+      children: {}
+      connections: []
+      reference_designator: ~
+diagnostics: []

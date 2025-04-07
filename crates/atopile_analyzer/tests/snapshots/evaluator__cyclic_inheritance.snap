@@ -1,0 +1,19 @@
+---
+source: crates/atopile_analyzer/tests/evaluator.rs
+expression: result
+---
+state:
+  instances: {}
+diagnostics:
+  - severity: Error
+    kind: "Evaluator: cyclic inheritance detected: Cyclic inheritance detected involving 'ModuleA'"
+    file: tests/resources/corpus/cyclic_inheritance.ato
+  - severity: Error
+    kind: "Evaluator: internal error: Failed to clone parent module"
+    file: tests/resources/corpus/cyclic_inheritance.ato
+  - severity: Error
+    kind: "Evaluator: internal error: Failed to clone parent module"
+    file: tests/resources/corpus/cyclic_inheritance.ato
+  - severity: Error
+    kind: "Evaluator: internal error: Failed to clone parent module"
+    file: tests/resources/corpus/cyclic_inheritance.ato
