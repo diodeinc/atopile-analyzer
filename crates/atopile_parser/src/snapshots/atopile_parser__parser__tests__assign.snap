@@ -1,0 +1,39 @@
+---
+source: crates/atopile_parser/src/parser.rs
+expression: result
+---
+ParseResult {
+    output: Some(
+        Spanned(
+            Assign(
+                AssignStmt {
+                    target: Spanned(
+                        PortRef {
+                            parts: [
+                                Spanned(
+                                    "r1",
+                                    0..2,
+                                ),
+                            ],
+                        },
+                        0..2,
+                    ),
+                    type_info: None,
+                    value: Spanned(
+                        New(
+                            Spanned(
+                                Symbol(
+                                    "Resistor",
+                                ),
+                                9..17,
+                            ),
+                        ),
+                        5..17,
+                    ),
+                },
+            ),
+            0..17,
+        ),
+    ),
+    errs: [],
+}

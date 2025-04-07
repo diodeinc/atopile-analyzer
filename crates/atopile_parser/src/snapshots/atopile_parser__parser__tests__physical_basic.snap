@@ -1,0 +1,41 @@
+---
+source: crates/atopile_parser/src/parser.rs
+expression: result
+---
+ParseResult {
+    output: Some(
+        Spanned(
+            Physical(
+                Spanned(
+                    PhysicalValue {
+                        value: Spanned(
+                            "10",
+                            0..2,
+                        ),
+                        unit: Some(
+                            Spanned(
+                                "kohm",
+                                2..6,
+                            ),
+                        ),
+                        tolerance: Some(
+                            Spanned(
+                                Bilateral {
+                                    value: Spanned(
+                                        "5",
+                                        11..12,
+                                    ),
+                                    unit: None,
+                                },
+                                7..13,
+                            ),
+                        ),
+                    },
+                    0..13,
+                ),
+            ),
+            0..13,
+        ),
+    ),
+    errs: [],
+}

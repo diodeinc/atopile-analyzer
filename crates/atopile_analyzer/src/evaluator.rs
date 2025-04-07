@@ -415,8 +415,8 @@ pub enum EvaluatorErrorKind {
     TypeNotFound,
     #[error("Invalid assignment")]
     InvalidAssignment,
-    #[error("Unparsable statement")]
-    UnparsableStmt,
+    #[error("{0}")]
+    ParseError(String),
 
     #[error("Internal error")]
     Internal,
@@ -1158,6 +1158,16 @@ impl Evaluator {
                 self.evaluate_block(source, file_scope, block)
             }
             Stmt::Comment(_) => Ok(()),
+            Stmt::ParseError(err) => {
+                self.reporter.report(
+                    EvaluatorError::new(
+                        EvaluatorErrorKind::ParseError(err.to_string()),
+                        &stmt.span().to_location(source),
+                    )
+                    .into(),
+                );
+                Ok(())
+            }
             _ => Err(EvaluatorError::new(
                 EvaluatorErrorKind::UnexpectedStmt,
                 &stmt.span().to_location(source),

@@ -1,0 +1,20 @@
+---
+source: crates/atopile_parser/src/parser.rs
+expression: result
+---
+ParseResult {
+    output: Some(
+        Spanned(
+            PortRef {
+                parts: [
+                    Spanned(
+                        "a",
+                        0..1,
+                    ),
+                ],
+            },
+            0..1,
+        ),
+    ),
+    errs: [],
+}

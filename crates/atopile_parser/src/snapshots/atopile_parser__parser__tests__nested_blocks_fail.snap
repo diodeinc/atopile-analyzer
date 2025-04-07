@@ -1,0 +1,167 @@
+---
+source: crates/atopile_parser/src/parser.rs
+expression: result
+---
+(
+    [
+        Spanned(
+            ParseError(
+                "syntax error",
+            ),
+            52..64,
+        ),
+        Spanned(
+            ParseError(
+                "syntax error",
+            ),
+            65..98,
+        ),
+        Spanned(
+            ParseError(
+                "syntax error",
+            ),
+            165..166,
+        ),
+        Spanned(
+            Block(
+                BlockStmt {
+                    kind: Spanned(
+                        Module,
+                        0..6,
+                    ),
+                    name: Spanned(
+                        Symbol(
+                            "M",
+                        ),
+                        7..8,
+                    ),
+                    parent: None,
+                    body: [
+                        Spanned(
+                            Assign(
+                                AssignStmt {
+                                    target: Spanned(
+                                        PortRef {
+                                            parts: [
+                                                Spanned(
+                                                    "r1",
+                                                    22..24,
+                                                ),
+                                            ],
+                                        },
+                                        22..24,
+                                    ),
+                                    type_info: None,
+                                    value: Spanned(
+                                        New(
+                                            Spanned(
+                                                Symbol(
+                                                    "Resistor",
+                                                ),
+                                                31..39,
+                                            ),
+                                        ),
+                                        27..39,
+                                    ),
+                                },
+                            ),
+                            22..39,
+                        ),
+                        Spanned(
+                            Connect(
+                                ConnectStmt {
+                                    left: Spanned(
+                                        Port(
+                                            Spanned(
+                                                PortRef {
+                                                    parts: [
+                                                        Spanned(
+                                                            "r1",
+                                                            115..117,
+                                                        ),
+                                                    ],
+                                                },
+                                                115..117,
+                                            ),
+                                        ),
+                                        115..117,
+                                    ),
+                                    right: Spanned(
+                                        Pin(
+                                            Spanned(
+                                                "A1",
+                                                124..126,
+                                            ),
+                                        ),
+                                        120..126,
+                                    ),
+                                },
+                            ),
+                            115..126,
+                        ),
+                        Spanned(
+                            Assert(
+                                AssertStmt {
+                                    expr: Spanned(
+                                        BinaryOp(
+                                            Spanned(
+                                                BinaryOp {
+                                                    left: Spanned(
+                                                        Physical(
+                                                            Spanned(
+                                                                PhysicalValue {
+                                                                    value: Spanned(
+                                                                        "10",
+                                                                        150..152,
+                                                                    ),
+                                                                    unit: Some(
+                                                                        Spanned(
+                                                                            "kohm",
+                                                                            152..156,
+                                                                        ),
+                                                                    ),
+                                                                    tolerance: None,
+                                                                },
+                                                                150..156,
+                                                            ),
+                                                        ),
+                                                        150..156,
+                                                    ),
+                                                    op: Spanned(
+                                                        Within,
+                                                        157..163,
+                                                    ),
+                                                    right: Spanned(
+                                                        Physical(
+                                                            Spanned(
+                                                                PhysicalValue {
+                                                                    value: Spanned(
+                                                                        "5",
+                                                                        164..165,
+                                                                    ),
+                                                                    unit: None,
+                                                                    tolerance: None,
+                                                                },
+                                                                164..165,
+                                                            ),
+                                                        ),
+                                                        164..165,
+                                                    ),
+                                                },
+                                                150..165,
+                                            ),
+                                        ),
+                                        150..165,
+                                    ),
+                                },
+                            ),
+                            143..165,
+                        ),
+                    ],
+                },
+            ),
+            0..166,
+        ),
+    ],
+    [],
+)

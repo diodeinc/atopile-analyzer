@@ -1,0 +1,34 @@
+---
+source: crates/atopile_parser/src/parser.rs
+expression: result
+---
+ParseResult {
+    output: Some(
+        Spanned(
+            Connect(
+                ConnectStmt {
+                    left: Spanned(
+                        Signal(
+                            Spanned(
+                                "a",
+                                7..8,
+                            ),
+                        ),
+                        0..8,
+                    ),
+                    right: Spanned(
+                        Pin(
+                            Spanned(
+                                "A1",
+                                15..17,
+                            ),
+                        ),
+                        11..17,
+                    ),
+                },
+            ),
+            0..17,
+        ),
+    ),
+    errs: [],
+}
