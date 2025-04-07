@@ -17,6 +17,7 @@ import {
   CustomTextEditorProvider,
   CancellationToken,
   CustomDocument,
+  StatusBarAlignment,
 } from "vscode";
 
 import {
@@ -244,6 +245,34 @@ export function activate(context: ExtensionContext) {
   const outputChannel: OutputChannel =
     Window.createOutputChannel("atopile analyzer");
 
+  // Create status bar item
+  const schematicButton = Window.createStatusBarItem(
+    StatusBarAlignment.Right,
+    100
+  );
+  schematicButton.text = "$(circuit-board) View Schematic";
+  schematicButton.command = "atopile.openSchematic";
+  schematicButton.tooltip = "Open schematic viewer";
+  context.subscriptions.push(schematicButton);
+
+  // Show/hide the button based on active editor
+  function updateStatusBarVisibility() {
+    const activeEditor = Window.activeTextEditor;
+    if (activeEditor && activeEditor.document.languageId === "ato") {
+      schematicButton.show();
+    } else {
+      schematicButton.hide();
+    }
+  }
+
+  // Register event handlers for the status bar item visibility
+  context.subscriptions.push(
+    Window.onDidChangeActiveTextEditor(() => updateStatusBarVisibility())
+  );
+
+  // Initial visibility check
+  updateStatusBarVisibility();
+
   // Register the preview provider
   context.subscriptions.push(
     Window.registerCustomEditorProvider(
@@ -258,10 +287,29 @@ export function activate(context: ExtensionContext) {
       const activeEditor = Window.activeTextEditor;
       if (activeEditor && activeEditor.document.languageId === "ato") {
         const uri = activeEditor.document.uri;
-        await commands.executeCommand(
-          "vscode.openWith",
-          uri,
-          "atopile.preview"
+
+        // Create and show panel
+        const panel = Window.createWebviewPanel(
+          "atopile.preview",
+          "Schematic Preview",
+          ViewColumn.Beside,
+          {
+            enableScripts: true,
+            retainContextWhenHidden: true,
+            localResourceRoots: [
+              Uri.file(path.join(context.extensionPath, "preview", "build")),
+            ],
+          }
+        );
+
+        // Get the preview provider instance
+        const provider = new AtoPreviewProvider(context);
+
+        // Initialize the webview content
+        await provider.resolveCustomTextEditor(
+          activeEditor.document,
+          panel,
+          undefined
         );
       } else {
         Window.showErrorMessage("Please open an .ato file first");

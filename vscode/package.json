@@ -29,7 +29,6 @@
     "vscode": "^1.61.0"
   },
   "activationEvents": [
-    "onLanguage:ato",
     "onCommand:atopile.openPreview"
   ],
   "main": "./client/out/extension",
@@ -38,9 +37,19 @@
       {
         "command": "atopile.openSchematic",
         "title": "Open Schematic",
-        "category": "atopile"
+        "category": "atopile",
+        "icon": "$(circuit-board)"
       }
     ],
+    "menus": {
+      "editor/title": [
+        {
+          "when": "resourceLangId == ato",
+          "command": "atopile.openSchematic",
+          "group": "navigation"
+        }
+      ]
+    },
     "languages": [
       {
         "id": "ato",
