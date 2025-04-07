@@ -9,13 +9,13 @@ expression: output
                 BlockStmt {
                     kind: Spanned(
                         Component,
-                        0..1,
+                        0..9,
                     ),
                     name: Spanned(
                         Symbol(
                             "NPN",
                         ),
-                        1..2,
+                        10..13,
                     ),
                     parent: None,
                     body: [
@@ -26,23 +26,23 @@ expression: output
                                         Signal(
                                             Spanned(
                                                 "base",
-                                                6..7,
+                                                26..30,
                                             ),
                                         ),
-                                        5..7,
+                                        19..30,
                                     ),
                                     right: Spanned(
                                         Pin(
                                             Spanned(
                                                 "1",
-                                                9..10,
+                                                37..38,
                                             ),
                                         ),
-                                        8..10,
+                                        33..38,
                                     ),
                                 },
                             ),
-                            5..10,
+                            19..38,
                         ),
                         Spanned(
                             Connect(
@@ -51,23 +51,23 @@ expression: output
                                         Signal(
                                             Spanned(
                                                 "collector",
-                                                12..13,
+                                                50..59,
                                             ),
                                         ),
-                                        11..13,
+                                        43..59,
                                     ),
                                     right: Spanned(
                                         Pin(
                                             Spanned(
                                                 "2",
-                                                15..16,
+                                                66..67,
                                             ),
                                         ),
-                                        14..16,
+                                        62..67,
                                     ),
                                 },
                             ),
-                            11..16,
+                            43..67,
                         ),
                         Spanned(
                             Connect(
@@ -76,23 +76,23 @@ expression: output
                                         Signal(
                                             Spanned(
                                                 "emitter",
-                                                18..19,
+                                                79..86,
                                             ),
                                         ),
-                                        17..19,
+                                        72..86,
                                     ),
                                     right: Spanned(
                                         Pin(
                                             Spanned(
                                                 "3",
-                                                21..22,
+                                                93..94,
                                             ),
                                         ),
-                                        20..22,
+                                        89..94,
                                     ),
                                 },
                             ),
-                            17..22,
+                            72..94,
                         ),
                         Spanned(
                             Assign(
@@ -102,43 +102,43 @@ expression: output
                                             parts: [
                                                 Spanned(
                                                     "designator_prefix",
-                                                    23..24,
+                                                    99..116,
                                                 ),
                                             ],
                                         },
-                                        23..24,
+                                        99..116,
                                     ),
                                     type_info: None,
                                     value: Spanned(
                                         String(
                                             Spanned(
                                                 "Q",
-                                                25..26,
+                                                119..122,
                                             ),
                                         ),
-                                        25..26,
+                                        119..122,
                                     ),
                                 },
                             ),
-                            23..26,
+                            99..122,
                         ),
                     ],
                 },
             ),
-            0..29,
+            0..124,
         ),
         Spanned(
             Block(
                 BlockStmt {
                     kind: Spanned(
                         Component,
-                        29..30,
+                        124..133,
                     ),
                     name: Spanned(
                         Symbol(
                             "PNP",
                         ),
-                        30..31,
+                        134..137,
                     ),
                     parent: None,
                     body: [
@@ -149,11 +149,11 @@ expression: output
                                         Symbol(
                                             "base",
                                         ),
-                                        35..36,
+                                        150..154,
                                     ),
                                 },
                             ),
-                            34..36,
+                            143..154,
                         ),
                         Spanned(
                             Signal(
@@ -162,11 +162,11 @@ expression: output
                                         Symbol(
                                             "collector",
                                         ),
-                                        38..39,
+                                        166..175,
                                     ),
                                 },
                             ),
-                            37..39,
+                            159..175,
                         ),
                         Spanned(
                             Signal(
@@ -175,11 +175,11 @@ expression: output
                                         Symbol(
                                             "emitter",
                                         ),
-                                        41..42,
+                                        187..194,
                                     ),
                                 },
                             ),
-                            40..42,
+                            180..194,
                         ),
                         Spanned(
                             Assign(
@@ -189,43 +189,43 @@ expression: output
                                             parts: [
                                                 Spanned(
                                                     "designator_prefix",
-                                                    43..44,
+                                                    199..216,
                                                 ),
                                             ],
                                         },
-                                        43..44,
+                                        199..216,
                                     ),
                                     type_info: None,
                                     value: Spanned(
                                         String(
                                             Spanned(
                                                 "Q",
-                                                45..46,
+                                                219..222,
                                             ),
                                         ),
-                                        45..46,
+                                        219..222,
                                     ),
                                 },
                             ),
-                            43..46,
+                            199..222,
                         ),
                     ],
                 },
             ),
-            29..49,
+            124..224,
         ),
         Spanned(
             Block(
                 BlockStmt {
                     kind: Spanned(
                         Component,
-                        49..50,
+                        224..233,
                     ),
                     name: Spanned(
                         Symbol(
                             "Triac",
                         ),
-                        50..51,
+                        234..239,
                     ),
                     parent: None,
                     body: [
@@ -236,11 +236,11 @@ expression: output
                                         Symbol(
                                             "MT1",
                                         ),
-                                        55..56,
+                                        252..255,
                                     ),
                                 },
                             ),
-                            54..56,
+                            245..255,
                         ),
                         Spanned(
                             Signal(
@@ -249,11 +249,11 @@ expression: output
                                         Symbol(
                                             "MT2",
                                         ),
-                                        58..59,
+                                        267..270,
                                     ),
                                 },
                             ),
-                            57..59,
+                            260..270,
                         ),
                         Spanned(
                             Signal(
@@ -262,11 +262,11 @@ expression: output
                                         Symbol(
                                             "gate",
                                         ),
-                                        61..62,
+                                        282..286,
                                     ),
                                 },
                             ),
-                            60..62,
+                            275..286,
                         ),
                         Spanned(
                             Assign(
@@ -276,30 +276,30 @@ expression: output
                                             parts: [
                                                 Spanned(
                                                     "designator_prefix",
-                                                    63..64,
+                                                    291..308,
                                                 ),
                                             ],
                                         },
-                                        63..64,
+                                        291..308,
                                     ),
                                     type_info: None,
                                     value: Spanned(
                                         String(
                                             Spanned(
                                                 "TR",
-                                                65..66,
+                                                311..315,
                                             ),
                                         ),
-                                        65..66,
+                                        311..315,
                                     ),
                                 },
                             ),
-                            63..66,
+                            291..315,
                         ),
                     ],
                 },
             ),
-            49..67,
+            224..315,
         ),
     ],
     [],

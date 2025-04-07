@@ -466,24 +466,33 @@ impl<'src, I: ValueInput<'src, Token = Token<'src>, Span = SimpleSpan>> AtopileP
                 .into()
         };
 
-        // TODO: Fix operator precedence
-        let operand = choice((Self::physical(), Self::new(), Self::atom()));
-        operand.pratt((
-            infix(left(2), op(Token::Star, BinaryOperator::Mul), pratt_infix),
-            infix(left(2), op(Token::Plus, BinaryOperator::Add), pratt_infix),
-            infix(left(2), op(Token::Minus, BinaryOperator::Sub), pratt_infix),
-            infix(left(2), op(Token::Div, BinaryOperator::Div), pratt_infix),
-            infix(left(2), op(Token::Eq, BinaryOperator::Eq), pratt_infix),
-            infix(left(2), op(Token::Gt, BinaryOperator::Gt), pratt_infix),
-            infix(left(2), op(Token::GtEq, BinaryOperator::Gte), pratt_infix),
-            infix(left(2), op(Token::Lt, BinaryOperator::Lt), pratt_infix),
-            infix(left(2), op(Token::LtEq, BinaryOperator::Lte), pratt_infix),
-            infix(
-                left(2),
-                op(Token::Within, BinaryOperator::Within),
-                pratt_infix,
-            ),
-        ))
+        recursive(|expr| {
+            let operand = choice((
+                just(Token::LParen)
+                    .ignore_then(expr)
+                    .then_ignore(just(Token::RParen)),
+                Self::physical(),
+                Self::new(),
+                Self::atom(),
+            ));
+
+            operand.pratt((
+                infix(left(6), op(Token::Star, BinaryOperator::Mul), pratt_infix),
+                infix(left(6), op(Token::Div, BinaryOperator::Div), pratt_infix),
+                infix(left(5), op(Token::Plus, BinaryOperator::Add), pratt_infix),
+                infix(left(5), op(Token::Minus, BinaryOperator::Sub), pratt_infix),
+                infix(left(4), op(Token::Gt, BinaryOperator::Gt), pratt_infix),
+                infix(left(4), op(Token::GtEq, BinaryOperator::Gte), pratt_infix),
+                infix(left(4), op(Token::Lt, BinaryOperator::Lt), pratt_infix),
+                infix(left(4), op(Token::LtEq, BinaryOperator::Lte), pratt_infix),
+                infix(left(3), op(Token::Eq, BinaryOperator::Eq), pratt_infix),
+                infix(
+                    left(2),
+                    op(Token::Within, BinaryOperator::Within),
+                    pratt_infix,
+                ),
+            ))
+        })
     }
 
     fn top_stmt() -> impl Parser<'src, I, Spanned<Stmt>, ParserExtra<'src>> + Clone {
@@ -884,6 +893,12 @@ mod tests {
         test_specialize,
         AtopileParser::block_stmt(),
         "u1.a -> Resistor"
+    );
+
+    test_parser!(
+        test_complex_expr,
+        AtopileParser::expr(),
+        "v_in * r_bottom.value / (r_top.value + r_bottom.value) within v_out"
     );
 
     test_parser!(

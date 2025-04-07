@@ -401,24 +401,24 @@ impl EvaluatorError {
 
 #[derive(Debug, Clone, Error)]
 pub enum EvaluatorErrorKind {
-    #[error("Import path not found")]
+    #[error("import path not found")]
     ImportPathNotFound,
-    #[error("Cyclic import detected")]
+    #[error("cyclic import detected")]
     ImportCycle,
-    #[error("Failed to load import")]
+    #[error("failed to load import")]
     ImportLoadFailed,
-    #[error("Symbol not found")]
+    #[error("symbol not found")]
     ImportNotFound,
-    #[error("Unexpected statement")]
+    #[error("unexpected statement")]
     UnexpectedStmt,
-    #[error("Type not found")]
+    #[error("type not found")]
     TypeNotFound,
-    #[error("Invalid assignment")]
+    #[error("invalid assignment")]
     InvalidAssignment,
-    #[error("{0}")]
-    ParseError(String),
+    #[error("parse error")]
+    ParseError,
 
-    #[error("Internal error")]
+    #[error("internal error")]
     Internal,
 }
 
@@ -1161,9 +1161,10 @@ impl Evaluator {
             Stmt::ParseError(err) => {
                 self.reporter.report(
                     EvaluatorError::new(
-                        EvaluatorErrorKind::ParseError(err.to_string()),
+                        EvaluatorErrorKind::ParseError,
                         &stmt.span().to_location(source),
                     )
+                    .with_message(err.to_string())
                     .into(),
                 );
                 Ok(())
