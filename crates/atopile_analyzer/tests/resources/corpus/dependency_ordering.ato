@@ -1,10 +1,8 @@
 module B:
     # Test new expression dependency
     a = new A
+    c = new C
     
-    # Test specialize statement dependency
-    b.crystal -> C
-
 module A:
     signal x
 
@@ -14,4 +12,3 @@ module C:
 # Test nested dependencies
 module D:
     outer = new B
-    outer.b.crystal -> C  # Should work since C is defined above 

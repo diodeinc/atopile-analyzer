@@ -1,0 +1,26 @@
+module BaseInterface:
+    signal a
+    signal b
+
+module ExtendedInterface:
+    signal a
+    signal b
+    signal c
+    signal d
+
+    a ~ b  # This connection should be added to instances that specialize to this
+
+module NestedModule:
+    iface = new BaseInterface
+    sub = new BaseInterface
+    iface.a ~ sub.a  # This connection should be preserved when specialized
+
+module TestModule:
+    iface = new BaseInterface
+    nested = new NestedModule
+    
+    # Test basic specialization
+    iface -> ExtendedInterface  # Should add signals c, d and connection a -> b
+
+    # Test deep specialization with connection transposition
+    nested.iface -> ExtendedInterface  # Should add signals and connections under nested.iface 

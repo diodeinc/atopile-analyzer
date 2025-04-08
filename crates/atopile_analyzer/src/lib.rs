@@ -3,7 +3,7 @@ pub mod evaluator;
 
 use std::{
     collections::HashMap,
-    fmt::Debug,
+    fmt::{Debug, Display},
     ops::Deref,
     path::{Path, PathBuf},
     sync::{Arc, Mutex},
@@ -29,6 +29,12 @@ pub struct Location {
     #[serde(skip)]
     pub file: PathBuf,
     pub range: Range,
+}
+
+impl Display for Location {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}:{}", self.file.display(), self.range.start)
+    }
 }
 
 #[derive(Debug, Clone, Copy, Serialize)]

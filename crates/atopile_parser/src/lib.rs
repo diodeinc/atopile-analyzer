@@ -65,6 +65,12 @@ pub struct Position {
     pub column: usize,
 }
 
+impl Display for Position {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}:{}", self.line, self.column)
+    }
+}
+
 #[derive(Debug, Clone, PartialEq)]
 pub struct AtopileErrorReport {
     span: SimpleSpan,

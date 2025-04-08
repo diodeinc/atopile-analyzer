@@ -25,5 +25,5 @@ state:
       reference_designator: ~
 diagnostics:
   - severity: Error
-    kind: "Evaluator: duplicate declaration: Block 'MyModule' is already declared at Location { file: \"tests/resources/corpus/duplicate_declaration.ato\", range: Range { start: Position { line: 0, column: 0 }, end: Position { line: 3, column: 0 } } }"
+    kind: "Evaluator: duplicate declaration: Block 'MyModule' is already declared at tests/resources/corpus/duplicate_declaration.ato:0:0"
     file: tests/resources/corpus/duplicate_declaration.ato

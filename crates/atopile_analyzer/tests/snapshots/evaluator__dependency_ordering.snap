@@ -31,6 +31,7 @@ state:
       attributes: {}
       children:
         a: "tests/resources/corpus/dependency_ordering.ato:B.a"
+        c: "tests/resources/corpus/dependency_ordering.ato:B.c"
       connections: []
       reference_designator: ~
     "tests/resources/corpus/dependency_ordering.ato:B.a":
@@ -44,6 +45,25 @@ state:
       connections: []
       reference_designator: ~
     "tests/resources/corpus/dependency_ordering.ato:B.a.x":
+      type_ref:
+        source_path: ""
+        module_name: ""
+      kind: Port
+      attributes: {}
+      children: {}
+      connections: []
+      reference_designator: ~
+    "tests/resources/corpus/dependency_ordering.ato:B.c":
+      type_ref:
+        source_path: tests/resources/corpus/dependency_ordering.ato
+        module_name: C
+      kind: Module
+      attributes: {}
+      children:
+        y: "tests/resources/corpus/dependency_ordering.ato:B.c.y"
+      connections: []
+      reference_designator: ~
+    "tests/resources/corpus/dependency_ordering.ato:B.c.y":
       type_ref:
         source_path: ""
         module_name: ""
@@ -89,6 +109,7 @@ state:
       attributes: {}
       children:
         a: "tests/resources/corpus/dependency_ordering.ato:D.outer.a"
+        c: "tests/resources/corpus/dependency_ordering.ato:D.outer.c"
       connections: []
       reference_designator: ~
     "tests/resources/corpus/dependency_ordering.ato:D.outer.a":
@@ -102,6 +123,25 @@ state:
       connections: []
       reference_designator: ~
     "tests/resources/corpus/dependency_ordering.ato:D.outer.a.x":
+      type_ref:
+        source_path: ""
+        module_name: ""
+      kind: Port
+      attributes: {}
+      children: {}
+      connections: []
+      reference_designator: ~
+    "tests/resources/corpus/dependency_ordering.ato:D.outer.c":
+      type_ref:
+        source_path: tests/resources/corpus/dependency_ordering.ato
+        module_name: C
+      kind: Module
+      attributes: {}
+      children:
+        y: "tests/resources/corpus/dependency_ordering.ato:D.outer.c.y"
+      connections: []
+      reference_designator: ~
+    "tests/resources/corpus/dependency_ordering.ato:D.outer.c.y":
       type_ref:
         source_path: ""
         module_name: ""

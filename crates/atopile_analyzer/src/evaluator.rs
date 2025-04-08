@@ -844,6 +844,123 @@ impl Evaluator {
         Ok(())
     }
 
+    fn merge_instance(
+        &mut self,
+        target_ref: &InstanceRef,
+        source_ref: &InstanceRef,
+        location: &Location,
+    ) -> EvaluatorResult<()> {
+        debug!(
+            "Merging instance {} into {}",
+            source_ref.to_string(),
+            target_ref.to_string()
+        );
+
+        // First collect all the data we need from the source instance
+        let (source_children, source_connections) = {
+            let source_instance = self.resolve_instance(source_ref).ok_or_else(|| {
+                EvaluatorError::internal(
+                    location,
+                    format!("Source instance `{}` does not exist", source_ref),
+                )
+            })?;
+            (
+                source_instance.children.clone(),
+                source_instance.connections.clone(),
+            )
+        };
+
+        // Update the target's type reference to the source's type
+        let source_type_ref = {
+            let source_instance = self.resolve_instance(source_ref).ok_or_else(|| {
+                EvaluatorError::internal(
+                    location,
+                    format!("Source instance `{}` does not exist", source_ref),
+                )
+            })?;
+            source_instance.type_ref.clone()
+        };
+
+        // Process each child from the source
+        for (child_name, source_child_ref) in source_children.iter() {
+            // We need to get the target instance each time through the loop to satisfy the borrow checker
+            let target_child_ref = {
+                let target_instance = self.resolve_instance_mut(target_ref).ok_or_else(|| {
+                    EvaluatorError::internal(
+                        location,
+                        format!("Target instance `{}` does not exist", target_ref),
+                    )
+                })?;
+                target_instance.children.get(child_name).cloned()
+            };
+
+            if let Some(target_child_ref) = target_child_ref {
+                // Child exists in target - recursively merge
+                self.merge_instance(&target_child_ref, source_child_ref, location)?;
+            } else {
+                // Child doesn't exist in target - clone it
+                let mut target_child_path = target_ref.instance_path.clone();
+                target_child_path.push(child_name.clone());
+                let target_child_ref = InstanceRef::new(&target_ref.module, target_child_path);
+
+                // Clone the source child into the target's tree
+                self.clone_instance(source_child_ref, &target_child_ref)
+                    .map_err(|e| {
+                        EvaluatorError::internal(
+                            location,
+                            format!("Failed to clone child instance: {}", e),
+                        )
+                    })?;
+
+                // Add the new child reference to the target instance
+                let target_instance = self.resolve_instance_mut(target_ref).ok_or_else(|| {
+                    EvaluatorError::internal(
+                        location,
+                        format!("Target instance `{}` does not exist", target_ref),
+                    )
+                })?;
+                target_instance.add_child(child_name, &target_child_ref);
+            }
+        }
+
+        // Process each connection from the source
+        let target_instance = self.resolve_instance_mut(target_ref).ok_or_else(|| {
+            EvaluatorError::internal(
+                location,
+                format!("Target instance `{}` does not exist", target_ref),
+            )
+        })?;
+
+        for connection in source_connections {
+            // Create new connection with paths transposed to target's namespace
+            let mut left_path = target_ref.instance_path.clone();
+            left_path.extend(
+                connection.left.instance_path[source_ref.instance_path.len()..]
+                    .iter()
+                    .cloned(),
+            );
+            let new_left = InstanceRef::new(&target_ref.module, left_path);
+
+            let mut right_path = target_ref.instance_path.clone();
+            right_path.extend(
+                connection.right.instance_path[source_ref.instance_path.len()..]
+                    .iter()
+                    .cloned(),
+            );
+            let new_right = InstanceRef::new(&target_ref.module, right_path);
+
+            // Add the transposed connection to the target instance
+            target_instance
+                .connections
+                .push(Connection::new(new_left, new_right));
+        }
+
+        // Update target instance's type ref after processing children and connections
+        target_instance.type_ref = source_type_ref;
+
+        Ok(())
+    }
+
     fn get_or_load_source(&mut self, path: &PathBuf) -> anyhow::Result<Arc<AtopileSource>> {
         if let Some(source) = self.files.get(path) {
             Ok(source.clone())
@@ -1123,6 +1240,37 @@ impl Evaluator {
 
                 Ok(())
             }
+            Stmt::Specialize(specialize) => {
+                debug!("Processing specialize statement");
+                // Find a ref to the instance we're specializing
+                let target_ref = InstanceRef::new(
+                    module_ref,
+                    specialize
+                        .port
+                        .deref()
+                        .parts
+                        .iter()
+                        .map(|p| p.deref().clone().into())
+                        .collect(),
+                );
+
+                // Get a reference to the module type we're specializing to
+                let source_module_ref = file_scope.resolve(&specialize.value).ok_or_else(|| {
+                    EvaluatorError::new(
+                        EvaluatorErrorKind::TypeNotFound,
+                        &specialize.value.span().to_location(source),
+                    )
+                })?;
+
+                // Merge the source module into the target instance
+                self.merge_instance(
+                    &target_ref,
+                    &source_module_ref.into(),
+                    &stmt.span().to_location(source),
+                )?;
+
+                Ok(())
+            }
             _ => {
                 debug!("Skipping unhandled statement type");
                 Ok(())
@@ -1136,11 +1284,6 @@ impl Evaluator {
         file_scope: &mut FileScope,
         block: &BlockStmt,
     ) -> EvaluatorResult<()> {
-        debug!(
-            "Evaluating block: {} of kind {:?}",
-            block.name.deref(),
-            block.kind.deref()
-        );
         let module_ref = ModuleRef::new(source.path(), block.name.deref());
         let instance_kind = match block.kind.deref() {
             BlockKind::Module => InstanceKind::Module,
@@ -1177,18 +1320,37 @@ impl Evaluator {
             )
         })?;
 
+        self.evaluate_block_on_instance(source, file_scope, block, &mut instance)?;
+
+        self.add_instance(&instance_ref, instance);
+        file_scope.define(block.name.deref(), &module_ref);
+
+        Ok(())
+    }
+
+    fn evaluate_block_on_instance(
+        &mut self,
+        source: &AtopileSource,
+        file_scope: &FileScope,
+        block: &BlockStmt,
+        instance: &mut Instance,
+    ) -> EvaluatorResult<()> {
+        debug!(
+            "Evaluating block: {} of kind {:?}",
+            block.name.deref(),
+            block.kind.deref()
+        );
+        let module_ref = ModuleRef::new(source.path(), block.name.deref());
+
         instance.type_ref = module_ref.clone();
 
         for stmt in &block.body {
             if let Err(e) =
-                self.evaluate_block_stmt(source, file_scope, &mut instance, &module_ref, stmt)
+                self.evaluate_block_stmt(source, file_scope, instance, &module_ref, stmt)
             {
                 self.reporter.report(e.into());
             }
         }
-
-        self.add_instance(&instance_ref, instance);
-        file_scope.define(block.name.deref(), &module_ref);
 
         Ok(())
     }
@@ -1294,7 +1456,7 @@ impl Evaluator {
                     self.reporter.report(
                         EvaluatorError::new(EvaluatorErrorKind::DuplicateDeclaration, &location)
                             .with_message(format!(
-                                "Block '{}' is already declared at {:?}",
+                                "Block '{}' is already declared at {}",
                                 name, prev_loc
                             ))
                             .into(),

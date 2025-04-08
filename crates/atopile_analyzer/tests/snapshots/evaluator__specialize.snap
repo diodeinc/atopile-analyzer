@@ -1,0 +1,313 @@
+---
+source: crates/atopile_analyzer/tests/evaluator.rs
+expression: result
+---
+state:
+  instances:
+    "tests/resources/corpus/specialize.ato:BaseInterface":
+      type_ref:
+        source_path: tests/resources/corpus/specialize.ato
+        module_name: BaseInterface
+      kind: Module
+      attributes: {}
+      children:
+        a: "tests/resources/corpus/specialize.ato:BaseInterface.a"
+        b: "tests/resources/corpus/specialize.ato:BaseInterface.b"
+      connections: []
+      reference_designator: ~
+    "tests/resources/corpus/specialize.ato:BaseInterface.a":
+      type_ref:
+        source_path: ""
+        module_name: ""
+      kind: Port
+      attributes: {}
+      children: {}
+      connections: []
+      reference_designator: ~
+    "tests/resources/corpus/specialize.ato:BaseInterface.b":
+      type_ref:
+        source_path: ""
+        module_name: ""
+      kind: Port
+      attributes: {}
+      children: {}
+      connections: []
+      reference_designator: ~
+    "tests/resources/corpus/specialize.ato:ExtendedInterface":
+      type_ref:
+        source_path: tests/resources/corpus/specialize.ato
+        module_name: ExtendedInterface
+      kind: Module
+      attributes: {}
+      children:
+        a: "tests/resources/corpus/specialize.ato:ExtendedInterface.a"
+        b: "tests/resources/corpus/specialize.ato:ExtendedInterface.b"
+        c: "tests/resources/corpus/specialize.ato:ExtendedInterface.c"
+        d: "tests/resources/corpus/specialize.ato:ExtendedInterface.d"
+      connections:
+        - left: "tests/resources/corpus/specialize.ato:ExtendedInterface.a"
+          right: "tests/resources/corpus/specialize.ato:ExtendedInterface.b"
+      reference_designator: ~
+    "tests/resources/corpus/specialize.ato:ExtendedInterface.a":
+      type_ref:
+        source_path: ""
+        module_name: ""
+      kind: Port
+      attributes: {}
+      children: {}
+      connections: []
+      reference_designator: ~
+    "tests/resources/corpus/specialize.ato:ExtendedInterface.b":
+      type_ref:
+        source_path: ""
+        module_name: ""
+      kind: Port
+      attributes: {}
+      children: {}
+      connections: []
+      reference_designator: ~
+    "tests/resources/corpus/specialize.ato:ExtendedInterface.c":
+      type_ref:
+        source_path: ""
+        module_name: ""
+      kind: Port
+      attributes: {}
+      children: {}
+      connections: []
+      reference_designator: ~
+    "tests/resources/corpus/specialize.ato:ExtendedInterface.d":
+      type_ref:
+        source_path: ""
+        module_name: ""
+      kind: Port
+      attributes: {}
+      children: {}
+      connections: []
+      reference_designator: ~
+    "tests/resources/corpus/specialize.ato:NestedModule":
+      type_ref:
+        source_path: tests/resources/corpus/specialize.ato
+        module_name: NestedModule
+      kind: Module
+      attributes: {}
+      children:
+        iface: "tests/resources/corpus/specialize.ato:NestedModule.iface"
+        sub: "tests/resources/corpus/specialize.ato:NestedModule.sub"
+      connections:
+        - left: "tests/resources/corpus/specialize.ato:NestedModule.iface.a"
+          right: "tests/resources/corpus/specialize.ato:NestedModule.sub.a"
+      reference_designator: ~
+    "tests/resources/corpus/specialize.ato:NestedModule.iface":
+      type_ref:
+        source_path: tests/resources/corpus/specialize.ato
+        module_name: BaseInterface
+      kind: Module
+      attributes: {}
+      children:
+        a: "tests/resources/corpus/specialize.ato:NestedModule.iface.a"
+        b: "tests/resources/corpus/specialize.ato:NestedModule.iface.b"
+      connections: []
+      reference_designator: ~
+    "tests/resources/corpus/specialize.ato:NestedModule.iface.a":
+      type_ref:
+        source_path: ""
+        module_name: ""
+      kind: Port
+      attributes: {}
+      children: {}
+      connections: []
+      reference_designator: ~
+    "tests/resources/corpus/specialize.ato:NestedModule.iface.b":
+      type_ref:
+        source_path: ""
+        module_name: ""
+      kind: Port
+      attributes: {}
+      children: {}
+      connections: []
+      reference_designator: ~
+    "tests/resources/corpus/specialize.ato:NestedModule.sub":
+      type_ref:
+        source_path: tests/resources/corpus/specialize.ato
+        module_name: BaseInterface
+      kind: Module
+      attributes: {}
+      children:
+        a: "tests/resources/corpus/specialize.ato:NestedModule.sub.a"
+        b: "tests/resources/corpus/specialize.ato:NestedModule.sub.b"
+      connections: []
+      reference_designator: ~
+    "tests/resources/corpus/specialize.ato:NestedModule.sub.a":
+      type_ref:
+        source_path: ""
+        module_name: ""
+      kind: Port
+      attributes: {}
+      children: {}
+      connections: []
+      reference_designator: ~
+    "tests/resources/corpus/specialize.ato:NestedModule.sub.b":
+      type_ref:
+        source_path: ""
+        module_name: ""
+      kind: Port
+      attributes: {}
+      children: {}
+      connections: []
+      reference_designator: ~
+    "tests/resources/corpus/specialize.ato:TestModule":
+      type_ref:
+        source_path: tests/resources/corpus/specialize.ato
+        module_name: TestModule
+      kind: Module
+      attributes: {}
+      children:
+        iface: "tests/resources/corpus/specialize.ato:TestModule.iface"
+        nested: "tests/resources/corpus/specialize.ato:TestModule.nested"
+      connections: []
+      reference_designator: ~
+    "tests/resources/corpus/specialize.ato:TestModule.iface":
+      type_ref:
+        source_path: tests/resources/corpus/specialize.ato
+        module_name: ExtendedInterface
+      kind: Module
+      attributes: {}
+      children:
+        a: "tests/resources/corpus/specialize.ato:TestModule.iface.a"
+        b: "tests/resources/corpus/specialize.ato:TestModule.iface.b"
+        c: "tests/resources/corpus/specialize.ato:TestModule.iface.c"
+        d: "tests/resources/corpus/specialize.ato:TestModule.iface.d"
+      connections:
+        - left: "tests/resources/corpus/specialize.ato:TestModule.iface.a"
+          right: "tests/resources/corpus/specialize.ato:TestModule.iface.b"
+      reference_designator: ~
+    "tests/resources/corpus/specialize.ato:TestModule.iface.a":
+      type_ref:
+        source_path: ""
+        module_name: ""
+      kind: Port
+      attributes: {}
+      children: {}
+      connections: []
+      reference_designator: ~
+    "tests/resources/corpus/specialize.ato:TestModule.iface.b":
+      type_ref:
+        source_path: ""
+        module_name: ""
+      kind: Port
+      attributes: {}
+      children: {}
+      connections: []
+      reference_designator: ~
+    "tests/resources/corpus/specialize.ato:TestModule.iface.c":
+      type_ref:
+        source_path: ""
+        module_name: ""
+      kind: Port
+      attributes: {}
+      children: {}
+      connections: []
+      reference_designator: ~
+    "tests/resources/corpus/specialize.ato:TestModule.iface.d":
+      type_ref:
+        source_path: ""
+        module_name: ""
+      kind: Port
+      attributes: {}
+      children: {}
+      connections: []
+      reference_designator: ~
+    "tests/resources/corpus/specialize.ato:TestModule.nested":
+      type_ref:
+        source_path: tests/resources/corpus/specialize.ato
+        module_name: NestedModule
+      kind: Module
+      attributes: {}
+      children:
+        iface: "tests/resources/corpus/specialize.ato:TestModule.nested.iface"
+        sub: "tests/resources/corpus/specialize.ato:TestModule.nested.sub"
+      connections:
+        - left: "tests/resources/corpus/specialize.ato:TestModule.nested.iface.a"
+          right: "tests/resources/corpus/specialize.ato:TestModule.nested.sub.a"
+      reference_designator: ~
+    "tests/resources/corpus/specialize.ato:TestModule.nested.iface":
+      type_ref:
+        source_path: tests/resources/corpus/specialize.ato
+        module_name: ExtendedInterface
+      kind: Module
+      attributes: {}
+      children:
+        a: "tests/resources/corpus/specialize.ato:TestModule.nested.iface.a"
+        b: "tests/resources/corpus/specialize.ato:TestModule.nested.iface.b"
+        c: "tests/resources/corpus/specialize.ato:TestModule.nested.iface.c"
+        d: "tests/resources/corpus/specialize.ato:TestModule.nested.iface.d"
+      connections:
+        - left: "tests/resources/corpus/specialize.ato:TestModule.nested.iface.a"
+          right: "tests/resources/corpus/specialize.ato:TestModule.nested.iface.b"
+      reference_designator: ~
+    "tests/resources/corpus/specialize.ato:TestModule.nested.iface.a":
+      type_ref:
+        source_path: ""
+        module_name: ""
+      kind: Port
+      attributes: {}
+      children: {}
+      connections: []
+      reference_designator: ~
+    "tests/resources/corpus/specialize.ato:TestModule.nested.iface.b":
+      type_ref:
+        source_path: ""
+        module_name: ""
+      kind: Port
+      attributes: {}
+      children: {}
+      connections: []
+      reference_designator: ~
+    "tests/resources/corpus/specialize.ato:TestModule.nested.iface.c":
+      type_ref:
+        source_path: ""
+        module_name: ""
+      kind: Port
+      attributes: {}
+      children: {}
+      connections: []
+      reference_designator: ~
+    "tests/resources/corpus/specialize.ato:TestModule.nested.iface.d":
+      type_ref:
+        source_path: ""
+        module_name: ""
+      kind: Port
+      attributes: {}
+      children: {}
+      connections: []
+      reference_designator: ~
+    "tests/resources/corpus/specialize.ato:TestModule.nested.sub":
+      type_ref:
+        source_path: tests/resources/corpus/specialize.ato
+        module_name: BaseInterface
+      kind: Module
+      attributes: {}
+      children:
+        a: "tests/resources/corpus/specialize.ato:TestModule.nested.sub.a"
+        b: "tests/resources/corpus/specialize.ato:TestModule.nested.sub.b"
+      connections: []
+      reference_designator: ~
+    "tests/resources/corpus/specialize.ato:TestModule.nested.sub.a":
+      type_ref:
+        source_path: ""
+        module_name: ""
+      kind: Port
+      attributes: {}
+      children: {}
+      connections: []
+      reference_designator: ~
+    "tests/resources/corpus/specialize.ato:TestModule.nested.sub.b":
+      type_ref:
+        source_path: ""
+        module_name: ""
+      kind: Port
+      attributes: {}
+      children: {}
+      connections: []
+      reference_designator: ~
+diagnostics: []

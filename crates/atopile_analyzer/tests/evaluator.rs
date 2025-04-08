@@ -94,3 +94,4 @@ create_evaluator_test!(cyclic_inheritance);
 create_evaluator_test!(duplicate_declaration);
 create_evaluator_test!(pin_connections);
 create_evaluator_test!(dependency_ordering);
+create_evaluator_test!(specialize);
