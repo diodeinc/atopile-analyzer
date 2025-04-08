@@ -1,5 +1,5 @@
 use std::{
-    collections::HashMap,
+    collections::{HashMap, HashSet},
     fs,
     ops::Deref,
     path::{Path, PathBuf},
@@ -165,6 +165,7 @@ pub struct Evaluator {
     state: EvaluatorState,
     reporter: AnalyzerReporter,
     files: HashMap<PathBuf, Arc<AtopileSource>>,
+    visited_files: HashSet<PathBuf>,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
@@ -609,20 +610,10 @@ pub(crate) fn resolve_import_path(ctx_path: &Path, import_path: &Path) -> Option
 }
 
 impl Evaluator {
-    pub fn new() -> Self {
-        debug!("Creating new Evaluator instance");
-        Self {
-            state: EvaluatorState::new(),
-            reporter: AnalyzerReporter::new(),
-            files: HashMap::new(),
-        }
-    }
-}
-
-impl Evaluator {
     pub fn reset(&mut self) {
         self.state = EvaluatorState::new();
         self.reporter.reset();
+        self.visited_files.clear();
     }
 
     pub fn reporter(&self) -> &AnalyzerReporter {
@@ -1362,6 +1353,12 @@ impl Evaluator {
     }
 
     fn evaluate_inner(&mut self, source: &AtopileSource, import_stack: Vec<PathBuf>) {
+        if self.visited_files.contains(source.path()) {
+            return;
+        }
+
+        self.visited_files.insert(source.path().to_path_buf());
+
         debug!("Starting inner evaluation of source: {:?}", source.path());
         debug!("Import stack depth: {}", import_stack.len());
         self.reporter.clear(source.path());

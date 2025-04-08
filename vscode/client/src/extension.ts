@@ -32,6 +32,25 @@ import * as cp from "child_process";
 let defaultClient: LanguageClient;
 const clients = new Map<string, LanguageClient>();
 
+// Storage key for last selected modules
+const LAST_SELECTED_MODULES_KEY = "lastSelectedModules";
+
+function getLastSelectedModules(
+  context: ExtensionContext
+): Record<string, string> {
+  return context.globalState.get(LAST_SELECTED_MODULES_KEY, {});
+}
+
+function saveLastSelectedModule(
+  context: ExtensionContext,
+  filePath: string,
+  moduleId: string
+) {
+  const lastSelected = getLastSelectedModules(context);
+  lastSelected[filePath] = moduleId;
+  context.globalState.update(LAST_SELECTED_MODULES_KEY, lastSelected);
+}
+
 function buildClient(
   clientOptions: LanguageClientOptions,
   context: ExtensionContext
@@ -42,7 +61,7 @@ function buildClient(
     args: [],
     transport: TransportKind.stdio,
     options: {
-      env: { RUST_LOG: "info", RUST_BACKTRACE: "1" },
+      env: { RUST_LOG: "debug", RUST_BACKTRACE: "1" },
     },
   };
 
@@ -324,7 +343,6 @@ export function activate(context: ExtensionContext) {
 
         // Find top-level modules by looking at instance IDs
         const topLevelModules = Object.keys(netlist.instances).filter((id) => {
-          // Top-level modules won't have a path after the module name
           const [file, instance_path] = id.split(":");
           if (instance_path.includes(".")) {
             return false;
@@ -340,21 +358,45 @@ export function activate(context: ExtensionContext) {
         } else if (topLevelModules.length === 1) {
           selectedModule = topLevelModules[0];
         } else {
-          // Show quickpick to select module
-          const selected = await Window.showQuickPick(
-            topLevelModules.map((module) => ({
-              label: module.split(":")[1],
+          // Get the last selected module for this file
+          const lastSelected =
+            getLastSelectedModules(context)[activeEditor.document.uri.fsPath];
+
+          // Create quickpick items, marking the last selected one
+          const quickPickItems = topLevelModules.map((module) => {
+            const moduleName = module.split(":")[1];
+            return {
+              label: moduleName,
               id: module,
-            })),
-            {
-              placeHolder: "Select a module to view",
-            }
-          );
+              description: module === lastSelected ? "Last viewed" : undefined,
+              picked: module === lastSelected,
+            };
+          });
+
+          // Sort to put the last selected first
+          if (lastSelected) {
+            quickPickItems.sort((a, b) => {
+              if (a.id === lastSelected) return -1;
+              if (b.id === lastSelected) return 1;
+              return 0;
+            });
+          }
+
+          const selected = await Window.showQuickPick(quickPickItems, {
+            placeHolder: "Select a module to view",
+          });
           if (!selected) {
             return; // User cancelled
           }
           selectedModule = selected.id;
         }
+
+        // Save the selection
+        saveLastSelectedModule(
+          context,
+          activeEditor.document.uri.fsPath,
+          selectedModule
+        );
 
         // Create and show panel
         const panel = Window.createWebviewPanel(

@@ -413,7 +413,7 @@ impl LanguageServer for Backend {
                     .expect("Failed to convert URI to file path"),
                 position_from_lsp(params.text_document_position_params.position),
             )
-            .map_err(|e| tower_lsp::jsonrpc::Error::invalid_params(e.to_string()))?;
+            .map_err(|_e| tower_lsp::jsonrpc::Error::invalid_request())?;
 
         Ok(result.map(|r| {
             GotoDefinitionResponse::Link(vec![LocationLink {

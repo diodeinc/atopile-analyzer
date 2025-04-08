@@ -338,7 +338,7 @@ impl AtopileAnalyzer {
         let files = Arc::new(FileCache::new());
         Self {
             files: files.clone(),
-            evaluator: Evaluator::new(),
+            evaluator: Evaluator::default(),
             open_files: std::collections::HashSet::new(),
         }
     }
@@ -353,7 +353,7 @@ impl Default for AtopileAnalyzer {
 impl AtopileAnalyzer {
     #[cfg(test)]
     pub fn evaluate_source_for_test(&self, source: &AtopileSource) -> EvaluatorState {
-        let mut evaluator = Evaluator::new();
+        let mut evaluator = Evaluator::default();
         evaluator.set_source(source.path(), Arc::new(source.clone()));
         evaluator.state().clone()
     }
