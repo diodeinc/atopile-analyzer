@@ -72,29 +72,32 @@ jobs:
 
       # Set the version in package.json from a workflow dispatch input
       - name: Pre-release version
+        working-directory: vscode
         if: github.event_name == 'release' && (github.event.release.prerelease || github.event.release.draft)
         # The pre-release version adds 1000 to the patch version to get around the lack of proper semver support
         # https://code.visualstudio.com/api/working-with-extensions/publishing-extension#prerelease-extensions
         run: |
           TAGGED_SEMVER=$(npx semver $(git describe --tags --exact-match HEAD))
           PUBLISH_VERSION="$($TAGGED_SEMVER | cut -d- -f1 | awk -F. '{$NF+=1000;OFS=".";$1=$1}1')"
-          cd vscode/
           npm version --no-git-tag-version $PUBLISH_VERSION
 
       - name: Release version
+        working-directory: vscode
         if: github.event_name == 'release' && !github.event.release.prerelease && !github.event.release.draft
-        run: |
-          cd vscode/
-          npm version --no-git-tag-version $(npx semver $(git describe --tags --exact-match HEAD))
+        run: npm version --no-git-tag-version $(npx semver $(git describe --tags --exact-match HEAD))
 
-      - run: npm ci
+      - name: Install dependencies
+        working-directory: vscode
+        run: npm ci
 
       - id: filename
+        working-directory: vscode
         run: |
           VERSION=$(node -p "require('./package.json').version")
           echo FILENAME="atopile-analyzer-$VERSION-${{ matrix.platform }}.vsix" >> $GITHUB_OUTPUT
 
       - name: Build and publish pre-release
+        working-directory: vscode
         # if: github.event_name == 'release' && (github.event.release.prerelease || github.event.release.draft)
         # Skip duplicate here to allow manual triggering
         run: |
@@ -102,7 +105,6 @@ jobs:
           npx vsce publish --skip-duplicate --pre-release --target ${{ matrix.platform }} -i ${{ steps.filename.outputs.FILENAME }}
         env:
           VSCE_PAT: ${{ secrets.VSCE_PAT }}
-        working-directory: vscode
 
       # TODO: Enable full publishing once we're happy with it's behavior on v0.3, even if only not producing spurious errors
 
