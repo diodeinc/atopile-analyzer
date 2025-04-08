@@ -137,7 +137,8 @@ class AtoPreviewProvider implements CustomTextEditorProvider {
 
   private async updatePreview(
     document: TextDocument,
-    webviewPanel: WebviewPanel
+    webviewPanel: WebviewPanel,
+    selectedModule?: string
   ) {
     try {
       const netlist = await this.getNetlist(document);
@@ -146,6 +147,7 @@ class AtoPreviewProvider implements CustomTextEditorProvider {
         command: "update",
         netlist: netlist,
         currentFile: document.uri.fsPath,
+        selectedModule: selectedModule,
       });
     } catch (error) {
       Window.showErrorMessage(`Failed to update preview: ${error}`);
@@ -155,7 +157,8 @@ class AtoPreviewProvider implements CustomTextEditorProvider {
   async resolveCustomTextEditor(
     document: TextDocument,
     webviewPanel: WebviewPanel,
-    _token: CancellationToken
+    _token: CancellationToken,
+    selectedModule?: string
   ): Promise<void> {
     webviewPanel.webview.options = {
       enableScripts: true,
@@ -207,7 +210,7 @@ class AtoPreviewProvider implements CustomTextEditorProvider {
             return;
           case "ready":
             // When the webview signals it's ready, send the initial netlist
-            this.updatePreview(document, webviewPanel);
+            this.updatePreview(document, webviewPanel, selectedModule);
             return;
         }
       },
@@ -219,7 +222,7 @@ class AtoPreviewProvider implements CustomTextEditorProvider {
     const changeDocumentSubscription = Workspace.onDidChangeTextDocument(
       (e) => {
         if (e.document.uri.toString() === document.uri.toString()) {
-          this.updatePreview(document, webviewPanel);
+          this.updatePreview(document, webviewPanel, selectedModule);
         }
       }
     );
@@ -237,6 +240,17 @@ class AtoPreviewProvider implements CustomTextEditorProvider {
   ): Promise<AtoPreviewDocument> {
     return new AtoPreviewDocument(uri);
   }
+}
+
+interface Instance {
+  kind: "Module" | "Component" | "Interface" | "Port" | "Pin";
+  type_ref?: string;
+  reference_designator?: string;
+  children?: Record<string, Instance>;
+}
+
+interface Netlist {
+  instances: Record<string, Instance>;
 }
 
 export function activate(context: ExtensionContext) {
@@ -286,6 +300,62 @@ export function activate(context: ExtensionContext) {
       if (activeEditor && activeEditor.document.languageId === "ato") {
         const uri = activeEditor.document.uri;
 
+        // Get the LSP client for this document
+        const folder = Workspace.getWorkspaceFolder(uri);
+        if (!folder) {
+          Window.showErrorMessage("Document not in workspace");
+          return;
+        }
+
+        const client = clients.get(folder.uri.toString()) || defaultClient;
+        if (!client) {
+          Window.showErrorMessage("No LSP client available");
+          return;
+        }
+
+        // Get the netlist data
+        const netlist = (await client.sendRequest(
+          "atopile/getNetlist"
+        )) as Netlist;
+        if (!netlist) {
+          Window.showErrorMessage("Failed to get netlist from LSP server");
+          return;
+        }
+
+        // Find top-level modules by looking at instance IDs
+        const topLevelModules = Object.keys(netlist.instances).filter((id) => {
+          // Top-level modules won't have a path after the module name
+          const [file, instance_path] = id.split(":");
+          if (instance_path.includes(".")) {
+            return false;
+          }
+
+          return file === activeEditor.document.uri.fsPath;
+        });
+
+        let selectedModule: string;
+        if (topLevelModules.length === 0) {
+          Window.showErrorMessage("No top-level modules found in this file");
+          return;
+        } else if (topLevelModules.length === 1) {
+          selectedModule = topLevelModules[0];
+        } else {
+          // Show quickpick to select module
+          const selected = await Window.showQuickPick(
+            topLevelModules.map((module) => ({
+              label: module.split(":")[1],
+              id: module,
+            })),
+            {
+              placeHolder: "Select a module to view",
+            }
+          );
+          if (!selected) {
+            return; // User cancelled
+          }
+          selectedModule = selected.id;
+        }
+
         // Create and show panel
         const panel = Window.createWebviewPanel(
           "atopile.preview",
@@ -307,7 +377,8 @@ export function activate(context: ExtensionContext) {
         await provider.resolveCustomTextEditor(
           activeEditor.document,
           panel,
-          undefined
+          undefined,
+          selectedModule
         );
       } else {
         Window.showErrorMessage("Please open an .ato file first");

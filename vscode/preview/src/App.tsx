@@ -26,6 +26,7 @@ const vscode = isVSCodeEnvironment() ? acquireVsCodeApi() : null;
 function App() {
   const [netlistData, setNetlistData] = useState<Netlist | null>(null);
   const [currentFile, setCurrentFile] = useState<string | undefined>();
+  const [selectedModule, setSelectedModule] = useState<string | undefined>();
   const [isLoading, setIsLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
 
@@ -51,6 +52,7 @@ function App() {
               setNetlistData(message.netlist);
             }
             setCurrentFile(message.currentFile);
+            setSelectedModule(message.selectedModule);
             break;
           default:
             console.warn("Unknown command received:", message);
@@ -69,6 +71,7 @@ function App() {
       setCurrentFile(
         "/Users/lenny/code/stdlib/boards/dev_tusb4020/eval_tusb4020.ato:Usb1v1.buck"
       );
+      setSelectedModule("buck");
     }
   }, []);
 
@@ -89,6 +92,7 @@ function App() {
           <SchematicContainer
             netlistData={netlistData}
             currentFile={currentFile ?? ""}
+            selectedModule={selectedModule}
           />
         )}
       </main>
