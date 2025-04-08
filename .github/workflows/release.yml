@@ -78,11 +78,14 @@ jobs:
         run: |
           TAGGED_SEMVER=$(npx semver $(git describe --tags --exact-match HEAD))
           PUBLISH_VERSION="$($TAGGED_SEMVER | cut -d- -f1 | awk -F. '{$NF+=1000;OFS=".";$1=$1}1')"
+          cd vscode/
           npm version --no-git-tag-version $PUBLISH_VERSION
 
       - name: Release version
         if: github.event_name == 'release' && !github.event.release.prerelease && !github.event.release.draft
-        run: npm version --no-git-tag-version $(npx semver $(git describe --tags --exact-match HEAD))
+        run: |
+          cd vscode/
+          npm version --no-git-tag-version $(npx semver $(git describe --tags --exact-match HEAD))
 
       - run: npm ci
 
