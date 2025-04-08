@@ -32,6 +32,25 @@ import * as cp from "child_process";
 let defaultClient: LanguageClient;
 const clients = new Map<string, LanguageClient>();
 
+// Storage key for last selected modules
+const LAST_SELECTED_MODULES_KEY = "lastSelectedModules";
+
+function getLastSelectedModules(
+  context: ExtensionContext
+): Record<string, string> {
+  return context.globalState.get(LAST_SELECTED_MODULES_KEY, {});
+}
+
+function saveLastSelectedModule(
+  context: ExtensionContext,
+  filePath: string,
+  moduleId: string
+) {
+  const lastSelected = getLastSelectedModules(context);
+  lastSelected[filePath] = moduleId;
+  context.globalState.update(LAST_SELECTED_MODULES_KEY, lastSelected);
+}
+
 function buildClient(
   clientOptions: LanguageClientOptions,
   context: ExtensionContext
@@ -42,7 +61,7 @@ function buildClient(
     args: [],
     transport: TransportKind.stdio,
     options: {
-      env: { RUST_LOG: "debug", RUST_BACKTRACE: "1" },
+      env: { RUST_LOG: "info", RUST_BACKTRACE: "1" },
     },
   };
 
@@ -126,9 +145,7 @@ class AtoPreviewProvider implements CustomTextEditorProvider {
     }
 
     // Execute the command
-    const result = await client.sendRequest("atopile/getNetlist", {
-      uri: document.uri.toString(),
-    });
+    const result = await client.sendRequest("atopile/getNetlist");
 
     if (!result) {
       throw new Error("Failed to get netlist from LSP server");
@@ -139,7 +156,8 @@ class AtoPreviewProvider implements CustomTextEditorProvider {
 
   private async updatePreview(
     document: TextDocument,
-    webviewPanel: WebviewPanel
+    webviewPanel: WebviewPanel,
+    selectedModule?: string
   ) {
     try {
       const netlist = await this.getNetlist(document);
@@ -148,6 +166,7 @@ class AtoPreviewProvider implements CustomTextEditorProvider {
         command: "update",
         netlist: netlist,
         currentFile: document.uri.fsPath,
+        selectedModule: selectedModule,
       });
     } catch (error) {
       Window.showErrorMessage(`Failed to update preview: ${error}`);
@@ -157,7 +176,8 @@ class AtoPreviewProvider implements CustomTextEditorProvider {
   async resolveCustomTextEditor(
     document: TextDocument,
     webviewPanel: WebviewPanel,
-    _token: CancellationToken
+    _token: CancellationToken,
+    selectedModule?: string
   ): Promise<void> {
     webviewPanel.webview.options = {
       enableScripts: true,
@@ -209,7 +229,7 @@ class AtoPreviewProvider implements CustomTextEditorProvider {
             return;
           case "ready":
             // When the webview signals it's ready, send the initial netlist
-            this.updatePreview(document, webviewPanel);
+            this.updatePreview(document, webviewPanel, selectedModule);
             return;
         }
       },
@@ -221,7 +241,7 @@ class AtoPreviewProvider implements CustomTextEditorProvider {
     const changeDocumentSubscription = Workspace.onDidChangeTextDocument(
       (e) => {
         if (e.document.uri.toString() === document.uri.toString()) {
-          this.updatePreview(document, webviewPanel);
+          this.updatePreview(document, webviewPanel, selectedModule);
         }
       }
     );
@@ -239,6 +259,17 @@ class AtoPreviewProvider implements CustomTextEditorProvider {
   ): Promise<AtoPreviewDocument> {
     return new AtoPreviewDocument(uri);
   }
+}
+
+interface Instance {
+  kind: "Module" | "Component" | "Interface" | "Port" | "Pin";
+  type_ref?: string;
+  reference_designator?: string;
+  children?: Record<string, Instance>;
+}
+
+interface Netlist {
+  instances: Record<string, Instance>;
 }
 
 export function activate(context: ExtensionContext) {
@@ -288,6 +319,85 @@ export function activate(context: ExtensionContext) {
       if (activeEditor && activeEditor.document.languageId === "ato") {
         const uri = activeEditor.document.uri;
 
+        // Get the LSP client for this document
+        const folder = Workspace.getWorkspaceFolder(uri);
+        if (!folder) {
+          Window.showErrorMessage("Document not in workspace");
+          return;
+        }
+
+        const client = clients.get(folder.uri.toString()) || defaultClient;
+        if (!client) {
+          Window.showErrorMessage("No LSP client available");
+          return;
+        }
+
+        // Get the netlist data
+        const netlist = (await client.sendRequest(
+          "atopile/getNetlist"
+        )) as Netlist;
+        if (!netlist) {
+          Window.showErrorMessage("Failed to get netlist from LSP server");
+          return;
+        }
+
+        // Find top-level modules by looking at instance IDs
+        const topLevelModules = Object.keys(netlist.instances).filter((id) => {
+          const [file, instance_path] = id.split(":");
+          if (instance_path.includes(".")) {
+            return false;
+          }
+
+          return file === activeEditor.document.uri.fsPath;
+        });
+
+        let selectedModule: string;
+        if (topLevelModules.length === 0) {
+          Window.showErrorMessage("No top-level modules found in this file");
+          return;
+        } else if (topLevelModules.length === 1) {
+          selectedModule = topLevelModules[0];
+        } else {
+          // Get the last selected module for this file
+          const lastSelected =
+            getLastSelectedModules(context)[activeEditor.document.uri.fsPath];
+
+          // Create quickpick items, marking the last selected one
+          const quickPickItems = topLevelModules.map((module) => {
+            const moduleName = module.split(":")[1];
+            return {
+              label: moduleName,
+              id: module,
+              description: module === lastSelected ? "Last viewed" : undefined,
+              picked: module === lastSelected,
+            };
+          });
+
+          // Sort to put the last selected first
+          if (lastSelected) {
+            quickPickItems.sort((a, b) => {
+              if (a.id === lastSelected) return -1;
+              if (b.id === lastSelected) return 1;
+              return 0;
+            });
+          }
+
+          const selected = await Window.showQuickPick(quickPickItems, {
+            placeHolder: "Select a module to view",
+          });
+          if (!selected) {
+            return; // User cancelled
+          }
+          selectedModule = selected.id;
+        }
+
+        // Save the selection
+        saveLastSelectedModule(
+          context,
+          activeEditor.document.uri.fsPath,
+          selectedModule
+        );
+
         // Create and show panel
         const panel = Window.createWebviewPanel(
           "atopile.preview",
@@ -309,7 +419,8 @@ export function activate(context: ExtensionContext) {
         await provider.resolveCustomTextEditor(
           activeEditor.document,
           panel,
-          undefined
+          undefined,
+          selectedModule
         );
       } else {
         Window.showErrorMessage("Please open an .ato file first");

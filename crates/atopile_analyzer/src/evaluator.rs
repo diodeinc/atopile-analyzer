@@ -1,8 +1,9 @@
 use std::{
-    collections::HashMap,
+    collections::{HashMap, HashSet},
     fs,
     ops::Deref,
     path::{Path, PathBuf},
+    sync::Arc,
     time::Instant,
 };
 
@@ -17,8 +18,7 @@ use serde::{Deserialize, Serialize};
 use thiserror::Error;
 
 use crate::{
-    diagnostics::AnalyzerReporter, AsLocation, FileCache, IntoLocated, IntoLocation, Located,
-    Location,
+    diagnostics::AnalyzerReporter, AsLocation, IntoLocated, IntoLocation, Located, Location,
 };
 
 #[derive(Debug, Clone)]
@@ -27,6 +27,7 @@ struct BlockDeclaration {
     parent: Option<Symbol>,
     location: Location,
     stmt: BlockStmt,
+    dependencies: HashSet<Symbol>,
 }
 
 impl BlockDeclaration {
@@ -36,11 +37,12 @@ impl BlockDeclaration {
             parent: block.parent.as_ref().map(|p| p.deref().clone()),
             location,
             stmt: block.clone(),
+            dependencies: HashSet::new(),
         }
     }
 }
 
-#[derive(Debug, Clone, Serialize)]
+#[derive(Debug, Clone, Serialize, Default)]
 pub struct EvaluatorState {
     instances: HashMap<InstanceRef, Instance>,
 }
@@ -52,7 +54,7 @@ impl EvaluatorState {
         }
     }
 
-    pub(crate) fn resolve_reference_designators(&mut self) {
+    pub fn resolve_reference_designators(&mut self) {
         lazy_static! {
             static ref COMP_RE: Regex = Regex::new(r#"(?s)\(comp\s+\(ref\s+"([^"]+)"\)(?:(?!\(comp\s+).)*?sheetpath\s+\(names\s+"([^"]+)"\)"#).unwrap();
         }
@@ -160,10 +162,12 @@ impl EvaluatorState {
     }
 }
 
+#[derive(Default)]
 pub struct Evaluator {
     state: EvaluatorState,
     reporter: AnalyzerReporter,
-    file_cache: FileCache,
+    files: HashMap<PathBuf, Arc<AtopileSource>>,
+    visited_files: HashSet<PathBuf>,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
@@ -608,25 +612,10 @@ pub(crate) fn resolve_import_path(ctx_path: &Path, import_path: &Path) -> Option
 }
 
 impl Evaluator {
-    pub fn new() -> Self {
-        debug!("Creating new Evaluator instance");
-        Self {
-            state: EvaluatorState::new(),
-            reporter: AnalyzerReporter::new(),
-            file_cache: FileCache::new(),
-        }
-    }
-}
-
-impl Default for Evaluator {
-    fn default() -> Self {
-        Self::new()
-    }
-}
-
-impl Evaluator {
     pub fn reset(&mut self) {
         self.state = EvaluatorState::new();
+        self.reporter.reset();
+        self.visited_files.clear();
     }
 
     pub fn reporter(&self) -> &AnalyzerReporter {
@@ -855,6 +844,17 @@ impl Evaluator {
         Ok(())
     }
 
+    fn get_or_load_source(&mut self, path: &PathBuf) -> anyhow::Result<Arc<AtopileSource>> {
+        if let Some(source) = self.files.get(path) {
+            Ok(source.clone())
+        } else {
+            let content = std::fs::read_to_string(path)?;
+            let source = Arc::new(AtopileSource::new(content, path.to_path_buf()));
+            self.files.insert(path.to_path_buf(), source.clone());
+            Ok(source)
+        }
+    }
+
     fn evaluate_import(
         &mut self,
         source: &AtopileSource,
@@ -907,7 +907,7 @@ impl Evaluator {
         }
 
         // Load and evaluate the imported module.
-        let (imported_source, _) = self.file_cache.get_or_load(&path).with_context(
+        let imported_source = self.get_or_load_source(&path).with_context(
             source,
             |_| EvaluatorErrorKind::ImportLoadFailed,
             import_path,
@@ -1259,6 +1259,31 @@ impl Evaluator {
         let mut declarations = Vec::new();
         let mut seen_names = HashMap::new();
 
+        // Helper function to collect dependencies from a block's body
+        fn collect_dependencies(body: &[Spanned<Stmt>]) -> HashSet<Symbol> {
+            let mut deps = HashSet::new();
+            for stmt in body {
+                match stmt.deref() {
+                    // Handle new expressions like: x = new Module
+                    Stmt::Assign(assign) => {
+                        if let Expr::New(type_name) = assign.value.deref() {
+                            deps.insert(type_name.deref().clone());
+                        }
+                    }
+                    // Handle specialize statements like: x.y -> Module
+                    Stmt::Specialize(specialize) => {
+                        deps.insert(specialize.value.deref().clone());
+                    }
+                    // Handle nested blocks to find dependencies in their bodies
+                    Stmt::Block(block) => {
+                        deps.extend(collect_dependencies(&block.body));
+                    }
+                    _ => {}
+                }
+            }
+            deps
+        }
+
         for stmt in source.ast() {
             if let Stmt::Block(block) = stmt.deref() {
                 let location = stmt.span().to_location(source);
@@ -1278,7 +1303,11 @@ impl Evaluator {
                 }
 
                 seen_names.insert(name.clone(), location.clone());
-                declarations.push(BlockDeclaration::new(block, location));
+
+                // Create declaration and collect its dependencies
+                let mut declaration = BlockDeclaration::new(block, location);
+                declaration.dependencies = collect_dependencies(&block.body);
+                declarations.push(declaration);
             }
         }
 
@@ -1313,7 +1342,7 @@ impl Evaluator {
                 reporter.report(
                     EvaluatorError::new(EvaluatorErrorKind::CyclicInheritance, &block.location)
                         .with_message(format!(
-                            "Cyclic inheritance detected involving '{}'",
+                            "Cyclic dependency detected involving '{}'",
                             block.name
                         ))
                         .into(),
@@ -1328,6 +1357,13 @@ impl Evaluator {
             if let Some(parent_name) = &block.parent {
                 if let Some(parent) = declarations.iter().find(|d| &d.name == parent_name) {
                     visit(parent, declarations, sorted, visited, temp_mark, reporter);
+                }
+            }
+
+            // Visit all dependencies from new expressions and specialize statements
+            for dep_name in &block.dependencies {
+                if let Some(dep) = declarations.iter().find(|d| &d.name == dep_name) {
+                    visit(dep, declarations, sorted, visited, temp_mark, reporter);
                 }
             }
 
@@ -1355,6 +1391,12 @@ impl Evaluator {
     }
 
     fn evaluate_inner(&mut self, source: &AtopileSource, import_stack: Vec<PathBuf>) {
+        if self.visited_files.contains(source.path()) {
+            return;
+        }
+
+        self.visited_files.insert(source.path().to_path_buf());
+
         debug!("Starting inner evaluation of source: {:?}", source.path());
         debug!("Import stack depth: {}", import_stack.len());
         self.reporter.clear(source.path());
@@ -1391,10 +1433,35 @@ impl Evaluator {
         }
     }
 
-    pub fn evaluate(&mut self, source: &AtopileSource) -> EvaluatorState {
-        debug!("Starting evaluation of source: {:?}", source.path());
+    pub fn set_source(&mut self, path: &Path, source: Arc<AtopileSource>) {
+        self.files.insert(path.to_path_buf(), source);
+        self.evaluate();
+    }
+
+    pub fn remove_source(&mut self, path: &Path) {
+        self.files.remove(path);
+        self.evaluate();
+    }
+
+    pub fn resolve_reference_designators(&mut self) {
+        self.state.resolve_reference_designators();
+    }
+
+    pub fn state(&self) -> &EvaluatorState {
+        &self.state
+    }
+
+    pub fn evaluate(&mut self) -> EvaluatorState {
+        debug!("Evaluator starting evaluation");
         let start = Instant::now();
-        self.evaluate_inner(source, vec![]);
+        self.reset();
+
+        let files_to_evaluate: Vec<_> = self.files.values().cloned().collect();
+
+        for source in files_to_evaluate {
+            self.evaluate_inner(&source, vec![]);
+        }
+
         let duration = start.elapsed();
         debug!("Evaluation completed in {}ms", duration.as_millis());
         debug!(

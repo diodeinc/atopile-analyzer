@@ -139,6 +139,7 @@ const StyleInjector = () => {
 interface SchematicContainerProps {
   netlistData: Netlist;
   currentFile: string;
+  selectedModule?: string;
 }
 
 const Breadcrumbs = ({
@@ -189,12 +190,22 @@ const Breadcrumbs = ({
 const SchematicContainer: React.FC<SchematicContainerProps> = ({
   netlistData,
   currentFile,
+  selectedModule: initialSelectedModule,
 }) => {
   console.log("schematic container with currentFile", currentFile);
   const [error, setError] = useState<string | null>(null);
-  const [selectedModule, setSelectedModule] = useState<string>(currentFile);
+  const [selectedModule, setSelectedModule] = useState<string>(
+    initialSelectedModule || currentFile
+  );
 
-  // Set initial view to the top-level file view
+  // Update selected module when prop changes
+  useEffect(() => {
+    if (initialSelectedModule) {
+      setSelectedModule(initialSelectedModule);
+    }
+  }, [initialSelectedModule]);
+
+  // Set initial view to the top-level file view if no module selected
   useEffect(() => {
     if (!selectedModule && currentFile) {
       setSelectedModule(currentFile);
