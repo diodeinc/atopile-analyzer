@@ -27,6 +27,7 @@ struct BlockDeclaration {
     parent: Option<Symbol>,
     location: Location,
     stmt: BlockStmt,
+    dependencies: HashSet<Symbol>,
 }
 
 impl BlockDeclaration {
@@ -36,6 +37,7 @@ impl BlockDeclaration {
             parent: block.parent.as_ref().map(|p| p.deref().clone()),
             location,
             stmt: block.clone(),
+            dependencies: HashSet::new(),
         }
     }
 }
@@ -1257,6 +1259,31 @@ impl Evaluator {
         let mut declarations = Vec::new();
         let mut seen_names = HashMap::new();
 
+        // Helper function to collect dependencies from a block's body
+        fn collect_dependencies(body: &[Spanned<Stmt>]) -> HashSet<Symbol> {
+            let mut deps = HashSet::new();
+            for stmt in body {
+                match stmt.deref() {
+                    // Handle new expressions like: x = new Module
+                    Stmt::Assign(assign) => {
+                        if let Expr::New(type_name) = assign.value.deref() {
+                            deps.insert(type_name.deref().clone());
+                        }
+                    }
+                    // Handle specialize statements like: x.y -> Module
+                    Stmt::Specialize(specialize) => {
+                        deps.insert(specialize.value.deref().clone());
+                    }
+                    // Handle nested blocks to find dependencies in their bodies
+                    Stmt::Block(block) => {
+                        deps.extend(collect_dependencies(&block.body));
+                    }
+                    _ => {}
+                }
+            }
+            deps
+        }
+
         for stmt in source.ast() {
             if let Stmt::Block(block) = stmt.deref() {
                 let location = stmt.span().to_location(source);
@@ -1276,7 +1303,11 @@ impl Evaluator {
                 }
 
                 seen_names.insert(name.clone(), location.clone());
-                declarations.push(BlockDeclaration::new(block, location));
+
+                // Create declaration and collect its dependencies
+                let mut declaration = BlockDeclaration::new(block, location);
+                declaration.dependencies = collect_dependencies(&block.body);
+                declarations.push(declaration);
             }
         }
 
@@ -1311,7 +1342,7 @@ impl Evaluator {
                 reporter.report(
                     EvaluatorError::new(EvaluatorErrorKind::CyclicInheritance, &block.location)
                         .with_message(format!(
-                            "Cyclic inheritance detected involving '{}'",
+                            "Cyclic dependency detected involving '{}'",
                             block.name
                         ))
                         .into(),
@@ -1326,6 +1357,13 @@ impl Evaluator {
             if let Some(parent_name) = &block.parent {
                 if let Some(parent) = declarations.iter().find(|d| &d.name == parent_name) {
                     visit(parent, declarations, sorted, visited, temp_mark, reporter);
+                }
+            }
+
+            // Visit all dependencies from new expressions and specialize statements
+            for dep_name in &block.dependencies {
+                if let Some(dep) = declarations.iter().find(|d| &d.name == dep_name) {
+                    visit(dep, declarations, sorted, visited, temp_mark, reporter);
                 }
             }
 
@@ -1413,7 +1451,7 @@ impl Evaluator {
         &self.state
     }
 
-    fn evaluate(&mut self) -> EvaluatorState {
+    pub fn evaluate(&mut self) -> EvaluatorState {
         debug!("Evaluator starting evaluation");
         let start = Instant::now();
         self.reset();

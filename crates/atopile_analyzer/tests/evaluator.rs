@@ -6,6 +6,7 @@ use atopile_parser::AtopileSource;
 use serde::Serialize;
 use std::fs;
 use std::path::PathBuf;
+use std::sync::Arc;
 
 #[derive(Debug, Serialize)]
 struct DiagnosticInfo {
@@ -55,13 +56,14 @@ macro_rules! create_evaluator_test {
             let file_path = concat!("tests/resources/corpus/", stringify!($name), ".ato");
             let path_buf = PathBuf::from(file_path);
 
-            let (source, _errors) = AtopileSource::new(
+            let source = Arc::new(AtopileSource::new(
                 normalized_input.to_string(),
                 path_buf.clone(),
-            );
+            ));
 
-            let mut evaluator = Evaluator::new();
-            let state = evaluator.evaluate(&source);
+            let mut evaluator = Evaluator::default();
+            evaluator.set_source(&path_buf, source);
+            let state = evaluator.evaluate();
 
             let diagnostics = evaluator.reporter()
                 .diagnostics()
@@ -91,3 +93,4 @@ create_evaluator_test!(forward_reference);
 create_evaluator_test!(cyclic_inheritance);
 create_evaluator_test!(duplicate_declaration);
 create_evaluator_test!(pin_connections);
+create_evaluator_test!(dependency_ordering);

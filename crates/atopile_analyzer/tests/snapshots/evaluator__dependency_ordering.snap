@@ -1,0 +1,113 @@
+---
+source: crates/atopile_analyzer/tests/evaluator.rs
+expression: result
+---
+state:
+  instances:
+    "tests/resources/corpus/dependency_ordering.ato:A":
+      type_ref:
+        source_path: tests/resources/corpus/dependency_ordering.ato
+        module_name: A
+      kind: Module
+      attributes: {}
+      children:
+        x: "tests/resources/corpus/dependency_ordering.ato:A.x"
+      connections: []
+      reference_designator: ~
+    "tests/resources/corpus/dependency_ordering.ato:A.x":
+      type_ref:
+        source_path: ""
+        module_name: ""
+      kind: Port
+      attributes: {}
+      children: {}
+      connections: []
+      reference_designator: ~
+    "tests/resources/corpus/dependency_ordering.ato:B":
+      type_ref:
+        source_path: tests/resources/corpus/dependency_ordering.ato
+        module_name: B
+      kind: Module
+      attributes: {}
+      children:
+        a: "tests/resources/corpus/dependency_ordering.ato:B.a"
+      connections: []
+      reference_designator: ~
+    "tests/resources/corpus/dependency_ordering.ato:B.a":
+      type_ref:
+        source_path: tests/resources/corpus/dependency_ordering.ato
+        module_name: A
+      kind: Module
+      attributes: {}
+      children:
+        x: "tests/resources/corpus/dependency_ordering.ato:B.a.x"
+      connections: []
+      reference_designator: ~
+    "tests/resources/corpus/dependency_ordering.ato:B.a.x":
+      type_ref:
+        source_path: ""
+        module_name: ""
+      kind: Port
+      attributes: {}
+      children: {}
+      connections: []
+      reference_designator: ~
+    "tests/resources/corpus/dependency_ordering.ato:C":
+      type_ref:
+        source_path: tests/resources/corpus/dependency_ordering.ato
+        module_name: C
+      kind: Module
+      attributes: {}
+      children:
+        y: "tests/resources/corpus/dependency_ordering.ato:C.y"
+      connections: []
+      reference_designator: ~
+    "tests/resources/corpus/dependency_ordering.ato:C.y":
+      type_ref:
+        source_path: ""
+        module_name: ""
+      kind: Port
+      attributes: {}
+      children: {}
+      connections: []
+      reference_designator: ~
+    "tests/resources/corpus/dependency_ordering.ato:D":
+      type_ref:
+        source_path: tests/resources/corpus/dependency_ordering.ato
+        module_name: D
+      kind: Module
+      attributes: {}
+      children:
+        outer: "tests/resources/corpus/dependency_ordering.ato:D.outer"
+      connections: []
+      reference_designator: ~
+    "tests/resources/corpus/dependency_ordering.ato:D.outer":
+      type_ref:
+        source_path: tests/resources/corpus/dependency_ordering.ato
+        module_name: B
+      kind: Module
+      attributes: {}
+      children:
+        a: "tests/resources/corpus/dependency_ordering.ato:D.outer.a"
+      connections: []
+      reference_designator: ~
+    "tests/resources/corpus/dependency_ordering.ato:D.outer.a":
+      type_ref:
+        source_path: tests/resources/corpus/dependency_ordering.ato
+        module_name: A
+      kind: Module
+      attributes: {}
+      children:
+        x: "tests/resources/corpus/dependency_ordering.ato:D.outer.a.x"
+      connections: []
+      reference_designator: ~
+    "tests/resources/corpus/dependency_ordering.ato:D.outer.a.x":
+      type_ref:
+        source_path: ""
+        module_name: ""
+      kind: Port
+      attributes: {}
+      children: {}
+      connections: []
+      reference_designator: ~
+diagnostics: []

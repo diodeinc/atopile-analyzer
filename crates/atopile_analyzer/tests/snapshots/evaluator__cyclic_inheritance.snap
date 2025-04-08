@@ -6,7 +6,7 @@ state:
   instances: {}
 diagnostics:
   - severity: Error
-    kind: "Evaluator: cyclic inheritance detected: Cyclic inheritance detected involving 'ModuleA'"
+    kind: "Evaluator: cyclic inheritance detected: Cyclic dependency detected involving 'ModuleA'"
     file: tests/resources/corpus/cyclic_inheritance.ato
   - severity: Error
     kind: "Evaluator: internal error: Failed to clone parent module"
