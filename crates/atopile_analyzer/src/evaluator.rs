@@ -3,6 +3,7 @@ use std::{
     fs,
     ops::Deref,
     path::{Path, PathBuf},
+    sync::Arc,
     time::Instant,
 };
 
@@ -17,8 +18,7 @@ use serde::{Deserialize, Serialize};
 use thiserror::Error;
 
 use crate::{
-    diagnostics::AnalyzerReporter, AsLocation, FileCache, IntoLocated, IntoLocation, Located,
-    Location,
+    diagnostics::AnalyzerReporter, AsLocation, IntoLocated, IntoLocation, Located, Location,
 };
 
 #[derive(Debug, Clone)]
@@ -40,7 +40,7 @@ impl BlockDeclaration {
     }
 }
 
-#[derive(Debug, Clone, Serialize)]
+#[derive(Debug, Clone, Serialize, Default)]
 pub struct EvaluatorState {
     instances: HashMap<InstanceRef, Instance>,
 }
@@ -52,7 +52,7 @@ impl EvaluatorState {
         }
     }
 
-    pub(crate) fn resolve_reference_designators(&mut self) {
+    pub fn resolve_reference_designators(&mut self) {
         lazy_static! {
             static ref COMP_RE: Regex = Regex::new(r#"(?s)\(comp\s+\(ref\s+"([^"]+)"\)(?:(?!\(comp\s+).)*?sheetpath\s+\(names\s+"([^"]+)"\)"#).unwrap();
         }
@@ -160,10 +160,11 @@ impl EvaluatorState {
     }
 }
 
+#[derive(Default)]
 pub struct Evaluator {
     state: EvaluatorState,
     reporter: AnalyzerReporter,
-    file_cache: FileCache,
+    files: HashMap<PathBuf, Arc<AtopileSource>>,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
@@ -613,20 +614,15 @@ impl Evaluator {
         Self {
             state: EvaluatorState::new(),
             reporter: AnalyzerReporter::new(),
-            file_cache: FileCache::new(),
+            files: HashMap::new(),
         }
-    }
-}
-
-impl Default for Evaluator {
-    fn default() -> Self {
-        Self::new()
     }
 }
 
 impl Evaluator {
     pub fn reset(&mut self) {
         self.state = EvaluatorState::new();
+        self.reporter.reset();
     }
 
     pub fn reporter(&self) -> &AnalyzerReporter {
@@ -855,6 +851,17 @@ impl Evaluator {
         Ok(())
     }
 
+    fn get_or_load_source(&mut self, path: &PathBuf) -> anyhow::Result<Arc<AtopileSource>> {
+        if let Some(source) = self.files.get(path) {
+            Ok(source.clone())
+        } else {
+            let content = std::fs::read_to_string(path)?;
+            let source = Arc::new(AtopileSource::new(content, path.to_path_buf()));
+            self.files.insert(path.to_path_buf(), source.clone());
+            Ok(source)
+        }
+    }
+
     fn evaluate_import(
         &mut self,
         source: &AtopileSource,
@@ -907,7 +914,7 @@ impl Evaluator {
         }
 
         // Load and evaluate the imported module.
-        let (imported_source, _) = self.file_cache.get_or_load(&path).with_context(
+        let imported_source = self.get_or_load_source(&path).with_context(
             source,
             |_| EvaluatorErrorKind::ImportLoadFailed,
             import_path,
@@ -1391,10 +1398,35 @@ impl Evaluator {
         }
     }
 
-    pub fn evaluate(&mut self, source: &AtopileSource) -> EvaluatorState {
-        debug!("Starting evaluation of source: {:?}", source.path());
+    pub fn set_source(&mut self, path: &Path, source: Arc<AtopileSource>) {
+        self.files.insert(path.to_path_buf(), source);
+        self.evaluate();
+    }
+
+    pub fn remove_source(&mut self, path: &Path) {
+        self.files.remove(path);
+        self.evaluate();
+    }
+
+    pub fn resolve_reference_designators(&mut self) {
+        self.state.resolve_reference_designators();
+    }
+
+    pub fn state(&self) -> &EvaluatorState {
+        &self.state
+    }
+
+    fn evaluate(&mut self) -> EvaluatorState {
+        debug!("Evaluator starting evaluation");
         let start = Instant::now();
-        self.evaluate_inner(source, vec![]);
+        self.reset();
+
+        let files_to_evaluate: Vec<_> = self.files.values().cloned().collect();
+
+        for source in files_to_evaluate {
+            self.evaluate_inner(&source, vec![]);
+        }
+
         let duration = start.elapsed();
         debug!("Evaluation completed in {}ms", duration.as_millis());
         debug!(

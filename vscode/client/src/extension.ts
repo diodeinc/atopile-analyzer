@@ -42,7 +42,7 @@ function buildClient(
     args: [],
     transport: TransportKind.stdio,
     options: {
-      env: { RUST_LOG: "debug", RUST_BACKTRACE: "1" },
+      env: { RUST_LOG: "info", RUST_BACKTRACE: "1" },
     },
   };
 
@@ -126,9 +126,7 @@ class AtoPreviewProvider implements CustomTextEditorProvider {
     }
 
     // Execute the command
-    const result = await client.sendRequest("atopile/getNetlist", {
-      uri: document.uri.toString(),
-    });
+    const result = await client.sendRequest("atopile/getNetlist");
 
     if (!result) {
       throw new Error("Failed to get netlist from LSP server");

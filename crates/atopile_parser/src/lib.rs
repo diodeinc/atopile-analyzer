@@ -96,10 +96,11 @@ pub struct AtopileSource {
     path: PathBuf,
     ast: Vec<Spanned<parser::Stmt>>,
     line_to_index: Vec<usize>,
+    errors: Vec<AtopileError>,
 }
 
 impl AtopileSource {
-    pub fn new(raw: String, path: PathBuf) -> (Self, Vec<AtopileError>) {
+    pub fn new(raw: String, path: PathBuf) -> Self {
         let mut errors: Vec<AtopileError> = Vec::new();
 
         let (tokens, lexer_errors) = lex(&raw);
@@ -126,15 +127,13 @@ impl AtopileSource {
             )
             .collect::<Vec<_>>();
 
-        (
-            Self {
-                raw,
-                path,
-                ast,
-                line_to_index,
-            },
+        Self {
+            raw,
+            path,
+            ast,
+            line_to_index,
             errors,
-        )
+        }
     }
 
     /// Returns the deepest parser::Stmt that is present at the given index into the source file,
@@ -187,6 +186,10 @@ impl AtopileSource {
 
     pub fn path(&self) -> &Path {
         &self.path
+    }
+
+    pub fn errors(&self) -> &Vec<AtopileError> {
+        &self.errors
     }
 }
 
@@ -249,7 +252,7 @@ impl<'a> Iterator for StmtTraverser<'a> {
 
 #[test]
 fn test_index_to_position() {
-    let (source, errors) = AtopileSource::new(
+    let source = AtopileSource::new(
         r#"
 from "test.ato" import MyModule
 
@@ -260,7 +263,7 @@ from "test2.ato" import MyModule2
         PathBuf::from("test.ato"),
     );
 
-    assert_eq!(errors.len(), 0);
+    assert_eq!(source.errors.len(), 0);
 
     assert_eq!(source.index_to_position(0), Position { line: 0, column: 0 });
     assert_eq!(
@@ -275,7 +278,7 @@ from "test2.ato" import MyModule2
 
 #[test]
 fn test_stmt_at() {
-    let (source, errors) = AtopileSource::new(
+    let source = AtopileSource::new(
         r#"
 from "test.ato" import MyModule
 
@@ -288,7 +291,7 @@ module M:
         PathBuf::from("test.ato"),
     );
 
-    assert_eq!(errors.len(), 0);
+    assert_eq!(source.errors.len(), 0);
 
     assert_debug_snapshot!(
         source.stmt_at(0),

@@ -1,3 +1,6 @@
+use std::collections::{HashMap, HashSet};
+use std::path::PathBuf;
+use std::sync::Arc;
 use std::time::Instant;
 
 use anyhow::Context;
@@ -31,6 +34,10 @@ impl Notification for NetlistUpdatedNotification {
 struct Backend {
     client: Client,
     analyzer: Mutex<AtopileAnalyzer>,
+
+    /// A set of all URLs that we sent diagnostics for last time, so we can
+    /// properly clear diagnostics for files that are no longer open.
+    last_diagnostics: Mutex<HashSet<PathBuf>>,
 }
 
 struct LspLogger {
@@ -138,6 +145,7 @@ impl Backend {
         Self {
             client,
             analyzer: Mutex::new(AtopileAnalyzer::new()),
+            last_diagnostics: Mutex::new(HashSet::new()),
         }
     }
 
@@ -150,7 +158,7 @@ impl Backend {
             .expect("Failed to convert URI to file path");
 
         let parsing_start = Instant::now();
-        let source = AtopileSource::new(text.to_string(), path.clone()).0;
+        let source = Arc::new(AtopileSource::new(text.to_string(), path.clone()));
 
         info!(
             "[profile] parsing source took {}ms",
@@ -159,7 +167,7 @@ impl Backend {
 
         let analyzer_start = Instant::now();
         let mut analyzer = self.analyzer.lock().await;
-        match analyzer.set_source(&path, source.clone()) {
+        match analyzer.set_source(&path, source) {
             Ok(_) => (),
             Err(e) => {
                 self.client
@@ -173,9 +181,7 @@ impl Backend {
         );
 
         // Generate and push the netlist
-        let netlist = analyzer
-            .get_netlist(&source)
-            .context("Failed to evaluate netlist")?;
+        let netlist = analyzer.get_netlist();
 
         let netlist_json = serde_json::to_value(netlist).context("Failed to serialize netlist")?;
 
@@ -187,17 +193,24 @@ impl Backend {
             .await;
 
         let diagnostics_start = Instant::now();
-        let diagnostics_result = analyzer.diagnostics_for_all_open_files();
+        let diagnostics_result = analyzer.diagnostics();
         info!(
             "[profile] diagnostics_for_all_open_files took {}ms",
             diagnostics_start.elapsed().as_millis()
         );
 
         match diagnostics_result {
-            Ok(diagnostics_per_file) => {
+            Ok(diagnostics) => {
                 let publish_start = Instant::now();
-                for (file, diagnostics) in diagnostics_per_file {
-                    let lsp_diagnostics = diagnostics.iter().map(diagnostic_to_lsp).collect();
+                let diagnostics_per_file: HashMap<PathBuf, Vec<&AnalyzerDiagnostic>> =
+                    diagnostics.iter().fold(HashMap::new(), |mut acc, d| {
+                        acc.entry(d.file.clone()).or_default().push(d);
+                        acc
+                    });
+
+                for (file, diagnostics) in &diagnostics_per_file {
+                    let lsp_diagnostics =
+                        diagnostics.iter().map(|d| diagnostic_to_lsp(d)).collect();
 
                     info!(
                         "publishing diagnostics for file {:?}: {:?}",
@@ -206,12 +219,30 @@ impl Backend {
 
                     self.client
                         .publish_diagnostics(
-                            Url::from_file_path(&file).expect("Failed to convert file path to URI"),
+                            Url::from_file_path(file).expect("Failed to convert file path to URI"),
                             lsp_diagnostics,
                             None,
                         )
                         .await;
                 }
+
+                let files_with_diagnostics = diagnostics_per_file.keys().cloned().collect();
+                for file in self
+                    .last_diagnostics
+                    .lock()
+                    .await
+                    .difference(&files_with_diagnostics)
+                {
+                    self.client
+                        .publish_diagnostics(
+                            Url::from_file_path(file).expect("Failed to convert file path to URI"),
+                            vec![],
+                            None,
+                        )
+                        .await;
+                }
+
+                *self.last_diagnostics.lock().await = files_with_diagnostics;
                 info!(
                     "[profile] publishing diagnostics took {}ms",
                     publish_start.elapsed().as_millis()
@@ -234,31 +265,9 @@ impl Backend {
         Ok(())
     }
 
-    async fn get_netlist(&self, params: Value) -> Result<Value> {
-        let uri_str = params.get("uri").and_then(|v| v.as_str()).ok_or_else(|| {
-            tower_lsp::jsonrpc::Error::invalid_params("Expected URI string parameter")
-        })?;
-
-        let uri = Url::parse(uri_str).map_err(|e| {
-            tower_lsp::jsonrpc::Error::invalid_params(format!("Invalid URI: {}", e))
-        })?;
-
-        let path = uri
-            .to_file_path()
-            .map_err(|_| tower_lsp::jsonrpc::Error::invalid_params("Invalid file path"))?;
-
+    async fn get_netlist(&self) -> Result<Value> {
         let mut analyzer = self.analyzer.lock().await;
-
-        // Get the source from the analyzer's state
-        let source = analyzer.get_source_from_cache(&path).ok_or_else(|| {
-            tower_lsp::jsonrpc::Error::invalid_params(
-                "File not found in analyzer state. Make sure the file is open in the editor.",
-            )
-        })?;
-
-        let netlist = analyzer
-            .get_netlist(&source)
-            .map_err(|_| tower_lsp::jsonrpc::Error::internal_error())?;
+        let netlist = analyzer.get_netlist();
 
         let netlist_json = serde_json::to_value(netlist)
             .map_err(|_| tower_lsp::jsonrpc::Error::internal_error())?;
