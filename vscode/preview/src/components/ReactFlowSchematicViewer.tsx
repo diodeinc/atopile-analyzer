@@ -1337,6 +1337,22 @@ const Visualizer = ({
   });
   const [prevComponent, setPrevComponent] = useState<string | null>(null);
   const [shouldAnimate, setShouldAnimate] = useState(false);
+  const [explodeModules, setExplodeModules] = useState(
+    config?.layout?.explodeModules ?? DEFAULT_CONFIG.layout.explodeModules
+  );
+
+  const dynamicConfig: Partial<SchematicConfig> = useMemo(
+    () => ({
+      ...config,
+      // Cast because we're only overriding explodeModules and other layout fields may be undefined in the Partial config
+      layout: {
+        ...((config.layout ?? {}) as any),
+        explodeModules,
+      } as any,
+    }),
+    [config, explodeModules]
+  );
+
   const [isGeneratingPDF, setIsGeneratingPDF] = useState(false);
   const elkInstance = useRef<ELKType | null>(null);
   const reactFlowInstance = useRef<any>(null);
@@ -1379,7 +1395,7 @@ const Visualizer = ({
 
   useEffect(() => {
     async function render() {
-      const renderer = new SchematicRenderer(netlist, config);
+      const renderer = new SchematicRenderer(netlist, dynamicConfig);
       if (selectedComponent) {
         try {
           let layout = await renderer.render(selectedComponent);
@@ -1407,7 +1423,7 @@ const Visualizer = ({
     }
 
     render();
-  }, [netlist, selectedComponent, prevComponent, config]);
+  }, [netlist, selectedComponent, prevComponent, dynamicConfig]);
 
   // Update nodes and edges when layout changes
   useEffect(() => {
@@ -1481,7 +1497,7 @@ const Visualizer = ({
     setIsGeneratingPDF(true);
     try {
       // Create PDF renderer with current config - use the exact same config as the React viewer
-      const pdfRenderer = new PDFSchematicRenderer(netlist, config);
+      const pdfRenderer = new PDFSchematicRenderer(netlist, dynamicConfig);
 
       // Render the PDF
       const doc = await pdfRenderer.render(selectedComponent);
@@ -1575,7 +1591,28 @@ const Visualizer = ({
           preventScrolling={false}
         >
           <Controls showInteractive={false} />
-          <Panel position="top-right">
+          <Panel
+            position="top-right"
+            style={{
+              display: "flex",
+              flexDirection: "row",
+              alignItems: "center",
+              gap: "8px",
+              padding: "8px",
+            }}
+          >
+            <button
+              className="viewer-toggle"
+              onClick={() => setExplodeModules((prev) => !prev)}
+              title={
+                explodeModules
+                  ? "Collapse modules back into hierarchy"
+                  : "Explode modules into individual components"
+              }
+            >
+              {explodeModules ? "Collapse" : "Explode"}
+            </button>
+
             <button
               className="download-button"
               onClick={handleDownloadPDF}
